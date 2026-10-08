@@ -19,6 +19,7 @@ pub mod dispute;
 pub mod fraud;
 pub mod lighthouse;
 pub mod pay;
+pub mod sgt;
 
 pub use pay::*;
 pub use tally::{constants::*, errors::TallyError};
@@ -68,6 +69,7 @@ pub struct Env {
     pub capsule: Pubkey,
     pub vault: Pubkey,
     pub menu_nonce: u64,
+    pub sgt_group_mint: Pubkey,
 }
 
 /// Default test rules: coffee only (category 3), $6 per purchase, $15 per cycle,
@@ -125,12 +127,14 @@ impl Env {
             capsule: Pubkey::default(),
             vault: Pubkey::default(),
             menu_nonce: 1,
+            sgt_group_mint: Pubkey::default(),
         };
         let (o, a) = (env.owner.pubkey(), env.agent.pubkey());
         env.svm.airdrop(&o, 10_000_000_000).unwrap();
         env.svm.airdrop(&a, 10_000_000_000).unwrap();
         env.capsule = pda(&[CAPSULE_SEED, o.as_ref(), &env.capsule_id.to_le_bytes()]);
         env.vault = anchor_spl::associated_token::get_associated_token_address(&env.capsule, &env.usdc);
+        env.sgt_group_mint = env.create_sgt_group();
         env.initialize_config().expect("initialize_config");
         env
     }
@@ -201,7 +205,7 @@ impl Env {
             .to_account_metas(None),
             data: tally::instruction::InitializeConfig {
                 arbiter: self.admin.pubkey(),
-                sgt_group: Pubkey::default(),
+                sgt_group: self.sgt_group_mint,
                 slash_bps: 5_000,
                 bond_unlock_delay: 1_000,
             }
