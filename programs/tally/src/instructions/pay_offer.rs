@@ -1,17 +1,19 @@
 //! `pay_offer`: the ten invariants of docs/06 that bind an agent's purchase to a merchant-signed
 //! catalog leaf and the owner's capsule rules, then settle atomically.
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 use tally_core::{
     header::{build_header, HeaderFields},
     menu::{leaf_hash, Item},
     merkle::verify_proof,
+    post::check_exact_deltas,
 };
 
 use crate::{
     checks::introspection::verify_prev_ed25519,
     constants::*,
     errors::TallyError,
+    events::Paid,
     state::{Capsule, Merchant, Receipt},
 };
 
@@ -126,5 +128,49 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         require!(ctx.accounts.owner.is_signer, TallyError::OwnerCosignRequired);
     }
 
+    // 9. duplicate-settlement nullifier: the Receipt PDA is `init` in the accounts struct
+
+    // 10. atomic outflow with an in-program exact-delta post-condition
+    let vault_before = ctx.accounts.vault.amount;
+    let payout_before = ctx.accounts.payout.amount;
+    let (owner_key, id, bump) = (cap.owner, cap.capsule_id.to_le_bytes(), [cap.bump]);
+    let seeds: &[&[u8]] = &[CAPSULE_SEED, owner_key.as_ref(), &id, &bump];
+    token_interface::transfer_checked(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.key(),
+            TransferChecked {
+                from: ctx.accounts.vault.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                to: ctx.accounts.payout.to_account_info(),
+                authority: ctx.accounts.capsule.to_account_info(),
+            },
+            &[seeds],
+        ),
+        args.price,
+        ctx.accounts.mint.decimals,
+    )?;
+    ctx.accounts.vault.reload()?;
+    ctx.accounts.payout.reload()?;
+    require!(
+        check_exact_deltas(vault_before, ctx.accounts.vault.amount, payout_before, ctx.accounts.payout.amount, args.price),
+        TallyError::PostCondition
+    );
+    ctx.accounts.capsule.spent_in_cycle = new_total;
+
+    let capsule_key = ctx.accounts.capsule.key();
+    let merchant_key = ctx.accounts.merchant.key();
+    ctx.accounts.receipt.set_inner(Receipt {
+        capsule: capsule_key,
+        merchant: merchant_key,
+        menu_root: args.menu_root,
+        item_id: args.item_id,
+        category: args.category,
+        price: args.price,
+        category_floor: args.category_floor,
+        slot,
+        cosigned: needs_owner,
+        disputed: false,
+    });
+    emit!(Paid { capsule: capsule_key, merchant: merchant_key, item_id: args.item_id, price: args.price, cosigned: needs_owner });
     Ok(())
 }
