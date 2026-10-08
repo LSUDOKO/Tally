@@ -52,9 +52,10 @@ fn main() {
     let header = build_header(&fields);
     let sig = signer.sign(&header).to_bytes();
 
-    // Fraud menu: a cheaper drip coffee appears, but coffee floors still claim 4.50.
+    // Fraud menu: a cheaper drip coffee (honest leaf) appears while the other coffee leaves
+    // still certify a 4.50 floor, so the merchant has signed a self-contradiction.
     let mut fraud = items.clone();
-    fraud.insert(0, Item { id: item_id(100), category: 3, price: 3_250_000, floor: 4_500_000 });
+    fraud.insert(0, Item { id: item_id(100), category: 3, price: 3_250_000, floor: 3_250_000 });
     let mut fraud_names = vec!["Drip coffee"];
     fraud_names.extend(names.iter());
     let (cheap, claimed) = find_floor_contradiction(&fraud).expect("contradiction");
