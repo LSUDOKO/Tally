@@ -341,7 +341,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
             redTeam = results.toList()
         }
         val floorIdx = p.menu.items.indices.minBy { p.menu.items[it].price + if (p.menu.items[it].price == p.menu.items[it].floor) 0 else Long.MAX_VALUE / 2 }
-        val evil = Pda.ata(Base58.encode(Ed25519.publicKey(ByteArray(32) { 66 })), capsule?.mint ?: config.usdcMint)
+        // A real, initialised USDC account that is not the merchant's registered payout (the owner's own).
+        val evil = Pda.ata(ownerAddress!!, capsule?.mint ?: config.usdcMint)
         // 1. payee swap
         attack("Payee swap → attacker account", PayOffer.build(params(p, floorIdx, false, overridePayout = evil)), p.menu.items[floorIdx])
         // 2. phantom add-on: an unsigned $2.99 fee appended to the signed menu
