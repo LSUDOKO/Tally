@@ -4676,6 +4676,7 @@ dependencies = [
  "solana-pubkey 4.3.0",
  "solana-sdk-ids",
  "solana-signer",
+ "solana-slot-hashes",
  "solana-system-interface 3.3.0",
  "solana-transaction",
  "solana-transaction-error",

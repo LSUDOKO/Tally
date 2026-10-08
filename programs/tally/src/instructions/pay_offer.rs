@@ -10,7 +10,7 @@ use tally_core::{
 };
 
 use crate::{
-    checks::{introspection::verify_prev_ed25519, lighthouse::require_terminal_lighthouse},
+    checks::{introspection::verify_prev_ed25519, lighthouse::require_terminal_lighthouse, pow::verify_pow},
     constants::*,
     errors::TallyError,
     events::Paid,
@@ -43,24 +43,24 @@ pub struct PayOfferArgs {
 #[instruction(args: PayOfferArgs)]
 pub struct PayOffer<'info> {
     #[account(mut, has_one = agent, has_one = owner, has_one = vault, has_one = mint)]
-    pub capsule: Account<'info, Capsule>,
+    pub capsule: Box<Account<'info, Capsule>>,
     #[account(mut)]
     pub agent: Signer<'info>,
     /// CHECK: equals `capsule.owner` (has_one); must sign only when invariant 8 requires it.
     pub owner: UncheckedAccount<'info>,
     #[account(has_one = payout)]
-    pub merchant: Account<'info, Merchant>,
-    pub mint: InterfaceAccount<'info, Mint>,
+    pub merchant: Box<Account<'info, Merchant>>,
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(mut)]
-    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub vault: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(mut, constraint = payout.mint == mint.key() @ TallyError::WrongMint)]
-    pub payout: InterfaceAccount<'info, TokenAccount>,
+    pub payout: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init, payer = agent, space = 8 + Receipt::INIT_SPACE,
         seeds = [RECEIPT_SEED, capsule.key().as_ref(), &args.menu_nonce.to_le_bytes(), &args.item_id],
         bump,
     )]
-    pub receipt: Account<'info, Receipt>,
+    pub receipt: Box<Account<'info, Receipt>>,
     /// CHECK: address-checked instructions sysvar.
     #[account(address = solana_sdk_ids::sysvar::instructions::ID)]
     pub ix_sysvar: UncheckedAccount<'info>,
@@ -110,6 +110,17 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
     // 6. Merkle inclusion of the leaf the program hashes itself
     let leaf = leaf_hash(&Item { id: args.item_id, category: args.category, price: args.price, floor: args.category_floor });
     require!(verify_proof(leaf, &args.proof, args.menu_root), TallyError::NotOnMenu);
+
+    // G1. merchant-enabled proof-of-work anti-flood gate
+    if merchant.pow_difficulty > 0 {
+        verify_pow(
+            &ctx.accounts.slot_hashes.to_account_info(),
+            &ctx.accounts.capsule.key(),
+            args.menu_nonce,
+            args.pow.as_ref(),
+            merchant.pow_difficulty,
+        )?;
+    }
 
     // 7. capsule policy: category bitmap, per-purchase cap, rolling ~24h cycle cap
     let cap = &mut ctx.accounts.capsule;

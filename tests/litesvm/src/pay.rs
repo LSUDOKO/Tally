@@ -55,7 +55,7 @@ pub struct PayBuilder<'a> {
     agent: Option<Keypair>,
     payout: Option<Pubkey>,
     merchant: Option<(Pubkey, Pubkey)>,
-    pow: Option<[u8; 8]>,
+    pow: Option<PowSolution>,
     lighthouse: Option<bool>,
     lighthouse_delta: i64,
     extra_signers: Vec<Keypair>,
@@ -103,7 +103,7 @@ impl<'a> PayBuilder<'a> {
     pub fn payout(mut self, p: Pubkey) -> Self { self.payout = Some(p); self }
     /// Pay through a different merchant registry entry `(merchant_pda, payout)`.
     pub fn merchant(mut self, m: (Pubkey, Pubkey)) -> Self { self.merchant = Some(m); self }
-    pub fn pow(mut self, n: [u8; 8]) -> Self { self.pow = Some(n); self }
+    pub fn pow(mut self, p: PowSolution) -> Self { self.pow = Some(p); self }
     pub fn lighthouse(mut self, on: bool) -> Self { self.lighthouse = Some(on); self }
     pub fn lighthouse_amount_off_by(mut self, d: i64) -> Self { self.lighthouse_delta = d; self.lighthouse = Some(true); self }
     pub fn extra_signer(mut self, k: Keypair) -> Self { self.extra_signers.push(k); self }
@@ -143,7 +143,7 @@ impl<'a> PayBuilder<'a> {
             price: it.price,
             category_floor: it.floor,
             proof: tree.proof(self.item),
-            pow: self.pow.map(|nonce| PowSolution { nonce }),
+            pow: self.pow.clone(),
         };
         let header = build_header(&HeaderFields {
             program_id: tally::ID.to_bytes(),
@@ -253,4 +253,19 @@ pub fn make_two_sig_ix(ix: &mut Instruction, extra: &SigningKey) {
     out.extend_from_slice(&sig2);
     out.extend_from_slice(junk);
     ix.data = out;
+}
+
+// ------------------------------------------------------------ proof of work
+impl Env {
+    /// Most recent SlotHashes entry, as the program reads it.
+    pub fn recent_slot_hash(&self) -> [u8; 32] {
+        let sh = self.svm.get_sysvar::<solana_slot_hashes::SlotHashes>();
+        sh.first().map(|(_, h)| h.to_bytes()).unwrap_or([0; 32])
+    }
+
+    /// Solve the hashcash challenge for `capsule` and `menu_nonce` (client-side work).
+    pub fn solve_pow_for(&self, capsule: Pubkey, menu_nonce: u64, difficulty: u8) -> PowSolution {
+        let challenge = tally_core::pow::pow_challenge(menu_nonce, &capsule.to_bytes(), &self.recent_slot_hash());
+        PowSolution { nonce: tally_core::pow::solve_hashcash(&challenge, difficulty) }
+    }
 }
