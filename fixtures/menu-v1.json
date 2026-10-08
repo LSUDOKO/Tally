@@ -1,0 +1,272 @@
+{
+  "ed25519_ix_data_hex": "01003000ffff1000ffff70009000ffffea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c9059b413ede4915caf7bab322d19eeaf9468f660ccd380761fd1b64924ab86b643ffb9203d5af7e10600dc74fa337cced88121ff17e5f6e1b300d729b00e6e0c54414c4c595f4d454e555f563100000029ab65f4d8551f9a6b2cf042dde943ea23e27beeca29326ef8acf312e422cdb36ed637f2bccae69ba683ffc83da53bb7410c02112ff33a6f2d36e20af8b1c47e7a4bb0403239b578a9dca53dbb47a143ec9f9d202ead4bcd6721737933e3c5d6e8030000000000004c040000000000002a000000000000000800000000010000",
+  "fraud": {
+    "cheap_index": 0,
+    "claimed_index": 1,
+    "header_fields": {
+      "expires_slot": 1100,
+      "issued_slot": 1000,
+      "item_count": 9,
+      "menu_nonce": 43
+    },
+    "header_hex": "54414c4c595f4d454e555f563100000029ab65f4d8551f9a6b2cf042dde943ea23e27beeca29326ef8acf312e422cdb36ed637f2bccae69ba683ffc83da53bb7410c02112ff33a6f2d36e20af8b1c47e1598b7e3cee21da1c1ecd53c9a31aa87497cc515383a6fd4f06afa35ac586410e8030000000000004c040000000000002b000000000000000900000000010000",
+    "items": [
+      {
+        "category": 3,
+        "floor": 3250000,
+        "id_hex": "44c53d1743c2ed58dd34902a465000e4",
+        "leaf_hex": "4e83acfdb7584bc0ecac0da66843c742378f46ea0df37f888e3d2573d82f80fc",
+        "name": "Drip coffee",
+        "price": 3250000,
+        "proof_hex": [
+          "2626540f3cf4ac9a26e0f619fe32ea72e1ed148a5965dab24a95d3452fa2fe4e",
+          "a7db6df9adff892024533be0e4bb2a4bc89077b6f293a83a9705b092b76e945d",
+          "dd0c819b6808a14c08c260d5594cef6bbb224b9269287430d510afbade772857",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 3,
+        "floor": 4500000,
+        "id_hex": "00c033c9ddfd0c86651cee1f730fd541",
+        "leaf_hex": "2626540f3cf4ac9a26e0f619fe32ea72e1ed148a5965dab24a95d3452fa2fe4e",
+        "name": "Oat latte (regular)",
+        "price": 4500000,
+        "proof_hex": [
+          "4e83acfdb7584bc0ecac0da66843c742378f46ea0df37f888e3d2573d82f80fc",
+          "a7db6df9adff892024533be0e4bb2a4bc89077b6f293a83a9705b092b76e945d",
+          "dd0c819b6808a14c08c260d5594cef6bbb224b9269287430d510afbade772857",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 3,
+        "floor": 4500000,
+        "id_hex": "ea67d001cd53f467dc6a4d41337cea4c",
+        "leaf_hex": "8f6bc05a75a1254b8e95e888b948144324515990b881d25f234e6b6ee0da18c2",
+        "name": "Oat latte (large)",
+        "price": 5900000,
+        "proof_hex": [
+          "8305a9613e492214b2f04f525ee7c4e9802169d4398af2d358249591d27e3336",
+          "02bbd2fa8b563c59ed7c988629776bf23d866399ccf96aec136a530275193476",
+          "dd0c819b6808a14c08c260d5594cef6bbb224b9269287430d510afbade772857",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 3,
+        "floor": 4500000,
+        "id_hex": "9e4aeea94dae491309896953bf4a2695",
+        "leaf_hex": "8305a9613e492214b2f04f525ee7c4e9802169d4398af2d358249591d27e3336",
+        "name": "Cappuccino",
+        "price": 5200000,
+        "proof_hex": [
+          "8f6bc05a75a1254b8e95e888b948144324515990b881d25f234e6b6ee0da18c2",
+          "02bbd2fa8b563c59ed7c988629776bf23d866399ccf96aec136a530275193476",
+          "dd0c819b6808a14c08c260d5594cef6bbb224b9269287430d510afbade772857",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 3,
+        "floor": 4500000,
+        "id_hex": "6e76042c798fc8abca318bd2e2473e46",
+        "leaf_hex": "43045b3d28ac2926963b0d3083f1b6b2af75e4d174fa9ba945761b00e7082763",
+        "name": "Reserve roast",
+        "price": 18000000,
+        "proof_hex": [
+          "dc62eaadf0cbc21c7e02db4fd82bd322975c845fa4bbfbcfee0cda523cee96ee",
+          "65dc9abe9ad9a17d48cbd0647351c4b2f51a2e1a5a0e6051bb942999ecdf02b1",
+          "cd64f71bbd461bd160aff56378837036f0dfbcf01cd4bdca1005f8dcf7e33a2a",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 0,
+        "floor": 3000000,
+        "id_hex": "6c1d22eec4e9e5e9ab2d2b72785de1f4",
+        "leaf_hex": "dc62eaadf0cbc21c7e02db4fd82bd322975c845fa4bbfbcfee0cda523cee96ee",
+        "name": "Croissant",
+        "price": 3000000,
+        "proof_hex": [
+          "43045b3d28ac2926963b0d3083f1b6b2af75e4d174fa9ba945761b00e7082763",
+          "65dc9abe9ad9a17d48cbd0647351c4b2f51a2e1a5a0e6051bb942999ecdf02b1",
+          "cd64f71bbd461bd160aff56378837036f0dfbcf01cd4bdca1005f8dcf7e33a2a",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 0,
+        "floor": 3000000,
+        "id_hex": "44b514960bb4d4fc92cae326067b227a",
+        "leaf_hex": "a901de8baca03510baa477e9a964074ec0563e91e95ccd5736c357d64df5347f",
+        "name": "Bagel",
+        "price": 3800000,
+        "proof_hex": [
+          "be1e60f530f6e444ff492c75877ff119e67aadda718a7d0b43b88db56abd1e00",
+          "84dbde3337beddef2f7f967a04a125594dedc4faa9af1955a53e23c81d65a2c4",
+          "cd64f71bbd461bd160aff56378837036f0dfbcf01cd4bdca1005f8dcf7e33a2a",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 4,
+        "floor": 2750000,
+        "id_hex": "9a618b0be57487fe07d239300fdc935e",
+        "leaf_hex": "be1e60f530f6e444ff492c75877ff119e67aadda718a7d0b43b88db56abd1e00",
+        "name": "Metro single",
+        "price": 2750000,
+        "proof_hex": [
+          "a901de8baca03510baa477e9a964074ec0563e91e95ccd5736c357d64df5347f",
+          "84dbde3337beddef2f7f967a04a125594dedc4faa9af1955a53e23c81d65a2c4",
+          "cd64f71bbd461bd160aff56378837036f0dfbcf01cd4bdca1005f8dcf7e33a2a",
+          "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2"
+        ]
+      },
+      {
+        "category": 4,
+        "floor": 2750000,
+        "id_hex": "82e97ff66f9d4b2d3b3bc83396855fc4",
+        "leaf_hex": "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2",
+        "name": "Day pass",
+        "price": 9000000,
+        "proof_hex": [
+          "a07ef92345cecdb7a1d25e86ef2969eafe5525de361c0de7a48f88ca8541412b"
+        ]
+      }
+    ],
+    "root_hex": "1598b7e3cee21da1c1ecd53c9a31aa87497cc515383a6fd4f06afa35ac586410",
+    "signature_hex": "03bea5a266f0a870f16aaad8c5931581a1fb7fc2e8b8f0e61e24c2b0f6a2487ad8518c8929f66681ec6ae423333e65b2a77bca97fd7cc1fcdcb27c42c888010e"
+  },
+  "header_fields": {
+    "expires_slot": 1100,
+    "issued_slot": 1000,
+    "item_count": 8,
+    "menu_nonce": 42
+  },
+  "header_hex": "54414c4c595f4d454e555f563100000029ab65f4d8551f9a6b2cf042dde943ea23e27beeca29326ef8acf312e422cdb36ed637f2bccae69ba683ffc83da53bb7410c02112ff33a6f2d36e20af8b1c47e7a4bb0403239b578a9dca53dbb47a143ec9f9d202ead4bcd6721737933e3c5d6e8030000000000004c040000000000002a000000000000000800000000010000",
+  "items": [
+    {
+      "category": 3,
+      "floor": 4500000,
+      "id_hex": "00c033c9ddfd0c86651cee1f730fd541",
+      "leaf_hex": "2626540f3cf4ac9a26e0f619fe32ea72e1ed148a5965dab24a95d3452fa2fe4e",
+      "name": "Oat latte (regular)",
+      "price": 4500000,
+      "proof_hex": [
+        "8f6bc05a75a1254b8e95e888b948144324515990b881d25f234e6b6ee0da18c2",
+        "7aee21bdc99b272f4898aab4a465bd320442f5e3afba6b96068969a947fc2b39",
+        "7edd168bfb16f0d27fa224d7536fecbf2865edc1dbb80e7b8104d0f2e19ba290"
+      ]
+    },
+    {
+      "category": 3,
+      "floor": 4500000,
+      "id_hex": "ea67d001cd53f467dc6a4d41337cea4c",
+      "leaf_hex": "8f6bc05a75a1254b8e95e888b948144324515990b881d25f234e6b6ee0da18c2",
+      "name": "Oat latte (large)",
+      "price": 5900000,
+      "proof_hex": [
+        "2626540f3cf4ac9a26e0f619fe32ea72e1ed148a5965dab24a95d3452fa2fe4e",
+        "7aee21bdc99b272f4898aab4a465bd320442f5e3afba6b96068969a947fc2b39",
+        "7edd168bfb16f0d27fa224d7536fecbf2865edc1dbb80e7b8104d0f2e19ba290"
+      ]
+    },
+    {
+      "category": 3,
+      "floor": 4500000,
+      "id_hex": "9e4aeea94dae491309896953bf4a2695",
+      "leaf_hex": "8305a9613e492214b2f04f525ee7c4e9802169d4398af2d358249591d27e3336",
+      "name": "Cappuccino",
+      "price": 5200000,
+      "proof_hex": [
+        "43045b3d28ac2926963b0d3083f1b6b2af75e4d174fa9ba945761b00e7082763",
+        "f86b065a81ffd49ccfa411116ebad93cac8cb30cd2dd1efb1444a53c832d07c7",
+        "7edd168bfb16f0d27fa224d7536fecbf2865edc1dbb80e7b8104d0f2e19ba290"
+      ]
+    },
+    {
+      "category": 3,
+      "floor": 4500000,
+      "id_hex": "6e76042c798fc8abca318bd2e2473e46",
+      "leaf_hex": "43045b3d28ac2926963b0d3083f1b6b2af75e4d174fa9ba945761b00e7082763",
+      "name": "Reserve roast",
+      "price": 18000000,
+      "proof_hex": [
+        "8305a9613e492214b2f04f525ee7c4e9802169d4398af2d358249591d27e3336",
+        "f86b065a81ffd49ccfa411116ebad93cac8cb30cd2dd1efb1444a53c832d07c7",
+        "7edd168bfb16f0d27fa224d7536fecbf2865edc1dbb80e7b8104d0f2e19ba290"
+      ]
+    },
+    {
+      "category": 0,
+      "floor": 3000000,
+      "id_hex": "6c1d22eec4e9e5e9ab2d2b72785de1f4",
+      "leaf_hex": "dc62eaadf0cbc21c7e02db4fd82bd322975c845fa4bbfbcfee0cda523cee96ee",
+      "name": "Croissant",
+      "price": 3000000,
+      "proof_hex": [
+        "a901de8baca03510baa477e9a964074ec0563e91e95ccd5736c357d64df5347f",
+        "5e8df478d41ee94b35ea7bdc5c4af814b478fb4e31b6356191e3e7e826bbaa46",
+        "6564571fb533c4cb340592f0f84c148018dbfaedaad32906f35ef9244bcbc604"
+      ]
+    },
+    {
+      "category": 0,
+      "floor": 3000000,
+      "id_hex": "44b514960bb4d4fc92cae326067b227a",
+      "leaf_hex": "a901de8baca03510baa477e9a964074ec0563e91e95ccd5736c357d64df5347f",
+      "name": "Bagel",
+      "price": 3800000,
+      "proof_hex": [
+        "dc62eaadf0cbc21c7e02db4fd82bd322975c845fa4bbfbcfee0cda523cee96ee",
+        "5e8df478d41ee94b35ea7bdc5c4af814b478fb4e31b6356191e3e7e826bbaa46",
+        "6564571fb533c4cb340592f0f84c148018dbfaedaad32906f35ef9244bcbc604"
+      ]
+    },
+    {
+      "category": 4,
+      "floor": 2750000,
+      "id_hex": "9a618b0be57487fe07d239300fdc935e",
+      "leaf_hex": "be1e60f530f6e444ff492c75877ff119e67aadda718a7d0b43b88db56abd1e00",
+      "name": "Metro single",
+      "price": 2750000,
+      "proof_hex": [
+        "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2",
+        "959c63d81572484ce3292f6f2c1a5d2a23bfa1b5bd63cadb137e990531c43108",
+        "6564571fb533c4cb340592f0f84c148018dbfaedaad32906f35ef9244bcbc604"
+      ]
+    },
+    {
+      "category": 4,
+      "floor": 2750000,
+      "id_hex": "82e97ff66f9d4b2d3b3bc83396855fc4",
+      "leaf_hex": "20a44d83a54cdee8a630a6927dfa093cc11d15aae0a4e60ac21f72c9870c2cd2",
+      "name": "Day pass",
+      "price": 9000000,
+      "proof_hex": [
+        "be1e60f530f6e444ff492c75877ff119e67aadda718a7d0b43b88db56abd1e00",
+        "959c63d81572484ce3292f6f2c1a5d2a23bfa1b5bd63cadb137e990531c43108",
+        "6564571fb533c4cb340592f0f84c148018dbfaedaad32906f35ef9244bcbc604"
+      ]
+    }
+  ],
+  "merchant_authority": "2KW2XRd9kwqet15Aha2oK3tYvd3nWbTFH1MBiRAv1BE1",
+  "merchant_authority_seed_hex": "0808080808080808080808080808080808080808080808080808080808080808",
+  "merchant_pda": "8TfJZMw4tMniEs8F6XbjeokVBHpuf2aCnXrXCbRL7Y5T",
+  "merchant_signing_pubkey": "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
+  "merchant_signing_seed_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+  "pow": {
+    "capsule": "5mapKdSTa29ejUmc6PW9zSUiuwNpYBjoaVZLfnQvNeJY",
+    "challenge_hex": "3297cef442cdba682999e6b678a3e05248641ea594e9b65b5e7fb51f9e7f944a",
+    "difficulty": 12,
+    "menu_nonce": 42,
+    "nonce_hex": "f304000000000000",
+    "slot_hash_hex": "f2474cf4562ef8cc286c08f2be04d780871399724e8f2fd4313bf7f466a6b718"
+  },
+  "program_id": "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk",
+  "root_hex": "7a4bb0403239b578a9dca53dbb47a143ec9f9d202ead4bcd6721737933e3c5d6",
+  "signature_hex": "9059b413ede4915caf7bab322d19eeaf9468f660ccd380761fd1b64924ab86b643ffb9203d5af7e10600dc74fa337cced88121ff17e5f6e1b300d729b00e6e0c",
+  "version": 1,
+  "warning": "TEST KEYS ONLY - never use these keys on mainnet"
+}

@@ -1,0 +1,2814 @@
+{
+  "address": "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk",
+  "metadata": {
+    "name": "tally",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Tally: deterministic intent-to-execution binding for autonomous agent payments"
+  },
+  "instructions": [
+    {
+      "name": "claim_promo",
+      "discriminator": [
+        236,
+        205,
+        177,
+        4,
+        130,
+        30,
+        37,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule"
+        },
+        {
+          "name": "sgt_claim",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  103,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "capsule.sgt_mint",
+                "account": "Capsule"
+              },
+              {
+                "kind": "arg",
+                "path": "promo_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "promo_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "close_capsule",
+      "discriminator": [
+        16,
+        246,
+        167,
+        171,
+        45,
+        72,
+        171,
+        122
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "owner_token",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "compensate",
+      "discriminator": [
+        27,
+        75,
+        62,
+        233,
+        36,
+        91,
+        225,
+        117
+      ],
+      "accounts": [
+        {
+          "name": "arbiter",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_capsule",
+      "discriminator": [
+        195,
+        104,
+        42,
+        180,
+        127,
+        169,
+        62,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "capsule",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  112,
+                  115,
+                  117,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "capsule_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "capsule"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "capsule_id",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "type": {
+            "defined": {
+              "name": "Rules"
+            }
+          }
+        },
+        {
+          "name": "agent",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "create_capsule_with_sgt",
+      "discriminator": [
+        89,
+        92,
+        104,
+        252,
+        13,
+        118,
+        204,
+        134
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "capsule",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  112,
+                  115,
+                  117,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "capsule_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "capsule"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "sgt_token_account"
+        },
+        {
+          "name": "sgt_mint"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "capsule_id",
+          "type": "u64"
+        },
+        {
+          "name": "rules",
+          "type": {
+            "defined": {
+              "name": "Rules"
+            }
+          }
+        },
+        {
+          "name": "agent",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "freeze",
+      "discriminator": [
+        255,
+        91,
+        207,
+        84,
+        251,
+        194,
+        254,
+        63
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "fund",
+      "discriminator": [
+        218,
+        188,
+        111,
+        221,
+        152,
+        113,
+        174,
+        7
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule"
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "owner_token",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_config",
+      "discriminator": [
+        208,
+        127,
+        21,
+        1,
+        194,
+        190,
+        196,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "arbiter",
+          "type": "pubkey"
+        },
+        {
+          "name": "sgt_group",
+          "type": "pubkey"
+        },
+        {
+          "name": "slash_bps",
+          "type": "u16"
+        },
+        {
+          "name": "bond_unlock_delay",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "open_dispute",
+      "discriminator": [
+        137,
+        25,
+        99,
+        119,
+        23,
+        223,
+        161,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule"
+        },
+        {
+          "name": "receipt",
+          "writable": true
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "dispute",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  112,
+                  117,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "receipt"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "evidence_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "pay_offer",
+      "discriminator": [
+        122,
+        224,
+        197,
+        240,
+        101,
+        128,
+        189,
+        165
+      ],
+      "accounts": [
+        {
+          "name": "capsule",
+          "writable": true
+        },
+        {
+          "name": "agent",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "owner",
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "merchant"
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "payout",
+          "writable": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "receipt",
+          "writable": true
+        },
+        {
+          "name": "ix_sysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "slot_hashes",
+          "address": "SysvarS1otHashes111111111111111111111111111"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "PayOfferArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "prove_floor_fraud",
+      "discriminator": [
+        38,
+        11,
+        22,
+        2,
+        124,
+        42,
+        99,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "reporter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "bond_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "reporter_skr",
+          "writable": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "key_record",
+          "docs": [
+            "The record of the key that signed the evidence (current or recently retired)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "account",
+                "path": "key_record.signing_key",
+                "account": "KeyRecord"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fraud_record",
+          "writable": true
+        },
+        {
+          "name": "ix_sysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "header",
+          "type": {
+            "defined": {
+              "name": "MenuHeaderArgs"
+            }
+          }
+        },
+        {
+          "name": "leaf_a",
+          "type": {
+            "defined": {
+              "name": "LeafArgs"
+            }
+          }
+        },
+        {
+          "name": "proof_a",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        },
+        {
+          "name": "leaf_b",
+          "type": {
+            "defined": {
+              "name": "LeafArgs"
+            }
+          }
+        },
+        {
+          "name": "proof_b",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "register_merchant",
+      "discriminator": [
+        238,
+        245,
+        77,
+        132,
+        161,
+        88,
+        216,
+        248
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  114,
+                  99,
+                  104,
+                  97,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout"
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "authority_skr",
+          "writable": true
+        },
+        {
+          "name": "bond_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "key_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "signing_key"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "signing_key",
+          "type": "pubkey"
+        },
+        {
+          "name": "bond",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "request_bond_unlock",
+      "discriminator": [
+        80,
+        81,
+        47,
+        184,
+        17,
+        43,
+        190,
+        63
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resolve_dispute",
+      "discriminator": [
+        231,
+        6,
+        202,
+        6,
+        96,
+        103,
+        12,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "arbiter",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "dispute",
+          "writable": true
+        },
+        {
+          "name": "merchant",
+          "writable": true,
+          "relations": [
+            "dispute"
+          ]
+        },
+        {
+          "name": "bond_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "claimant_skr",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "upheld",
+          "type": "bool"
+        },
+        {
+          "name": "slash_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "rotate_signing_key",
+      "discriminator": [
+        229,
+        103,
+        107,
+        44,
+        84,
+        162,
+        133,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "old_key_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "account",
+                "path": "merchant.signing_key",
+                "account": "Merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "new_key_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "new_key"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_key",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_active",
+      "discriminator": [
+        29,
+        16,
+        225,
+        132,
+        38,
+        216,
+        206,
+        33
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "active",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "set_agent",
+      "discriminator": [
+        154,
+        74,
+        121,
+        91,
+        137,
+        19,
+        101,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_agent",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_payout",
+      "discriminator": [
+        55,
+        43,
+        132,
+        51,
+        227,
+        169,
+        242,
+        195
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "payout"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_pow_difficulty",
+      "discriminator": [
+        246,
+        197,
+        49,
+        165,
+        77,
+        79,
+        63,
+        196
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "difficulty",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "top_up_bond",
+      "discriminator": [
+        110,
+        37,
+        8,
+        119,
+        210,
+        231,
+        202,
+        197
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "authority_skr",
+          "writable": true
+        },
+        {
+          "name": "bond_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unfreeze",
+      "discriminator": [
+        133,
+        160,
+        68,
+        253,
+        80,
+        232,
+        218,
+        247
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_rules",
+      "discriminator": [
+        9,
+        156,
+        238,
+        50,
+        25,
+        101,
+        141,
+        28
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "rules",
+          "type": {
+            "defined": {
+              "name": "Rules"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "capsule"
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "capsule"
+          ]
+        },
+        {
+          "name": "owner_token",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_bond",
+      "discriminator": [
+        222,
+        199,
+        141,
+        31,
+        188,
+        93,
+        155,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "merchant"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "bond_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority_skr",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Capsule",
+      "discriminator": [
+        212,
+        231,
+        77,
+        219,
+        58,
+        13,
+        118,
+        241
+      ]
+    },
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Dispute",
+      "discriminator": [
+        36,
+        49,
+        241,
+        67,
+        40,
+        36,
+        241,
+        74
+      ]
+    },
+    {
+      "name": "FraudRecord",
+      "discriminator": [
+        175,
+        89,
+        223,
+        204,
+        62,
+        39,
+        170,
+        208
+      ]
+    },
+    {
+      "name": "KeyRecord",
+      "discriminator": [
+        71,
+        3,
+        224,
+        40,
+        16,
+        111,
+        28,
+        230
+      ]
+    },
+    {
+      "name": "Merchant",
+      "discriminator": [
+        71,
+        235,
+        30,
+        40,
+        231,
+        21,
+        32,
+        64
+      ]
+    },
+    {
+      "name": "Receipt",
+      "discriminator": [
+        39,
+        154,
+        73,
+        106,
+        80,
+        102,
+        145,
+        153
+      ]
+    },
+    {
+      "name": "SgtClaim",
+      "discriminator": [
+        183,
+        0,
+        102,
+        153,
+        41,
+        89,
+        222,
+        230
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "DisputeOpened",
+      "discriminator": [
+        239,
+        222,
+        102,
+        235,
+        193,
+        85,
+        1,
+        214
+      ]
+    },
+    {
+      "name": "DisputeResolved",
+      "discriminator": [
+        121,
+        64,
+        249,
+        153,
+        139,
+        128,
+        236,
+        187
+      ]
+    },
+    {
+      "name": "Paid",
+      "discriminator": [
+        240,
+        193,
+        17,
+        238,
+        238,
+        210,
+        129,
+        235
+      ]
+    },
+    {
+      "name": "Slashed",
+      "discriminator": [
+        98,
+        59,
+        249,
+        154,
+        233,
+        53,
+        98,
+        194
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Frozen",
+      "msg": "Capsule is frozen"
+    },
+    {
+      "code": 6001,
+      "name": "Expired",
+      "msg": "Capsule expired"
+    },
+    {
+      "code": 6002,
+      "name": "MerchantInactive",
+      "msg": "Merchant inactive"
+    },
+    {
+      "code": 6003,
+      "name": "MissingSig",
+      "msg": "Merchant signature instruction missing"
+    },
+    {
+      "code": 6004,
+      "name": "BadSigIx",
+      "msg": "Malformed or unsafe signature instruction"
+    },
+    {
+      "code": 6005,
+      "name": "WrongSigner",
+      "msg": "Menu not signed by registered merchant key"
+    },
+    {
+      "code": 6006,
+      "name": "WrongMessage",
+      "msg": "Signed menu header does not match"
+    },
+    {
+      "code": 6007,
+      "name": "Stale",
+      "msg": "Menu is stale or not yet valid"
+    },
+    {
+      "code": 6008,
+      "name": "WindowTooLong",
+      "msg": "Menu validity window too long"
+    },
+    {
+      "code": 6009,
+      "name": "NotOnMenu",
+      "msg": "Item is not on the signed menu"
+    },
+    {
+      "code": 6010,
+      "name": "Category",
+      "msg": "Category not allowed by your rules"
+    },
+    {
+      "code": 6011,
+      "name": "OverPerTx",
+      "msg": "Above your per-purchase cap"
+    },
+    {
+      "code": 6012,
+      "name": "OverDaily",
+      "msg": "Above your daily cap"
+    },
+    {
+      "code": 6013,
+      "name": "OwnerCosignRequired",
+      "msg": "Pricier than the cheapest match: owner must co-sign"
+    },
+    {
+      "code": 6014,
+      "name": "WrongMint",
+      "msg": "Payout mint mismatch"
+    },
+    {
+      "code": 6015,
+      "name": "PostCondition",
+      "msg": "Balance post-condition failed"
+    },
+    {
+      "code": 6016,
+      "name": "LighthouseMissing",
+      "msg": "Required Lighthouse assertion missing"
+    },
+    {
+      "code": 6017,
+      "name": "PowRequired",
+      "msg": "Merchant requires proof-of-work"
+    },
+    {
+      "code": 6018,
+      "name": "PowInvalid",
+      "msg": "Invalid proof-of-work"
+    },
+    {
+      "code": 6019,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6020,
+      "name": "Unauthorized",
+      "msg": "Signer is not authorised for this action"
+    },
+    {
+      "code": 6021,
+      "name": "BondLocked",
+      "msg": "Bond is still locked"
+    },
+    {
+      "code": 6022,
+      "name": "DisputeOpen",
+      "msg": "Merchant has an open dispute"
+    },
+    {
+      "code": 6023,
+      "name": "NotAFraud",
+      "msg": "Leaves do not prove a floor contradiction"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidSgt",
+      "msg": "Seeker Genesis Token check failed"
+    },
+    {
+      "code": 6025,
+      "name": "InvalidRules",
+      "msg": "Capsule rules are invalid"
+    },
+    {
+      "code": 6026,
+      "name": "WrongDisputeState",
+      "msg": "Dispute is not in the required state"
+    },
+    {
+      "code": 6027,
+      "name": "SelfReport",
+      "msg": "A merchant cannot report its own fraud"
+    },
+    {
+      "code": 6028,
+      "name": "EvidenceExpired",
+      "msg": "Evidence signed with a retired key is too old"
+    }
+  ],
+  "types": [
+    {
+      "name": "Capsule",
+      "docs": [
+        "A user's on-chain intent: rules plus a USDC vault the agent key may spend from."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "per_tx_cap",
+            "type": "u64"
+          },
+          {
+            "name": "daily_cap",
+            "type": "u64"
+          },
+          {
+            "name": "spent_in_cycle",
+            "type": "u64"
+          },
+          {
+            "name": "cycle_start_slot",
+            "type": "u64"
+          },
+          {
+            "name": "allowed_categories",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "min_merchant_bond",
+            "type": "u64"
+          },
+          {
+            "name": "expiry_slot",
+            "type": "u64"
+          },
+          {
+            "name": "flags",
+            "type": "u8"
+          },
+          {
+            "name": "sgt_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "frozen",
+            "type": "bool"
+          },
+          {
+            "name": "capsule_id",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "docs": [
+        "Protocol configuration pinned at deploy: trusted mints, arbiter and slashing parameters."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "arbiter",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "skr_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "sgt_group",
+            "type": "pubkey"
+          },
+          {
+            "name": "slash_bps",
+            "type": "u16"
+          },
+          {
+            "name": "bond_unlock_delay",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Dispute",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "receipt",
+            "type": "pubkey"
+          },
+          {
+            "name": "claimant",
+            "type": "pubkey"
+          },
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "evidence_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "DisputeStatus"
+              }
+            }
+          },
+          {
+            "name": "slash_amount",
+            "type": "u64"
+          },
+          {
+            "name": "opened_slot",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeOpened",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dispute",
+            "type": "pubkey"
+          },
+          {
+            "name": "receipt",
+            "type": "pubkey"
+          },
+          {
+            "name": "claimant",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dispute",
+            "type": "pubkey"
+          },
+          {
+            "name": "upheld",
+            "type": "bool"
+          },
+          {
+            "name": "slash_amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Upheld"
+          },
+          {
+            "name": "Rejected"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FraudRecord",
+      "docs": [
+        "Nullifier for a proven floor contradiction: one slash per (merchant, signed menu root)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "menu_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "reporter",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "KeyRecord",
+      "docs": [
+        "Validity record for every menu-signing key a merchant has ever used. Never closed, so a",
+        "rotated-out key's signatures stay attributable (and slashable) for a bounded window."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "signing_key",
+            "type": "pubkey"
+          },
+          {
+            "name": "valid_from",
+            "type": "u64"
+          },
+          {
+            "name": "valid_until",
+            "docs": [
+              "`u64::MAX` while the key is current."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LeafArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "type": "u16"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "floor",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MenuHeaderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "menu_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "issued_slot",
+            "type": "u64"
+          },
+          {
+            "name": "expires_slot",
+            "type": "u64"
+          },
+          {
+            "name": "menu_nonce",
+            "type": "u64"
+          },
+          {
+            "name": "item_count",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Merchant",
+      "docs": [
+        "Merchant registry entry, seeded by the merchant's master authority so the menu key can rotate."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "signing_key",
+            "type": "pubkey"
+          },
+          {
+            "name": "payout",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "skr_bonded",
+            "type": "u64"
+          },
+          {
+            "name": "bond_unlock_slot",
+            "type": "u64"
+          },
+          {
+            "name": "pow_difficulty",
+            "type": "u8"
+          },
+          {
+            "name": "slashed_total",
+            "type": "u64"
+          },
+          {
+            "name": "open_disputes",
+            "type": "u32"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Paid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "capsule",
+            "type": "pubkey"
+          },
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "item_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "cosigned",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PayOfferArgs",
+      "docs": [
+        "Everything the program needs to rebuild the signed header and the chosen leaf."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "menu_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "issued_slot",
+            "type": "u64"
+          },
+          {
+            "name": "expires_slot",
+            "type": "u64"
+          },
+          {
+            "name": "menu_nonce",
+            "type": "u64"
+          },
+          {
+            "name": "item_count",
+            "type": "u32"
+          },
+          {
+            "name": "item_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "type": "u16"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "category_floor",
+            "type": "u64"
+          },
+          {
+            "name": "proof",
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "pow",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "PowSolution"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PowSolution",
+      "docs": [
+        "Optional proof-of-work solution (gate G1), required when the merchant enables it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "slot",
+            "docs": [
+              "The SlotHashes slot the client mined against; must be at most `MAX_POW_AGE` old."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Receipt",
+      "docs": [
+        "One settled purchase. Its address `(capsule, menu_nonce, item_id)` is the duplicate-settlement",
+        "nullifier, and its contents are dispute evidence."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "capsule",
+            "type": "pubkey"
+          },
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "menu_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "item_id",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "type": "u16"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "category_floor",
+            "type": "u64"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "cosigned",
+            "type": "bool"
+          },
+          {
+            "name": "disputed",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Rules",
+      "docs": [
+        "Owner-chosen spending rules. `flags` may not include `FLAG_SGT_VERIFIED`; only the",
+        "SGT-checked creation path sets it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "per_tx_cap",
+            "type": "u64"
+          },
+          {
+            "name": "daily_cap",
+            "type": "u64"
+          },
+          {
+            "name": "allowed_categories",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "min_merchant_bond",
+            "type": "u64"
+          },
+          {
+            "name": "expiry_slot",
+            "type": "u64"
+          },
+          {
+            "name": "flags",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SgtClaim",
+      "docs": [
+        "One promo claim per Seeker Genesis Token per promo id."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sgt_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "promo_id",
+            "type": "u64"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Slashed",
+      "docs": [
+        "`reason`: 0 = floor fraud proof, 1 = upheld dispute."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reason",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
