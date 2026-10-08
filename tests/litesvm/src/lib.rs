@@ -439,3 +439,13 @@ impl Env {
         Env::new().with_merchant(5_000_000_000).with_capsule(coffee_rules(), 20_000_000)
     }
 }
+
+impl Env {
+    /// Recreate the default capsule with extra `flags` set (e.g. FLAG_ALLOW_EXTENDED).
+    pub fn with_flags(mut self, flags: u8) -> Self {
+        let mut r = coffee_rules();
+        r.flags = flags;
+        self.update_rules(r).expect("update_rules");
+        self
+    }
+}
