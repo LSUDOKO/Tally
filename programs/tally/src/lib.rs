@@ -49,4 +49,36 @@ pub mod tally {
     pub fn top_up_bond(ctx: Context<TopUpBond>, amount: u64) -> Result<()> {
         instructions::merchant::top_up_bond(ctx, amount)
     }
+
+    pub fn create_capsule(ctx: Context<CreateCapsule>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
+        instructions::capsule::create_capsule(ctx, capsule_id, rules, agent)
+    }
+
+    pub fn update_rules(ctx: Context<CapsuleOwner>, rules: Rules) -> Result<()> {
+        instructions::capsule::update_rules(ctx, rules)
+    }
+
+    pub fn fund(ctx: Context<MoveFunds>, amount: u64) -> Result<()> {
+        instructions::capsule::fund(ctx, amount)
+    }
+
+    pub fn withdraw(ctx: Context<MoveFunds>, amount: u64) -> Result<()> {
+        instructions::capsule::withdraw(ctx, amount)
+    }
+
+    pub fn freeze(ctx: Context<CapsuleOwner>) -> Result<()> {
+        instructions::capsule::set_frozen(ctx, true)
+    }
+
+    pub fn unfreeze(ctx: Context<CapsuleOwner>) -> Result<()> {
+        instructions::capsule::set_frozen(ctx, false)
+    }
+
+    pub fn set_agent(ctx: Context<CapsuleOwner>, new_agent: Pubkey) -> Result<()> {
+        instructions::capsule::set_agent(ctx, new_agent)
+    }
+
+    pub fn close_capsule(ctx: Context<CloseCapsule>) -> Result<()> {
+        instructions::capsule::close_capsule(ctx)
+    }
 }
