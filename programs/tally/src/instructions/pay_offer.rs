@@ -60,7 +60,7 @@ pub struct PayOffer<'info> {
     pub payout: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init, payer = agent, space = 8 + Receipt::INIT_SPACE,
-        seeds = [RECEIPT_SEED, capsule.key().as_ref(), &args.menu_nonce.to_le_bytes(), &args.item_id],
+        seeds = [RECEIPT_SEED, capsule.key().as_ref(), merchant.key().as_ref(), &args.menu_nonce.to_le_bytes(), &args.item_id],
         bump,
     )]
     pub receipt: Box<Account<'info, Receipt>>,

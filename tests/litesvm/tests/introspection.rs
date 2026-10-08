@@ -100,6 +100,11 @@ fn header_bound_to_merchant_pda() {
     let signer = e.merchant_signer.clone();
     let (m2, p2) = e.register_extra_merchant(&signer, 5_000_000_000);
     let m1 = e.merchant;
+    let id0 = default_items()[0].id;
+    let (r1, r2) = (
+        e.receipt_address(&m1, 1, &id0),
+        e.receipt_address(&m2, 1, &id0),
+    );
     let r = e
         .pay()
         .payout(p2)
@@ -107,6 +112,8 @@ fn header_bound_to_merchant_pda() {
             for meta in v[1].accounts.iter_mut() {
                 if meta.pubkey == m1 {
                     meta.pubkey = m2;
+                } else if meta.pubkey == r1 {
+                    meta.pubkey = r2;
                 }
             }
         })

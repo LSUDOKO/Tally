@@ -65,7 +65,7 @@ Seeding by `authority` instead of `signing_key` lets a merchant **rotate** a lea
 | `capsule_id` | u64 | |
 | `bump` | u8 | |
 
-### `Receipt`, seeds `["receipt", capsule, menu_nonce (u64 LE), item_id ([u8;16])]`
+### `Receipt`, seeds `["receipt", capsule, merchant, menu_nonce (u64 LE), item_id ([u8;16])]`
 
 | Field | Type |
 |---|---|

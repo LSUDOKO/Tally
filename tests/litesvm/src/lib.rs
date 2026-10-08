@@ -584,7 +584,7 @@ impl Env {
     /// Receipt for `item` (index into `default_items()`) bought from menu rotation `nonce`.
     pub fn receipt(&self, nonce: u64, item: usize) -> tally::state::Receipt {
         let id = default_items()[item].id;
-        self.fetch(&self.receipt_address(nonce, &id))
+        self.fetch(&self.receipt_address(&self.merchant, nonce, &id))
     }
 }
 

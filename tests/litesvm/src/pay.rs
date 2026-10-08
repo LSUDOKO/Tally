@@ -93,10 +93,16 @@ impl Env {
         }
     }
 
-    pub fn receipt_address(&self, menu_nonce: u64, item_id: &[u8; 16]) -> Pubkey {
+    pub fn receipt_address(
+        &self,
+        merchant: &Pubkey,
+        menu_nonce: u64,
+        item_id: &[u8; 16],
+    ) -> Pubkey {
         pda(&[
             RECEIPT_SEED,
             self.capsule.as_ref(),
+            merchant.as_ref(),
             &menu_nonce.to_le_bytes(),
             item_id,
         ])
@@ -248,7 +254,7 @@ impl<'a> PayBuilder<'a> {
             mint: env.usdc,
             vault: env.vault,
             payout: self.payout.unwrap_or(payout),
-            receipt: env.receipt_address(args.menu_nonce, &item_id_for_receipt),
+            receipt: env.receipt_address(&merchant, args.menu_nonce, &item_id_for_receipt),
             ix_sysvar: solana_sdk_ids::sysvar::instructions::ID,
             slot_hashes: solana_sdk_ids::sysvar::slot_hashes::ID,
             token_program: SPL_TOKEN,

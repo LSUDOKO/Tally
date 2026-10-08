@@ -135,3 +135,14 @@ fn insufficient_vault_reverts_cleanly() {
     assert_eq!(e.token_balance(&e.vault), 1_000_000);
     assert_eq!(e.capsule_state().spent_in_cycle, 0);
 }
+
+#[test]
+fn receipts_are_namespaced_by_merchant() {
+    // A hostile merchant B using the same (menu_nonce, item_id) must not pre-block a purchase
+    // from merchant A.
+    let mut e = Env::funded();
+    let kb = ed25519_dalek::SigningKey::from_bytes(&[77; 32]);
+    let (mb, pb) = e.register_extra_merchant(&kb, 5_000_000_000);
+    e.pay().merchant((mb, pb)).menu_signer(kb).send().unwrap();
+    e.pay().send().unwrap(); // same nonce 1, same item 0, merchant A
+}

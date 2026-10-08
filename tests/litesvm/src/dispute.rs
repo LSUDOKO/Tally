@@ -14,7 +14,7 @@ impl Env {
 
     /// Capsule owner disputes the receipt for (`nonce`, default item `item`).
     pub fn try_open_dispute(&mut self, nonce: u64, item: usize) -> TxResult {
-        let receipt = self.receipt_address(nonce, &default_items()[item].id);
+        let receipt = self.receipt_address(&self.merchant, nonce, &default_items()[item].id);
         let owner = self.owner.insecure_clone();
         let ix = Instruction {
             program_id: tally::ID,
@@ -52,7 +52,7 @@ impl Env {
         upheld: bool,
         slash_amount: u64,
     ) -> TxResult {
-        let receipt = self.receipt_address(nonce, &default_items()[item].id);
+        let receipt = self.receipt_address(&self.merchant, nonce, &default_items()[item].id);
         let claimant_skr = self.owner_skr();
         let ix = Instruction {
             program_id: tally::ID,
