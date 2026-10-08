@@ -1,7 +1,7 @@
 // Demo faucet: give a phone's wallet what the demo needs on a cluster we initialised —
 // SOL for fees, test USDC to fund a capsule, mock SKR to bond as a merchant.
 // Usage: TALLY_CLUSTER=devnet pnpm -C scripts exec tsx faucet.ts <wallet-address> [usdc=50] [skr=5000] [sol=0.2]
-import { address, lamports } from '@solana/kit';
+import { address, lamports, type Instruction } from '@solana/kit';
 import { getTransferSolInstruction } from '@solana-program/system';
 import { TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda, getCreateAssociatedTokenIdempotentInstructionAsync, getMintToInstruction } from '@solana-program/token';
 import { loadState, payer, sendOk } from './lib/env';
@@ -13,7 +13,7 @@ async function main() {
   const s = loadState();
   if (!s.usdcMint || !s.skrMint) throw new Error('run init-devnet.ts first');
   const fee = await payer();
-  const ixs = [getTransferSolInstruction({ source: fee, destination: to, amount: lamports(BigInt(Math.round(Number(solArg) * 1e9))) })];
+  const ixs: Instruction[] = [getTransferSolInstruction({ source: fee, destination: to, amount: lamports(BigInt(Math.round(Number(solArg) * 1e9))) })];
   for (const [mint, amount] of [[s.usdcMint, usdcArg], [s.skrMint, skrArg]] as const) {
     const [ata] = await findAssociatedTokenPda({ owner: to, mint, tokenProgram: TOKEN_PROGRAM_ADDRESS });
     ixs.push(await getCreateAssociatedTokenIdempotentInstructionAsync({ payer: fee, owner: to, mint }));
