@@ -20,3 +20,4 @@ pub const NODE_PREFIX: u8 = 0x01;
 pub mod hash;
 pub mod header;
 pub mod menu;
+pub mod merkle;
