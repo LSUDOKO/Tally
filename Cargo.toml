@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = ["crates/tally-core", "programs/tally"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/LSUDOKO/Tally"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

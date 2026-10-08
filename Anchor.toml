@@ -1,0 +1,12 @@
+[toolchain]
+anchor_version = "1.2.1"
+
+[programs.localnet]
+tally = "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk"
+
+[programs.devnet]
+tally = "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"

@@ -1,0 +1,23 @@
+[package]
+name = "tally-core"
+version = "0.1.0"
+description = "Byte-level primitives shared by the Tally program, SDK and app: signed menu header, catalog leaves, Merkle proofs, hardened Ed25519 parsing"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+solana-sha256-hasher = "3.1"
+ed25519-dalek = { version = "2", optional = true }
+serde_json = { version = "1", optional = true }
+hex = { version = "0.4", optional = true }
+bs58 = { version = "0.5", optional = true }
+solana-pubkey = { version = "3", optional = true, features = ["curve25519"] }
+
+[dev-dependencies]
+ed25519-dalek = "2"
+serde_json = "1"
+hex = "0.4"
+bs58 = "0.5"
+
+[features]
+fixtures = ["dep:ed25519-dalek", "dep:serde_json", "dep:hex", "dep:bs58", "dep:solana-pubkey"]
