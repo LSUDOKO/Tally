@@ -42,7 +42,7 @@ pub mod tally {
         instructions::merchant::register_merchant(ctx, name, signing_key, bond)
     }
 
-    pub fn rotate_signing_key(ctx: Context<MerchantAdmin>, new_key: Pubkey) -> Result<()> {
+    pub fn rotate_signing_key(ctx: Context<RotateSigningKey>, new_key: Pubkey) -> Result<()> {
         instructions::merchant::rotate_signing_key(ctx, new_key)
     }
 

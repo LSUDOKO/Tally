@@ -46,13 +46,19 @@ fn different_categories_are_not_a_fraud() {
 fn fraud_signed_by_someone_else_is_rejected() {
     let mut e = Env::funded();
     let (rep, rep_skr) = e.reporter();
-    let r = e.try_prove_fraud(
+    // Valid-looking evidence, but signed by a key that is not the merchant's: pass the merchant's
+    // real key record so the program reaches (and fails) the signature check.
+    let current = e.key_record(&solana_pubkey::Pubkey::new_from_array(
+        e.merchant_signer.verifying_key().to_bytes(),
+    ));
+    let r = e.try_prove_fraud_with_record(
         &fraud_items(),
         0,
         1,
         &SigningKey::from_bytes(&[42; 32]),
         &rep,
         rep_skr,
+        current,
     );
     assert_custom_err(&r, tally_err(TallyError::WrongSigner));
 }
@@ -119,4 +125,38 @@ fn only_arbiter_spends_pool() {
     e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
         .unwrap();
     assert!(e.try_compensate(&rep, rep_skr, 1).is_err());
+}
+
+#[test]
+fn rotation_does_not_escape_fraud_proof() {
+    let mut e = Env::funded();
+    let (rep, rep_skr) = e.reporter();
+    let old = e.merchant_signer.clone();
+    e.rotate_signing_key(SigningKey::from_bytes(&[56; 32]));
+    e.try_prove_fraud(&fraud_items(), 0, 1, &old, &rep, rep_skr)
+        .unwrap();
+    assert_eq!(e.token_balance(&e.bond_vault()), BOND / 2);
+}
+
+#[test]
+fn retired_key_evidence_expires_after_unlock_delay() {
+    let mut e = Env::funded();
+    let (rep, rep_skr) = e.reporter();
+    let old = e.merchant_signer.clone();
+    e.rotate_signing_key(SigningKey::from_bytes(&[56; 32]));
+    let s = e.slot();
+    e.warp(s + 1_001); // config bond_unlock_delay = 1,000
+    assert_custom_err(
+        &e.try_prove_fraud(&fraud_items(), 0, 1, &old, &rep, rep_skr),
+        tally_err(TallyError::EvidenceExpired),
+    );
+}
+
+#[test]
+fn key_records_track_rotation() {
+    let mut e = Env::funded();
+    let old = solana_pubkey::Pubkey::new_from_array(e.merchant_signer.verifying_key().to_bytes());
+    e.rotate_signing_key(SigningKey::from_bytes(&[56; 32]));
+    let r: tally::state::KeyRecord = e.fetch(&e.key_record(&old));
+    assert_eq!(r.valid_until, e.slot());
 }

@@ -59,6 +59,21 @@ impl Env {
         reporter: &Keypair,
         reporter_skr: Pubkey,
     ) -> TxResult {
+        let record = self.key_record(&Pubkey::new_from_array(signer.verifying_key().to_bytes()));
+        self.try_prove_fraud_with_record(items, a, b, signer, reporter, reporter_skr, record)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_prove_fraud_with_record(
+        &mut self,
+        items: &[Item],
+        a: usize,
+        b: usize,
+        signer: &SigningKey,
+        reporter: &Keypair,
+        reporter_skr: Pubkey,
+        key_record: Pubkey,
+    ) -> TxResult {
         let tree = MerkleTree::new(items.iter().map(leaf_hash).collect());
         let now = self.slot();
         let h = MenuHeaderArgs {
@@ -93,6 +108,7 @@ impl Env {
                 skr_mint: self.skr,
                 reporter_skr,
                 pool: self.pool(),
+                key_record,
                 fraud_record: crate::pda(&[
                     tally::constants::FRAUD_SEED,
                     self.merchant.as_ref(),

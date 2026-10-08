@@ -286,6 +286,9 @@ impl Env {
                 skr_mint,
                 authority_skr: auth_skr,
                 bond_vault: self.bond_vault(),
+                key_record: self.key_record(&Pubkey::new_from_array(
+                    self.merchant_signer.verifying_key().to_bytes(),
+                )),
                 token_program: SPL_TOKEN,
                 system_program: SYSTEM,
             }
@@ -315,10 +318,21 @@ impl Env {
     }
 
     pub fn try_rotate_signing_key_as(&mut self, signer: &Keypair, new_key: Pubkey) -> TxResult {
-        let ix = self.merchant_admin_ix(
-            &signer.pubkey(),
-            tally::instruction::RotateSigningKey { new_key }.data(),
-        );
+        let current = self
+            .fetch::<tally::state::Merchant>(&self.merchant)
+            .signing_key;
+        let ix = Instruction {
+            program_id: tally::ID,
+            accounts: tally::accounts::RotateSigningKey {
+                authority: signer.pubkey(),
+                merchant: self.merchant,
+                old_key_record: self.key_record(&current),
+                new_key_record: self.key_record(&new_key),
+                system_program: SYSTEM,
+            }
+            .to_account_metas(None),
+            data: tally::instruction::RotateSigningKey { new_key }.data(),
+        };
         self.svm.airdrop(&signer.pubkey(), 1_000_000_000).unwrap();
         self.send(&[ix], &[signer])
     }
@@ -593,5 +607,11 @@ impl Env {
     pub fn send_plain(&mut self, ixs: &[Instruction]) -> TxResult {
         let admin = self.admin.insecure_clone();
         self.send(ixs, &[&admin])
+    }
+}
+
+impl Env {
+    pub fn key_record(&self, signing_key: &Pubkey) -> Pubkey {
+        pda(&[KEY_SEED, self.merchant.as_ref(), signing_key.as_ref()])
     }
 }

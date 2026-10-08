@@ -29,3 +29,4 @@ pub const FRAUD_SEED: &[u8] = b"fraud";
 /// reports itself through a sock puppet recovers only this share, so self-slashing never beats
 /// the bond unlock delay.
 pub const REPORTER_BOUNTY_BPS: u64 = 1_000;
+pub const KEY_SEED: &[u8] = b"key";

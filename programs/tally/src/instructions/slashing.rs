@@ -15,7 +15,7 @@ use crate::{
     constants::*,
     errors::TallyError,
     events::Slashed,
-    state::{Config, FraudRecord, Merchant},
+    state::{Config, FraudRecord, KeyRecord, Merchant},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq, Eq)]
@@ -63,6 +63,12 @@ pub struct ProveFloorFraud<'info> {
     pub reporter_skr: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(mut, seeds = [POOL_SEED], bump)]
     pub pool: Box<InterfaceAccount<'info, TokenAccount>>,
+    /// The record of the key that signed the evidence (current or recently retired).
+    #[account(
+        seeds = [KEY_SEED, merchant.key().as_ref(), key_record.signing_key.as_ref()],
+        bump = key_record.bump,
+    )]
+    pub key_record: Box<Account<'info, KeyRecord>>,
     #[account(
         init, payer = reporter, space = 8 + FraudRecord::INIT_SPACE,
         seeds = [FRAUD_SEED, merchant.key().as_ref(), &header.menu_root], bump,
@@ -100,9 +106,16 @@ pub fn prove_floor_fraud(
         menu_nonce: header.menu_nonce,
         item_count: header.item_count,
     });
+    let record = &ctx.accounts.key_record;
+    if record.valid_until != u64::MAX {
+        let deadline = record
+            .valid_until
+            .saturating_add(ctx.accounts.config.bond_unlock_delay);
+        require!(Clock::get()?.slot <= deadline, TallyError::EvidenceExpired);
+    }
     verify_prev_ed25519(
         &ctx.accounts.ix_sysvar.to_account_info(),
-        &ctx.accounts.merchant.signing_key,
+        &record.signing_key,
         &msg,
     )?;
     require!(

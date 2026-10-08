@@ -5,31 +5,37 @@ use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, Tran
 use crate::{
     constants::*,
     errors::TallyError,
-    state::{Config, Merchant},
+    state::{Config, KeyRecord, Merchant},
 };
 
 #[derive(Accounts)]
+#[instruction(name: [u8; 32], signing_key: Pubkey)]
 pub struct RegisterMerchant<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     #[account(seeds = [CONFIG_SEED], bump = config.bump)]
-    pub config: Account<'info, Config>,
+    pub config: Box<Account<'info, Config>>,
     #[account(
         init, payer = authority, space = 8 + Merchant::INIT_SPACE,
         seeds = [MERCHANT_SEED, authority.key().as_ref()], bump,
     )]
-    pub merchant: Account<'info, Merchant>,
+    pub merchant: Box<Account<'info, Merchant>>,
     #[account(token::mint = config.usdc_mint)]
-    pub payout: InterfaceAccount<'info, TokenAccount>,
+    pub payout: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(address = config.skr_mint)]
-    pub skr_mint: InterfaceAccount<'info, Mint>,
+    pub skr_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(mut, token::mint = skr_mint, token::authority = authority)]
-    pub authority_skr: InterfaceAccount<'info, TokenAccount>,
+    pub authority_skr: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init, payer = authority, seeds = [BOND_SEED, merchant.key().as_ref()], bump,
         token::mint = skr_mint, token::authority = merchant, token::token_program = token_program,
     )]
-    pub bond_vault: InterfaceAccount<'info, TokenAccount>,
+    pub bond_vault: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(
+        init, payer = authority, space = 8 + KeyRecord::INIT_SPACE,
+        seeds = [KEY_SEED, merchant.key().as_ref(), signing_key.as_ref()], bump,
+    )]
+    pub key_record: Box<Account<'info, KeyRecord>>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
@@ -68,6 +74,14 @@ pub fn register_merchant(
         active: true,
         bump: ctx.bumps.merchant,
     });
+    let merchant = ctx.accounts.merchant.key();
+    ctx.accounts.key_record.set_inner(KeyRecord {
+        merchant,
+        signing_key,
+        valid_from: Clock::get()?.slot,
+        valid_until: u64::MAX,
+        bump: ctx.bumps.key_record,
+    });
     Ok(())
 }
 
@@ -79,7 +93,40 @@ pub struct MerchantAdmin<'info> {
     pub merchant: Account<'info, Merchant>,
 }
 
-pub fn rotate_signing_key(ctx: Context<MerchantAdmin>, new_key: Pubkey) -> Result<()> {
+#[derive(Accounts)]
+#[instruction(new_key: Pubkey)]
+pub struct RotateSigningKey<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(mut, has_one = authority @ TallyError::Unauthorized)]
+    pub merchant: Account<'info, Merchant>,
+    #[account(
+        mut,
+        seeds = [KEY_SEED, merchant.key().as_ref(), merchant.signing_key.as_ref()],
+        bump = old_key_record.bump,
+    )]
+    pub old_key_record: Account<'info, KeyRecord>,
+    #[account(
+        init, payer = authority, space = 8 + KeyRecord::INIT_SPACE,
+        seeds = [KEY_SEED, merchant.key().as_ref(), new_key.as_ref()], bump,
+    )]
+    pub new_key_record: Account<'info, KeyRecord>,
+    pub system_program: Program<'info, System>,
+}
+
+/// Rotate the menu-signing key. The old key's record is closed for *new* menus but kept, so
+/// fraud signed with it remains provable for `bond_unlock_delay` slots after rotation.
+pub fn rotate_signing_key(ctx: Context<RotateSigningKey>, new_key: Pubkey) -> Result<()> {
+    let now = Clock::get()?.slot;
+    ctx.accounts.old_key_record.valid_until = now;
+    let merchant = ctx.accounts.merchant.key();
+    ctx.accounts.new_key_record.set_inner(KeyRecord {
+        merchant,
+        signing_key: new_key,
+        valid_from: now,
+        valid_until: u64::MAX,
+        bump: ctx.bumps.new_key_record,
+    });
     ctx.accounts.merchant.signing_key = new_key;
     Ok(())
 }

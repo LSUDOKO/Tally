@@ -98,6 +98,19 @@ pub struct Dispute {
     pub bump: u8,
 }
 
+/// Validity record for every menu-signing key a merchant has ever used. Never closed, so a
+/// rotated-out key's signatures stay attributable (and slashable) for a bounded window.
+#[account]
+#[derive(InitSpace)]
+pub struct KeyRecord {
+    pub merchant: Pubkey,
+    pub signing_key: Pubkey,
+    pub valid_from: u64,
+    /// `u64::MAX` while the key is current.
+    pub valid_until: u64,
+    pub bump: u8,
+}
+
 /// Nullifier for a proven floor contradiction: one slash per (merchant, signed menu root).
 #[account]
 #[derive(InitSpace)]
