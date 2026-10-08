@@ -11,3 +11,5 @@ pub mod slashing;
 pub use slashing::*;
 pub mod dispute;
 pub use dispute::*;
+pub mod sgt;
+pub use sgt::*;

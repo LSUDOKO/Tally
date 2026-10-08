@@ -113,4 +113,12 @@ pub mod tally {
     pub fn withdraw_bond(ctx: Context<WithdrawBond>, amount: u64) -> Result<()> {
         instructions::dispute::withdraw_bond(ctx, amount)
     }
+
+    pub fn create_capsule_with_sgt(ctx: Context<CreateCapsuleWithSgt>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
+        instructions::sgt::create_capsule_with_sgt(ctx, capsule_id, rules, agent)
+    }
+
+    pub fn claim_promo(ctx: Context<ClaimPromo>, promo_id: u64) -> Result<()> {
+        instructions::sgt::claim_promo(ctx, promo_id)
+    }
 }
