@@ -103,6 +103,8 @@ pub fn new_capsule(
 ) -> Result<Capsule> {
     let now = Clock::get()?.slot;
     rules.validate(now)?;
+    // The agent must be a separate key: if agent == owner every co-sign tier is silently met.
+    require_keys_neq!(agent, owner, TallyError::InvalidRules);
     let mut c = Capsule {
         owner,
         agent,
@@ -145,6 +147,11 @@ pub fn set_frozen(ctx: Context<CapsuleOwner>, frozen: bool) -> Result<()> {
 }
 
 pub fn set_agent(ctx: Context<CapsuleOwner>, new_agent: Pubkey) -> Result<()> {
+    require_keys_neq!(
+        new_agent,
+        ctx.accounts.capsule.owner,
+        TallyError::InvalidRules
+    );
     ctx.accounts.capsule.agent = new_agent;
     Ok(())
 }

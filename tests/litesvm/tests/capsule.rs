@@ -97,3 +97,23 @@ fn close_returns_funds() {
     assert_eq!(env.token_balance(&env.owner_usdc()), before + 7_000_000);
     assert!(!env.exists(&env.capsule));
 }
+
+#[test]
+fn agent_cannot_be_owner_at_creation() {
+    let mut env = Env::new();
+    env.agent = env.owner.insecure_clone();
+    assert_custom_err(
+        &env.try_create_capsule(coffee_rules()),
+        tally_err(TallyError::InvalidRules),
+    );
+}
+
+#[test]
+fn agent_cannot_be_rotated_to_owner() {
+    let mut env = Env::new().with_capsule(coffee_rules(), 0);
+    let owner = env.owner.pubkey();
+    assert_custom_err(
+        &env.try_owner_op(tally::instruction::SetAgent { new_agent: owner }.data()),
+        tally_err(TallyError::InvalidRules),
+    );
+}
