@@ -12,10 +12,11 @@ fn floor_fraud_proof_slashes_bond() {
     let signer = e.merchant_signer.clone();
     e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
         .unwrap();
-    // slash_bps = 5000 → 2,500 SKR slashed: 1,250 to the reporter, 1,250 to the pool.
+    // slash_bps = 5000 → 2,500 SKR slashed: a 10% bounty (250) to the reporter, 2,250 to the
+    // compensation pool. A small bounty makes self-reporting through a sock puppet a 90% loss.
     assert_eq!(e.token_balance(&e.bond_vault()), BOND / 2);
-    assert_eq!(e.token_balance(&rep_skr), BOND / 4);
-    assert_eq!(e.token_balance(&e.pool()), BOND / 4);
+    assert_eq!(e.token_balance(&rep_skr), BOND / 20);
+    assert_eq!(e.token_balance(&e.pool()), BOND / 2 - BOND / 20);
     let m: tally::state::Merchant = e.fetch(&e.merchant);
     assert_eq!(m.skr_bonded, BOND / 2);
     assert_eq!(m.slashed_total, BOND / 2);
@@ -83,4 +84,39 @@ fn a_second_fraudulent_menu_slashes_again() {
     e.try_prove_fraud(&other, 0, 1, &signer, &rep, rep_skr)
         .unwrap();
     assert_eq!(e.token_balance(&e.bond_vault()), BOND / 4);
+}
+
+#[test]
+fn merchant_cannot_report_itself() {
+    let mut e = Env::funded();
+    let me = e.merchant_auth.insecure_clone();
+    let my_skr = e.merchant_skr();
+    let signer = e.merchant_signer.clone();
+    assert_custom_err(
+        &e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &me, my_skr),
+        tally_err(TallyError::SelfReport),
+    );
+}
+
+#[test]
+fn arbiter_compensates_users_from_pool() {
+    let mut e = Env::funded();
+    let (rep, rep_skr) = e.reporter();
+    let signer = e.merchant_signer.clone();
+    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
+        .unwrap();
+    let to = e.owner_skr();
+    let arbiter = e.admin.insecure_clone();
+    e.try_compensate(&arbiter, to, 1_000_000_000).unwrap();
+    assert_eq!(e.token_balance(&to), 1_000_000_000);
+}
+
+#[test]
+fn only_arbiter_spends_pool() {
+    let mut e = Env::funded();
+    let (rep, rep_skr) = e.reporter();
+    let signer = e.merchant_signer.clone();
+    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
+        .unwrap();
+    assert!(e.try_compensate(&rep, rep_skr, 1).is_err());
 }

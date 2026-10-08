@@ -84,6 +84,11 @@ pub fn prove_floor_fraud(
     proof_b: Vec<[u8; 32]>,
 ) -> Result<()> {
     let merchant_key = ctx.accounts.merchant.key();
+    let authority = ctx.accounts.merchant.authority;
+    require!(
+        ctx.accounts.reporter.key() != authority && ctx.accounts.reporter_skr.owner != authority,
+        TallyError::SelfReport
+    );
     // Evidence is the merchant's own signature; no freshness requirement — a signed
     // contradiction stays evidence forever.
     let msg = build_header(&HeaderFields {
@@ -120,7 +125,7 @@ pub fn prove_floor_fraud(
     if amount == 0 {
         amount = vault_amount;
     }
-    let to_reporter = amount / 2;
+    let to_reporter = amount * REPORTER_BOUNTY_BPS / 10_000;
     let to_pool = amount - to_reporter;
 
     let m = &ctx.accounts.merchant;
@@ -168,4 +173,38 @@ pub fn prove_floor_fraud(
         reason: 0
     });
     Ok(())
+}
+
+/// Pay a user out of the compensation pool (funded by fraud slashes). Arbiter only.
+#[derive(Accounts)]
+pub struct Compensate<'info> {
+    pub arbiter: Signer<'info>,
+    #[account(seeds = [CONFIG_SEED], bump = config.bump, has_one = arbiter @ TallyError::Unauthorized)]
+    pub config: Box<Account<'info, Config>>,
+    #[account(mut, seeds = [POOL_SEED], bump)]
+    pub pool: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(address = config.skr_mint)]
+    pub skr_mint: Box<InterfaceAccount<'info, Mint>>,
+    #[account(mut, token::mint = skr_mint)]
+    pub destination: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+pub fn compensate(ctx: Context<Compensate>, amount: u64) -> Result<()> {
+    let bump = [ctx.accounts.config.bump];
+    let seeds: &[&[u8]] = &[CONFIG_SEED, &bump];
+    token_interface::transfer_checked(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.key(),
+            TransferChecked {
+                from: ctx.accounts.pool.to_account_info(),
+                mint: ctx.accounts.skr_mint.to_account_info(),
+                to: ctx.accounts.destination.to_account_info(),
+                authority: ctx.accounts.config.to_account_info(),
+            },
+            &[seeds],
+        ),
+        amount,
+        ctx.accounts.skr_mint.decimals,
+    )
 }

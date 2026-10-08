@@ -115,3 +115,30 @@ impl Env {
         self.send(&[ed, ix], &[reporter])
     }
 }
+
+impl Env {
+    /// The merchant authority's own SKR account (created at registration).
+    pub fn merchant_skr(&self) -> Pubkey {
+        anchor_spl::associated_token::get_associated_token_address(
+            &self.merchant_auth.pubkey(),
+            &self.skr,
+        )
+    }
+
+    pub fn try_compensate(&mut self, signer: &Keypair, to: Pubkey, amount: u64) -> TxResult {
+        let ix = Instruction {
+            program_id: tally::ID,
+            accounts: tally::accounts::Compensate {
+                arbiter: signer.pubkey(),
+                config: self.config,
+                pool: self.pool(),
+                skr_mint: self.skr,
+                destination: to,
+                token_program: SPL_TOKEN,
+            }
+            .to_account_metas(None),
+            data: tally::instruction::Compensate { amount }.data(),
+        };
+        self.send(&[ix], &[signer])
+    }
+}

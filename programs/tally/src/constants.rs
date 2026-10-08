@@ -24,3 +24,8 @@ pub const KNOWN_FLAGS: u8 = FLAG_REQUIRE_LIGHTHOUSE | FLAG_SGT_VERIFIED | FLAG_A
 pub const LIGHTHOUSE_ID: anchor_lang::prelude::Pubkey =
     anchor_lang::prelude::Pubkey::from_str_const("L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95");
 pub const FRAUD_SEED: &[u8] = b"fraud";
+
+/// Share of a fraud slash paid to the reporter (basis points). Small on purpose: a merchant who
+/// reports itself through a sock puppet recovers only this share, so self-slashing never beats
+/// the bond unlock delay.
+pub const REPORTER_BOUNTY_BPS: u64 = 1_000;

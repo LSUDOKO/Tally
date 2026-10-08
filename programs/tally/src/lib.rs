@@ -146,4 +146,8 @@ pub mod tally {
     pub fn claim_promo(ctx: Context<ClaimPromo>, promo_id: u64) -> Result<()> {
         instructions::sgt::claim_promo(ctx, promo_id)
     }
+
+    pub fn compensate(ctx: Context<Compensate>, amount: u64) -> Result<()> {
+        instructions::slashing::compensate(ctx, amount)
+    }
 }

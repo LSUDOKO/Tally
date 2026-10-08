@@ -58,4 +58,8 @@ pub enum TallyError {
     InvalidRules,
     #[msg("Dispute is not in the required state")]
     WrongDisputeState,
+    #[msg("A merchant cannot report its own fraud")]
+    SelfReport,
+    #[msg("Evidence signed with a retired key is too old")]
+    EvidenceExpired,
 }
