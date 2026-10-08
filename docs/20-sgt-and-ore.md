@@ -50,11 +50,12 @@ Autonomous agents can be turned against merchants. Hundreds of `pay_offer` attem
 - When it's on, every `pay_offer` must carry a **DrillX** solution. DrillX is the memory-hard, Equihash-based hash from ORE v2, available as the open-source `drillx` crate.
 
 ```
-challenge = SHA256("TALLY_POW_V1" ‖ menu_nonce ‖ capsule_pubkey ‖ most_recent SlotHashes entry)
+challenge = SHA256("TALLY_POW_V1" ‖ menu_nonce ‖ capsule_pubkey ‖ slot_hash(pow.slot))
+# pow.slot is named by the client and must be a SlotHashes entry at most 150 slots old
 valid     = drillx::is_valid_digest(challenge, nonce, digest) && drillx::difficulty(digest) ≥ pow_difficulty
 ```
 
-- Binding the challenge to `menu_nonce` and `capsule` means work can't be **reused** across menus or capsules. The `SlotHashes` entry stops precomputation.
+- Binding the challenge to `menu_nonce` and `capsule` means work can't be **reused** across menus or capsules. The named `SlotHashes` entry (≤150 slots old) stops precomputation while still letting a solution mined against slot N land at N+k on a live cluster. *(As built: an earlier version used only the newest entry, which made every congested transaction miss; fixed after review.)*
 - The check runs **inside `pay_offer`** (gate G1 in [06](06-onchain-program.md)), so it can't be skipped. The whitepaper describes "an ORE verification instruction". ORE's program doesn't expose a generic verify-arbitrary-challenge instruction, so Tally verifies with the `drillx` crate in-program.
 - On the phone, the solver runs through JNI on a background dispatcher. At low difficulty it takes about 1–2 s on a phone, which is enough to make floods expensive and invisible to an honest single purchase. **Measure on a Seeker.**
 

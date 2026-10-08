@@ -364,20 +364,43 @@ pub fn make_two_sig_ix(ix: &mut Instruction, extra: &SigningKey) {
 // ------------------------------------------------------------ proof of work
 impl Env {
     /// Most recent SlotHashes entry, as the program reads it.
-    pub fn recent_slot_hash(&self) -> [u8; 32] {
+    /// Most recent `(slot, hash)` SlotHashes entry.
+    pub fn recent_slot_entry(&self) -> (u64, [u8; 32]) {
         let sh = self.svm.get_sysvar::<solana_slot_hashes::SlotHashes>();
-        sh.first().map(|(_, h)| h.to_bytes()).unwrap_or([0; 32])
+        sh.first()
+            .map(|(s, h)| (*s, h.to_bytes()))
+            .unwrap_or((0, [0; 32]))
     }
 
-    /// Solve the hashcash challenge for `capsule` and `menu_nonce` (client-side work).
-    pub fn solve_pow_for(&self, capsule: Pubkey, menu_nonce: u64, difficulty: u8) -> PowSolution {
-        let challenge = tally_core::pow::pow_challenge(
-            menu_nonce,
-            &capsule.to_bytes(),
-            &self.recent_slot_hash(),
-        );
+    /// Replace the SlotHashes sysvar with explicit `(slot, hash)` entries (newest first).
+    pub fn set_slot_hashes(&mut self, entries: &[(u64, [u8; 32])]) {
+        let v: Vec<(u64, solana_hash::Hash)> = entries
+            .iter()
+            .map(|(s, h)| (*s, solana_hash::Hash::new_from_array(*h)))
+            .collect();
+        self.svm
+            .set_sysvar(&solana_slot_hashes::SlotHashes::new(&v));
+    }
+
+    /// Solve the hashcash challenge against SlotHashes entry `(slot, hash)` (client-side work).
+    pub fn solve_pow_at(
+        &self,
+        capsule: Pubkey,
+        menu_nonce: u64,
+        difficulty: u8,
+        slot: u64,
+        hash: [u8; 32],
+    ) -> PowSolution {
+        let challenge = tally_core::pow::pow_challenge(menu_nonce, &capsule.to_bytes(), &hash);
         PowSolution {
             nonce: tally_core::pow::solve_hashcash(&challenge, difficulty),
+            slot,
         }
+    }
+
+    /// Solve against the most recent SlotHashes entry.
+    pub fn solve_pow_for(&self, capsule: Pubkey, menu_nonce: u64, difficulty: u8) -> PowSolution {
+        let (slot, hash) = self.recent_slot_entry();
+        self.solve_pow_at(capsule, menu_nonce, difficulty, slot, hash)
     }
 }

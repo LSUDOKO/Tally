@@ -24,6 +24,8 @@ use crate::{
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PowSolution {
     pub nonce: [u8; 8],
+    /// The SlotHashes slot the client mined against; must be at most `MAX_POW_AGE` old.
+    pub slot: u64,
 }
 
 /// Everything the program needs to rebuild the signed header and the chosen leaf.
@@ -140,6 +142,7 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
             args.menu_nonce,
             args.pow.as_ref(),
             merchant.pow_difficulty,
+            slot,
         )?;
     }
 
