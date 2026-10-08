@@ -58,9 +58,20 @@ valid     = drillx::is_valid_digest(challenge, nonce, digest) && drillx::difficu
 - The check runs **inside `pay_offer`** (gate G1 in [06](06-onchain-program.md)), so it can't be skipped. The whitepaper describes "an ORE verification instruction". ORE's program doesn't expose a generic verify-arbitrary-challenge instruction, so Tally verifies with the `drillx` crate in-program.
 - On the phone, the solver runs through JNI on a background dispatcher. At low difficulty it takes about 1–2 s on a phone, which is enough to make floods expensive and invisible to an honest single purchase. **Measure on a Seeker.**
 
-### Compute budget
+### Compute budget (measured, Phase 1 Task 19)
 
-DrillX verification is designed to be cheap compared with solving (ORE v2 verified on-chain). Its CU cost still has to be **measured** and added to the `pay_offer` budget only when the gate is on. If it's too high, fall back to a SHA-256 hashcash gate with the same challenge.
+| Work function | `pay_offer` total CU | Decision |
+|---|---|---|
+| None (gate off) | ~20.4k | — |
+| **DrillX** (`drillx` 2.2 `Solution::is_valid`, Equi-X verify) | **~468k** (needs a 1.4M CU budget) | Rejected: over 10× the whole-instruction budget |
+| **SHA-256 hashcash** (same challenge) | **~22.4k** | **Shipped** |
+
+The on-chain gate is therefore SHA-256 hashcash over the identical challenge
+(`SHA256("TALLY_POW_V1" ‖ menu_nonce ‖ capsule ‖ recent slot hash)`), with `difficulty` = required
+leading zero bits. DrillX remains usable **off-chain** (e.g. for ORE-branded client work or a
+future precompile), and the challenge format is unchanged, so swapping verifiers later does not
+change any client binding. Say this plainly in the deck: "we measured DrillX at ~468k CU on-chain,
+so the anti-flood gate uses a 2k-CU hashcash with the same binding".
 
 ### Background ORE mining → priority-fee offset (stretch)
 
