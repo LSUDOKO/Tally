@@ -98,6 +98,8 @@ impl Env {
         let so = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/deploy/tally.so");
         assert!(std::path::Path::new(so).exists(), "run `cargo build-sbf --manifest-path programs/tally/Cargo.toml` first");
         svm.add_program_from_file(tally::ID, so).expect("load tally.so");
+        let lh = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/programs/lighthouse.so");
+        svm.add_program_from_file(lighthouse::LIGHTHOUSE_ID, lh).expect("load lighthouse.so");
         let admin = Keypair::new();
         svm.airdrop(&admin.pubkey(), 100_000_000_000).unwrap();
         let usdc = CreateMint::new(&mut svm, &admin).decimals(6).send().unwrap();
@@ -481,5 +483,13 @@ impl Env {
     pub fn receipt(&self, nonce: u64, item: usize) -> tally::state::Receipt {
         let id = default_items()[item].id;
         self.fetch(&self.receipt_address(nonce, &id))
+    }
+}
+
+impl Env {
+    /// Send instructions signed only by the admin (fee payer).
+    pub fn send_plain(&mut self, ixs: &[Instruction]) -> TxResult {
+        let admin = self.admin.insecure_clone();
+        self.send(ixs, &[&admin])
     }
 }
