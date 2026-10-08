@@ -1,6 +1,13 @@
 package app.tally.ui
 
 import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -104,9 +111,32 @@ fun HomeScreen(s: Session) {
                             }
                             Gap(6)
                             Text("\$${usdc(c.spentInCycle)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} per purchase", color = TallyColors.Muted, fontSize = 13.sp)
-                            if (c.frozen) { Gap(8); Chip("Frozen", TallyColors.Blocked) }
+                            Gap(10)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (c.frozen) Chip("Frozen", TallyColors.Blocked)
+                                if (c.flags and 2 != 0) Chip("Seeker verified", TallyColors.Paid)
+                                if (c.flags and 1 != 0) Chip("Lighthouse required", TallyColors.Accent)
+                            }
+                            Gap(12)
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Secondary("Add \$10", { scope.launch { s.fund(10_000_000) } }, Modifier.weight(1f))
+                                Secondary("Withdraw all", { scope.launch { s.withdraw(s.vaultBalance) } }, Modifier.weight(1f), enabled = s.vaultBalance > 0)
+                                Secondary("Rules", { s.screen = Screen.NewCapsule }, Modifier.weight(1f))
+                            }
                         }
                     }
+                }
+                if (s.capsule != null && s.agentSol < 10_000_000) {
+                    Card(accent = TallyColors.NeedsYou) {
+                        Column {
+                            Body("Your agent needs a little SOL for network fees and receipts (${"%.4f".format(s.agentSol / 1e9)} SOL left).", TallyColors.NeedsYou)
+                            Gap(10)
+                            Primary("Top up agent with 0.05 SOL", { scope.launch { s.topUpAgent() } }, color = TallyColors.NeedsYou)
+                        }
+                    }
+                }
+                if (s.capsule != null && (s.capsule!!.flags and 2) != 0) {
+                    Secondary("Claim Seeker launch promo (one per device)", { scope.launch { s.claimPromo(1) } })
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(Modifier.weight(1f)) { Stat("Attacks blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked) }
@@ -135,9 +165,11 @@ fun NewCapsuleScreen(s: Session) {
     val scope = rememberCoroutineScope()
     var text by remember { mutableStateOf("Coffee, max \$6, \$15 a day, cheapest by default") }
     var fund by remember { mutableStateOf("20") }
+    var lighthouse by remember { mutableStateOf((s.capsule?.flags ?: 0) and 1 != 0) }
+    val existing = s.capsule != null
     val parsed = RuleParser.parse(text)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("New capsule", onBack = { s.screen = Screen.Home })
+        TopBar(if (existing) "Capsule rules" else "New capsule", onBack = { s.screen = Screen.Home })
         Column(Pad, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Body("Say what your agent may buy. You'll confirm the exact rules before Seed Vault signs.", TallyColors.Muted)
             OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth(), label = { Text("Your rules") }, minLines = 2)
@@ -157,10 +189,24 @@ fun NewCapsuleScreen(s: Session) {
                     Body("Anything pricier than the cheapest match, from an unbonded merchant, or on a long-lived menu will need your tap.", TallyColors.Muted)
                 }
             }
-            OutlinedTextField(fund, { fund = it.filter { c -> c.isDigit() || c == '.' } }, Modifier.fillMaxWidth(), label = { Text("Fund with (USDC)") })
-            Primary("Approve with Seed Vault", {
-                scope.launch { s.createCapsule(parsed, ((fund.toDoubleOrNull() ?: 0.0) * 1_000_000).toLong()) }
-            })
+            Card {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Require a Lighthouse assertion", color = TallyColors.Text, fontWeight = FontWeight.SemiBold)
+                        Text("Every payment must end with an exact vault-balance check (defence in depth).", color = TallyColors.Muted, fontSize = 13.sp)
+                    }
+                    Switch(lighthouse, { lighthouse = it })
+                }
+            }
+            if (!existing) {
+                if (s.sgt != null) Chip("Seeker Genesis Token found: this capsule will be Seeker-verified", TallyColors.Paid)
+                OutlinedTextField(fund, { fund = it.filter { c -> c.isDigit() || c == '.' } }, Modifier.fillMaxWidth(), label = { Text("Fund with (USDC)") })
+                Primary("Approve with Seed Vault", {
+                    scope.launch { s.createCapsule(parsed, ((fund.toDoubleOrNull() ?: 0.0) * 1_000_000).toLong(), lighthouse) }
+                })
+            } else {
+                Primary("Update rules with Seed Vault", { scope.launch { s.updateRules(parsed, lighthouse) } })
+            }
             Gap(24)
         }
     }
@@ -203,6 +249,10 @@ fun CheckoutScreen(s: Session) {
                                 },
                             )
                         }
+                        if (MenuIssue.FloorContradiction in s.issues) {
+                            Gap(10)
+                            Primary("Report merchant (slash its bond)", { scope.launch { s.reportFraud() } }, color = TallyColors.Blocked)
+                        }
                     }
                 }
             }
@@ -220,7 +270,19 @@ fun CheckoutScreen(s: Session) {
                     }
                 }
             }
-            OutlinedTextField(request, { request = it }, Modifier.fillMaxWidth(), label = { Text("What do you want?") })
+            val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+                res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { request = it }
+            }
+            OutlinedTextField(
+                request, { request = it }, Modifier.fillMaxWidth(), label = { Text("What do you want?") },
+                trailingIcon = {
+                    IconButton({
+                        runCatching {
+                            speech.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_PROMPT, "What should your agent buy?"))
+                        }
+                    }) { Icon(Icons.Filled.Mic, contentDescription = "Speak your request", tint = TallyColors.Accent) }
+                },
+            )
             Primary("Ask the agent", { scope.launch { s.askAgent(request) } })
             s.agentResult?.let { ar ->
                 val pick = ar.pick
@@ -291,6 +353,7 @@ fun CheckoutScreen(s: Session) {
 fun ReceiptsScreen(s: Session) {
     @Suppress("UNUSED_VARIABLE") val v = s.logVersion
     val log = s.store.log()
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize()) {
         TopBar("Receipts & forensics", onBack = { s.screen = Screen.Home })
         if (log.isEmpty()) Body("Nothing yet. Paid purchases and blocked attempts appear here with explorer links.", TallyColors.Muted)
@@ -306,7 +369,16 @@ fun ReceiptsScreen(s: Session) {
                         }
                         Text(e.detail, color = TallyColors.Muted, fontSize = 13.sp)
                         if (e.attack) Chip("red team", TallyColors.Blocked)
+                        if (e.disputed) Chip("disputed", TallyColors.NeedsYou)
                         ExplorerLink(s, e.signature)
+                        if (e.outcome == "paid" && e.receipt != null && !e.disputed) {
+                            Text(
+                                "Dispute this purchase",
+                                color = TallyColors.NeedsYou,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(top = 6.dp).clickable { scope.launch { s.dispute(e, "Not received as described") } },
+                            )
+                        }
                     }
                 }
             }
