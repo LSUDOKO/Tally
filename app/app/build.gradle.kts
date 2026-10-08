@@ -92,6 +92,8 @@ dependencies {
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
     implementation(libs.okhttp)
+    implementation(libs.zxing.core)
+    implementation(libs.anthropic.java)
     implementation(libs.serialization.json)
     implementation(libs.serialization.cbor)
     implementation(libs.bouncycastle)
