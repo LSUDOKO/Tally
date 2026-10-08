@@ -24,3 +24,10 @@ bs58 = "0.5"
 
 [features]
 fixtures = ["dep:ed25519-dalek", "dep:serde_json", "dep:hex", "dep:bs58", "dep:solana-pubkey"]
+
+[[bin]]
+name = "gen-fixtures"
+required-features = ["fixtures"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
