@@ -2,7 +2,11 @@
 //! catalog leaf and the owner's capsule rules, then settle atomically.
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use tally_core::header::{build_header, HeaderFields};
+use tally_core::{
+    header::{build_header, HeaderFields},
+    menu::{leaf_hash, Item},
+    merkle::verify_proof,
+};
 
 use crate::{
     checks::introspection::verify_prev_ed25519,
@@ -88,6 +92,28 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         item_count: args.item_count,
     });
     verify_prev_ed25519(&ctx.accounts.ix_sysvar.to_account_info(), &merchant.signing_key, &header)?;
+
+    // 4. freshness tiers: <=150 slots autonomous; up to 9,000 only if the capsule allows it
+    //    and the owner co-signs (enforced with invariant 8 below)
+    require!(args.issued_slot <= slot && slot <= args.expires_slot, TallyError::Stale);
+    let window = args.expires_slot - args.issued_slot;
+    let extended = window > MAX_AUTONOMOUS_WINDOW;
+    require!(window <= MAX_EXTENDED_WINDOW, TallyError::WindowTooLong);
+    if extended {
+        require!(ctx.accounts.capsule.flags & FLAG_ALLOW_EXTENDED != 0, TallyError::WindowTooLong);
+    }
+
+    // 5. registry payout: `has_one = payout` + mint constraint in the accounts struct
+
+    // 6. Merkle inclusion of the leaf the program hashes itself
+    let leaf = leaf_hash(&Item { id: args.item_id, category: args.category, price: args.price, floor: args.category_floor });
+    require!(verify_proof(leaf, &args.proof, args.menu_root), TallyError::NotOnMenu);
+
+    // 8 (partial). extended windows need the owner's signature
+    let needs_owner = extended;
+    if needs_owner {
+        require!(ctx.accounts.owner.is_signer, TallyError::OwnerCosignRequired);
+    }
 
     Ok(())
 }
