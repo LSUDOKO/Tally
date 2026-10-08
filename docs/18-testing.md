@@ -1,6 +1,6 @@
 # 18 — Testing
 
-> **As built:** 138 Rust tests pass (`cargo test --workspace`). That's 34 `tally-core` unit and golden-vector tests, 2 program unit tests and 102 LiteSVM integration tests across `merchant`, `capsule`, `introspection`, `menu`, `policy`, `settlement`, `lighthouse`, `slashing`, `dispute`, `sgt`, `pow` and `compute`. The row → test mapping is in [`tests/litesvm/THREAT_SUITE.md`](../tests/litesvm/THREAT_SUITE.md). The planned table below is kept for reference.
+> **As built:** 155 Rust tests pass (`cargo test --workspace`). That's 34 `tally-core` unit and golden-vector tests, 2 program unit tests and 119 LiteSVM integration tests across `merchant`, `capsule`, `introspection`, `menu`, `policy`, `settlement`, `lighthouse`, `slashing`, `dispute`, `sgt`, `pow` and `compute`. The row → test mapping is in [`tests/litesvm/THREAT_SUITE.md`](../tests/litesvm/THREAT_SUITE.md). The planned table below is kept for reference.
 
 ## Program tests (one per threat-model row, plus happy paths)
 

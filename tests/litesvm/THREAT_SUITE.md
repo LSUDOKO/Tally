@@ -31,6 +31,19 @@ cargo test -p tally-litesvm
 
 Rows 13 (simulation-diff phishing) and 17–20 (relay, floor omission, rubber-stamping, OS compromise) are app-side or out of scope, and have no on-chain test.
 
+## Hardening from the phase 1 review
+
+| Exploit found in review | Test |
+|---|---|
+| Merchant self-slashes to escape disputes or the unlock delay | `slashing::merchant_cannot_report_itself`, `floor_fraud_proof_slashes_bond` (10% bounty) |
+| Key rotation erases fraud evidence | `slashing::rotation_does_not_escape_fraud_proof`, `retired_key_evidence_expires_after_unlock_delay`, `key_records_track_rotation` |
+| Bond unlock never re-locks; merchant trades while unlocking | `dispute::withdraw_relocks_bond`, `unlock_request_deactivates_merchant`, `reactivating_cancels_unlock` |
+| PoW fails whenever the slot advances | `pow::pow_survives_slot_advance`, `pow_slot_too_old`, `pow_slot_not_in_sysvar`, `pow_wrong_hash_for_named_slot` |
+| A trivially-true Lighthouse assertion satisfies the flag | `lighthouse::trivially_true_lighthouse_assertion_is_rejected` |
+| Cross-merchant receipt pre-blocking | `settlement::receipts_are_namespaced_by_merchant` |
+| `agent == owner` silently disables co-sign | `capsule::agent_cannot_be_owner_at_creation`, `agent_cannot_be_rotated_to_owner` |
+| Compensation pool locked forever | `slashing::arbiter_compensates_users_from_pool`, `only_arbiter_spends_pool` |
+
 ## Also covered
 
 - **Disputes and bonds:** `dispute::*`. Arbiter-only resolution, slash capped at bond, no double resolution, unlock delay, unlock blocked by open disputes.
