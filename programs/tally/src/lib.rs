@@ -2,6 +2,7 @@
 //! on-chain rules, inside one atomic transaction. See `docs/00-whitepaper.md`.
 use anchor_lang::prelude::*;
 
+pub mod checks;
 pub mod constants;
 pub mod errors;
 pub mod events;
@@ -80,5 +81,9 @@ pub mod tally {
 
     pub fn close_capsule(ctx: Context<CloseCapsule>) -> Result<()> {
         instructions::capsule::close_capsule(ctx)
+    }
+
+    pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
+        instructions::pay_offer::pay_offer(ctx, args)
     }
 }
