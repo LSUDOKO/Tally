@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "phase/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Program and core (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.97.1
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Cache Solana toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/solana
+            ~/.cache/solana
+          key: solana-4.0.2
+      - name: Install Solana CLI 4.0.2
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v4.0.2/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Build program (SBF)
+        run: cargo build-sbf --manifest-path programs/tally/Cargo.toml
+      - name: Test (core, golden vectors, LiteSVM threat suite)
+        run: cargo test --workspace
+
+  sdk:
+    name: SDK (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C sdk typecheck
+      - run: pnpm -C sdk test
+      - run: pnpm -C scripts typecheck
