@@ -21,3 +21,4 @@ pub mod hash;
 pub mod header;
 pub mod menu;
 pub mod merkle;
+pub mod ed25519;
