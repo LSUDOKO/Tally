@@ -1,6 +1,26 @@
 # 06 — On-chain program (Anchor)
 
-> **Reference sketch.** This was written for clarity and review. It has not been compiled, tested or audited. Treat every line as a starting point.
+> **Status: implemented.** The program lives in [`programs/tally`](../programs/tally) and is exercised by 155 tests ([threat suite index](../tests/litesvm/THREAT_SUITE.md)). It has **not** been audited. The code further below is the original reference sketch, kept for readability. Where the build diverged, this "As built" section is authoritative.
+
+## As built
+
+| Topic | Decision | Why |
+|---|---|---|
+| `Config` PDA `["config"]` | Pins `usdc_mint`, `skr_mint`, `arbiter`, `sgt_group`, `slash_bps`, `bond_unlock_delay`; creates the SKR compensation pool `["pool"]` | Bonds and payouts can't use look-alike mints; one source of truth for the arbiter and the SGT group |
+| Merchant PDA | `["merchant", authority]` | The menu key rotates without losing receipts or the bond |
+| Key records | `KeyRecord` `["key", merchant, signing_key]` with `valid_from`/`valid_until`, never closed; rotation retires the old record | A rotated key's signed contradictions stay slashable for `bond_unlock_delay` slots |
+| Receipt seeds | `["receipt", capsule, merchant, menu_nonce, item_id]` | Another merchant can't pre-block a purchase by reusing `(nonce, item)` |
+| Agent key | Must differ from the owner (create and `set_agent`) | Otherwise every co-sign tier is silently met |
+| Settlement | `token_interface::transfer_checked`, then `reload()` and exact vault/payout deltas | Token-2022 safe; a fee-on-transfer mint can't short the payee |
+| Required Lighthouse | The last instruction must be exactly `AssertTokenAccount{Amount == vault_after}` on the vault | A trivially-true assertion doesn't count |
+| Fraud proofs | `FraudRecord` nullifier per `(merchant, menu_root)`; self-reports rejected; reporter bounty 10%, rest to the pool | No repeat slashing; self-slashing can't beat the unlock delay |
+| Pool | `compensate(amount)`, arbiter only | Slashed SKR reaches affected users |
+| Bond lifecycle | `request_bond_unlock` deactivates the merchant; each `withdraw_bond` re-locks; re-activating cancels the unlock; open disputes block withdrawal | No trading on a bond that is leaving; no withdraw-at-will after one request |
+| PoW gate G1 | SHA-256 hashcash; `PowSolution { nonce, slot }`, where `slot` is a SlotHashes entry ≤150 slots old | DrillX verification measured ~468k CU; naming the slot survives slot drift on a live cluster |
+| SGT | Hand-parsed Token-2022 base layout + `TokenGroupMember` TLV (type 23) | Tested against accounts minted by the real Token-2022 program |
+| Errors | 6000–6019 as below, then `Unauthorized`, `BondLocked`, `DisputeOpen`, `NotAFraud`, `InvalidSgt`, `InvalidRules`, `WrongDisputeState`, `SelfReport`, `EvidenceExpired` (6020–6028) | Stable codes for the SDK and app |
+| Instructions | 24 (`idl/tally.json`) | |
+| Compute (measured) | `pay_offer` ~20.4k CU (8 items), ~22.8k (4,096 items), ~22.3k with Lighthouse + PoW | Target < 45k |
 
 ## Design summary
 

@@ -117,6 +117,79 @@
       "args": []
     },
     {
+      "name": "compensate",
+      "discriminator": [
+        27,
+        75,
+        62,
+        233,
+        36,
+        91,
+        225,
+        117
+      ],
+      "accounts": [
+        {
+          "name": "arbiter",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "skr_mint"
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "create_capsule",
       "discriminator": [
         195,
@@ -841,6 +914,33 @@
           }
         },
         {
+          "name": "key_record",
+          "docs": [
+            "The record of the key that signed the evidence (current or recently retired)."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "account",
+                "path": "key_record.signing_key",
+                "account": "KeyRecord"
+              }
+            ]
+          }
+        },
+        {
           "name": "fraud_record",
           "writable": true
         },
@@ -993,6 +1093,30 @@
               {
                 "kind": "account",
                 "path": "merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "key_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "signing_key"
               }
             ]
           }
@@ -1177,6 +1301,7 @@
       "accounts": [
         {
           "name": "authority",
+          "writable": true,
           "signer": true,
           "relations": [
             "merchant"
@@ -1185,6 +1310,59 @@
         {
           "name": "merchant",
           "writable": true
+        },
+        {
+          "name": "old_key_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "account",
+                "path": "merchant.signing_key",
+                "account": "Merchant"
+              }
+            ]
+          }
+        },
+        {
+          "name": "new_key_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  107,
+                  101,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "new_key"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -1669,6 +1847,19 @@
       ]
     },
     {
+      "name": "KeyRecord",
+      "discriminator": [
+        71,
+        3,
+        224,
+        40,
+        16,
+        111,
+        28,
+        230
+      ]
+    },
+    {
       "name": "Merchant",
       "discriminator": [
         71,
@@ -1897,6 +2088,16 @@
       "code": 6026,
       "name": "WrongDisputeState",
       "msg": "Dispute is not in the required state"
+    },
+    {
+      "code": 6027,
+      "name": "SelfReport",
+      "msg": "A merchant cannot report its own fraud"
+    },
+    {
+      "code": 6028,
+      "name": "EvidenceExpired",
+      "msg": "Evidence signed with a retired key is too old"
     }
   ],
   "types": [
@@ -2166,6 +2367,41 @@
       }
     },
     {
+      "name": "KeyRecord",
+      "docs": [
+        "Validity record for every menu-signing key a merchant has ever used. Never closed, so a",
+        "rotated-out key's signatures stay attributable (and slashable) for a bounded window."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "signing_key",
+            "type": "pubkey"
+          },
+          {
+            "name": "valid_from",
+            "type": "u64"
+          },
+          {
+            "name": "valid_until",
+            "docs": [
+              "`u64::MAX` while the key is current."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "LeafArgs",
       "type": {
         "kind": "struct",
@@ -2414,6 +2650,13 @@
                 8
               ]
             }
+          },
+          {
+            "name": "slot",
+            "docs": [
+              "The SlotHashes slot the client mined against; must be at most `MAX_POW_AGE` old."
+            ],
+            "type": "u64"
           }
         ]
       }
