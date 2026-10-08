@@ -54,6 +54,20 @@ class Rpc(private val transport: (String) -> String) {
         return Base64.getDecoder().decode(v.jsonObject["data"]!!.jsonArray[0].jsonPrimitive.content)
     }
 
+    /** `(address, data)` of every token account `owner` holds under `programId`. */
+    fun getTokenAccountsByOwner(owner: String, programId: String): List<Pair<String, ByteArray>> {
+        val v = call(
+            "getTokenAccountsByOwner",
+            str(owner),
+            buildJsonObject { put("programId", programId) },
+            cfg("encoding" to "base64", "commitment" to "confirmed"),
+        ).jsonObject["value"]!!.jsonArray
+        return v.map { e ->
+            val o = e.jsonObject
+            o["pubkey"]!!.jsonPrimitive.content to Base64.getDecoder().decode(o["account"]!!.jsonObject["data"]!!.jsonArray[0].jsonPrimitive.content)
+        }
+    }
+
     fun sendTransaction(wire: ByteArray, skipPreflight: Boolean = false): String =
         call(
             "sendTransaction",

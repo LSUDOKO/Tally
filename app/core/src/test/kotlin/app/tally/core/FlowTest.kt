@@ -69,6 +69,7 @@ class FlowTest {
                 "getSlot" in body -> """{"jsonrpc":"2.0","result":12345,"id":1}"""
                 "getLatestBlockhash" in body -> """{"jsonrpc":"2.0","result":{"context":{"slot":1},"value":{"blockhash":"4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi","lastValidBlockHeight":9}},"id":1}"""
                 "getAccountInfo" in body -> """{"jsonrpc":"2.0","result":{"context":{"slot":1},"value":{"data":["${Base64.getEncoder().encodeToString(byteArrayOf(1, 2, 3))}","base64"],"owner":"x","lamports":1,"executable":false}},"id":1}"""
+                "getTokenAccountsByOwner" in body -> """{"jsonrpc":"2.0","result":{"context":{"slot":1},"value":[{"pubkey":"Acc1","account":{"data":["${Base64.getEncoder().encodeToString(byteArrayOf(9))}","base64"]}}]},"id":1}"""
                 "getSignatureStatuses" in body -> """{"jsonrpc":"2.0","result":{"context":{"slot":1},"value":[{"confirmationStatus":"confirmed","err":{"InstructionError":[1,{"Custom":6007}]}}]},"id":1}"""
                 else -> """{"jsonrpc":"2.0","error":{"code":-32601,"message":"nope"},"id":1}"""
             }
@@ -76,6 +77,7 @@ class FlowTest {
         assertEquals(12345, rpc.getSlot())
         assertEquals("4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi", rpc.getLatestBlockhash())
         assertEquals(listOf<Byte>(1, 2, 3), rpc.getAccountData("x")!!.toList())
+        assertEquals("Acc1", rpc.getTokenAccountsByOwner("o", Programs.TOKEN_2022).single().first)
         val st = rpc.getSignatureStatus("sig")!!
         assertEquals(6007, ErrorText.code(st.err!!))
     }
