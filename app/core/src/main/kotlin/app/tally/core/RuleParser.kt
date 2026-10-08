@@ -2,8 +2,8 @@ package app.tally.core
 
 /** Structured capsule rules the owner reviews as chips before signing in Seed Vault. */
 data class ParsedRules(val categories: List<Int>, val perTxCap: Long, val dailyCap: Long, val cheapestByDefault: Boolean) {
-    fun toRules(expirySlot: Long, minMerchantBond: Long = 1_000_000_000) =
-        Rules(perTxCap, dailyCap, Rules.categories(*categories.toIntArray()), minMerchantBond, expirySlot)
+    fun toRules(expirySlot: Long, minMerchantBond: Long = 1_000_000_000, flags: Int = 0) =
+        Rules(perTxCap, dailyCap, Rules.categories(*categories.toIntArray()), minMerchantBond, expirySlot, flags)
 }
 
 /**

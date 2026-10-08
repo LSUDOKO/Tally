@@ -161,6 +161,18 @@ object Message {
     }
 }
 
+object AssociatedToken {
+    /** `CreateIdempotent` (instruction 1): make sure `owner` has an ATA for `mint`. */
+    fun createIdempotent(payer: String, owner: String, mint: String) = Instruction(
+        Programs.ASSOCIATED_TOKEN,
+        listOf(
+            AccountMeta(payer, true, true), AccountMeta(Pda.ata(owner, mint), false, true), AccountMeta(owner, false, false),
+            AccountMeta(mint, false, false), AccountMeta(Programs.SYSTEM, false, false), AccountMeta(Programs.TOKEN, false, false),
+        ),
+        byteArrayOf(1),
+    )
+}
+
 object SystemProgram {
     /** System `Transfer` (instruction 2): move lamports, e.g. the owner topping up the agent's fee balance. */
     fun transfer(from: String, to: String, lamports: Long) =
