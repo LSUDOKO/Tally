@@ -2,6 +2,7 @@ package app.tally.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +59,8 @@ fun MerchantScreen(s: Session) {
     var qr by remember { mutableStateOf<String?>(null) }
     var nonce by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var busyPow by remember { mutableStateOf(false) }
+    var catalog by remember { mutableStateOf(g.store.catalog) }
+    var editing by remember { mutableStateOf(false) }
 
     suspend fun reload() {
         val auth = s.ownerAddress ?: return
@@ -68,7 +71,7 @@ fun MerchantScreen(s: Session) {
         while (live) {
             val auth = s.ownerAddress ?: break
             val slot = withContext(Dispatchers.IO) { runCatching { g.rpc.getSlot() }.getOrNull() }
-            if (slot != null) qr = terminal.publish(terminal.merchantAddress(auth), slot, nonce++, Catalog.DEFAULT).second
+            if (slot != null) qr = terminal.publish(terminal.merchantAddress(auth), slot, nonce++, catalog).second
             delay(20_000)
         }
     }
@@ -122,12 +125,29 @@ fun MerchantScreen(s: Session) {
                         }
                     }, enabled = !busyPow)
                 }
+                Secondary(if (editing) "Done editing menu" else "Edit menu (${catalog.size} items)", { editing = !editing; if (!editing) g.store.catalog = catalog })
+                if (editing) {
+                    catalog.forEachIndexed { i, e ->
+                        Card {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(e.name, { v -> catalog = catalog.toMutableList().also { it[i] = e.copy(name = v.take(40)) } }, Modifier.fillMaxWidth(), label = { Text("Item") })
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    OutlinedTextField(usdc(e.priceMicro), { v -> v.toDoubleOrNull()?.let { d -> catalog = catalog.toMutableList().also { it[i] = e.copy(priceMicro = (d * 1_000_000).toLong()) } } }, Modifier.weight(1f), label = { Text("Price (USDC)") })
+                                    OutlinedTextField("${e.category}", { v -> v.toIntOrNull()?.takeIf { it in 0..255 }?.let { c -> catalog = catalog.toMutableList().also { it[i] = e.copy(category = c) } } }, Modifier.weight(1f), label = { Text("Category code") })
+                                }
+                                Text("Remove", color = TallyColors.Blocked, modifier = Modifier.clickable { catalog = catalog.filterIndexed { k, _ -> k != i } })
+                            }
+                        }
+                    }
+                    Secondary("Add item", { catalog = catalog + Catalog.Entry("New item", 3, 4_000_000) })
+                    Body("Category floors (cheapest per category) are computed and signed for you. Codes: 0 food · 1 drinks · 2 snacks · 3 coffee · 4 transit · 5 groceries.", TallyColors.Muted)
+                }
                 qr?.takeIf { live }?.let { text ->
                     val bmp = remember(text) { QrCode.render(text) }
                     Box(Modifier.fillMaxWidth().aspectRatio(1f).background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(24.dp)).padding(16.dp)) {
                         Image(bmp.asImageBitmap(), contentDescription = "Signed menu QR", modifier = Modifier.fillMaxSize())
                     }
-                    Mono("re-signs every ~20 s · window 120 slots · ${Catalog.DEFAULT.size} items · ${text.length} chars")
+                    Mono("re-signs every ~20 s · window 120 slots · ${catalog.size} items · ${text.length} chars")
                 }
             }
             Gap(24)
