@@ -14,3 +14,7 @@ build/
 .idea/
 sdk/node_modules/
 scripts/node_modules/
+app/**/build/
+app/.gradle/
+app/.kotlin/
+.kotlin/
