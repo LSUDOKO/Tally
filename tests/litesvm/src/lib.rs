@@ -15,6 +15,10 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use solana_transaction_error::TransactionError;
 
+pub mod lighthouse;
+pub mod pay;
+
+pub use pay::*;
 pub use tally::{constants::*, errors::TallyError};
 
 pub type TxResult = Result<TransactionMetadata, FailedTransactionMetadata>;
@@ -61,6 +65,7 @@ pub struct Env {
     pub capsule_id: u64,
     pub capsule: Pubkey,
     pub vault: Pubkey,
+    pub menu_nonce: u64,
 }
 
 /// Default test rules: coffee only (category 3), $6 per purchase, $15 per cycle,
@@ -115,6 +120,7 @@ impl Env {
             capsule_id: 1,
             capsule: Pubkey::default(),
             vault: Pubkey::default(),
+            menu_nonce: 1,
         };
         let (o, a) = (env.owner.pubkey(), env.agent.pubkey());
         env.svm.airdrop(&o, 10_000_000_000).unwrap();
@@ -396,5 +402,40 @@ impl Env {
             data: tally::instruction::CloseCapsule {}.data(),
         };
         self.send(&[ix], &[&owner])
+    }
+}
+
+// ---------------------------------------------------------------- misc helpers
+impl Env {
+    pub fn next_nonce(&mut self) -> u64 {
+        self.menu_nonce += 1;
+        self.menu_nonce
+    }
+
+    pub fn capsule_flags(&self) -> u8 {
+        if self.exists(&self.capsule) {
+            self.capsule_state().flags
+        } else {
+            0
+        }
+    }
+
+    /// Register a second merchant (fresh authority) that uses `signing_key`. Returns `(merchant, payout)`.
+    pub fn register_extra_merchant(&mut self, signing_key: &ed25519_dalek::SigningKey, bond: u64) -> (Pubkey, Pubkey) {
+        let saved = (self.merchant_auth.insecure_clone(), self.merchant, self.payout, self.merchant_signer.clone());
+        self.merchant_auth = Keypair::new();
+        self.svm.airdrop(&self.merchant_auth.pubkey(), 10_000_000_000).unwrap();
+        self.merchant = pda(&[MERCHANT_SEED, self.merchant_auth.pubkey().as_ref()]);
+        self.merchant_signer = signing_key.clone();
+        let skr = self.skr;
+        self.try_register_merchant(skr, bond).expect("register extra merchant");
+        let out = (self.merchant, self.payout);
+        (self.merchant_auth, self.merchant, self.payout, self.merchant_signer) = saved;
+        out
+    }
+
+    /// Standard funded environment: merchant bonded with 5,000 SKR, coffee capsule with $20.
+    pub fn funded() -> Self {
+        Env::new().with_merchant(5_000_000_000).with_capsule(coffee_rules(), 20_000_000)
     }
 }
