@@ -2,6 +2,7 @@
 // docs/14 (red-team segment). Failing transactions are sent with preflight skipped so they land
 // on-chain and their reverts are visible on the explorer. Writes docs/DEVNET.md (devnet only).
 //
+// Run once per day per capsule: the demo spends $10.40 of the capsule's $15 daily cap.
 // Usage: TALLY_CLUSTER=devnet pnpm -C scripts attack
 import { writeFileSync } from 'node:fs';
 import { type Address } from '@solana/kit';
@@ -60,7 +61,8 @@ async function main() {
   };
 
   const run = async (scenario: string, expected: string, build: () => Promise<Parameters<typeof send>[1]>, expectOk: boolean) => {
-    const r = await send(agent, await build(), { land: !expectOk });
+    // Always land (skip preflight) so every outcome, success or revert, is an on-chain transaction.
+    const r = await send(agent, await build(), { land: true });
     let result: string;
     if (r.ok) result = 'paid';
     else {

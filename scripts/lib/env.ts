@@ -121,8 +121,8 @@ export async function send(feePayer: KeyPairSigner, instructions: Instruction[],
   } catch (e) {
     const text = String((e as Error)?.message ?? e);
     const cause = JSON.stringify((e as { cause?: unknown }).cause ?? (e as { context?: unknown }).context ?? {});
-    const m = /custom program error: (0x[0-9a-f]+)|"Custom":(\d+)|code[":\s]+(\d{4})/i.exec(text + cause);
-    const code = m ? (m[1] ? parseInt(m[1], 16) : Number(m[2] ?? m[3])) : undefined;
+    const m = /custom program error: (0x[0-9a-f]+)|"Custom":(\d+)/i.exec(text + cause);
+    const code = m ? (m[1] ? parseInt(m[1], 16) : Number(m[2])) : undefined;
     return { signature, ok: false, error: text.split('\n')[0], code };
   }
 }
