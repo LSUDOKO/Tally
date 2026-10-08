@@ -58,6 +58,16 @@ describe('pay_offer transaction builder', () => {
   });
 });
 
+describe('tampering', () => {
+  it('keeps the signed root when an item is tampered, so the program sees NotOnMenu', async () => {
+    const s = await setup();
+    const tampered = { ...s.menu, items: s.menu.items.map((i, k) => (k === 0 ? { ...i, price: 9_900_000n } : i)) };
+    const ixs = await buildPayOfferInstructions({ menu: tampered, index: 0, capsule: s.capsule, agent: s.agent, payout: s.payout });
+    const data = ixs[ixs.length - 1].data!;
+    expect(Buffer.from(data.slice(8, 40)).equals(Buffer.from(s.menu.root))).toBe(true);
+  });
+});
+
 describe('error sentences', () => {
   it('explains known codes in plain language', () => {
     expect(explainError(6013)).toBe("That's pricier than the cheapest match, so your approval is needed.");

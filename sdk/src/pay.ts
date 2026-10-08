@@ -114,7 +114,8 @@ export async function buildPayOfferInstructions(p: PayOfferParams): Promise<Inst
     vault: p.capsule.vault,
     payout: p.payout,
     receipt: await receiptAddress(p.capsule.address, p.menu.merchant, p.menu.menuNonce, item.id),
-    menuRoot: tree.root(),
+    // The signed root, never a recomputed one: a tampered item must fail Merkle inclusion.
+    menuRoot: p.menu.root,
     issuedSlot: p.menu.issuedSlot,
     expiresSlot: p.menu.expiresSlot,
     menuNonce: p.menu.menuNonce,
