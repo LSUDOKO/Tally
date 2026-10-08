@@ -286,7 +286,7 @@ pub mod tally {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct PowSolution { pub nonce: [u8; 8], pub digest: [u8; 16] }
+pub struct PowSolution { pub nonce: [u8; 8] } // as built: hashcash nonce only
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct PayOfferArgs {
