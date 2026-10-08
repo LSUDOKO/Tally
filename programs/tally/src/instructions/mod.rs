@@ -9,3 +9,5 @@ pub mod pay_offer;
 pub use pay_offer::*;
 pub mod slashing;
 pub use slashing::*;
+pub mod dispute;
+pub use dispute::*;

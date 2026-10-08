@@ -97,4 +97,20 @@ pub mod tally {
     ) -> Result<()> {
         instructions::slashing::prove_floor_fraud(ctx, header, leaf_a, proof_a, leaf_b, proof_b)
     }
+
+    pub fn open_dispute(ctx: Context<OpenDispute>, evidence_hash: [u8; 32]) -> Result<()> {
+        instructions::dispute::open_dispute(ctx, evidence_hash)
+    }
+
+    pub fn resolve_dispute(ctx: Context<ResolveDispute>, upheld: bool, slash_amount: u64) -> Result<()> {
+        instructions::dispute::resolve_dispute(ctx, upheld, slash_amount)
+    }
+
+    pub fn request_bond_unlock(ctx: Context<BondAdmin>) -> Result<()> {
+        instructions::dispute::request_bond_unlock(ctx)
+    }
+
+    pub fn withdraw_bond(ctx: Context<WithdrawBond>, amount: u64) -> Result<()> {
+        instructions::dispute::withdraw_bond(ctx, amount)
+    }
 }
