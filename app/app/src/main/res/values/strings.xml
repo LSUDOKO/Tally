@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Tally</string>
+    <string name="widget_description">Today\'s agent spend and attacks blocked</string>
+    <string name="hce_description">Tally merchant menu</string>
 </resources>
