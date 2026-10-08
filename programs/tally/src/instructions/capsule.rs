@@ -73,13 +73,20 @@ pub struct CreateCapsule<'info> {
 }
 
 pub fn create_capsule(ctx: Context<CreateCapsule>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
+    let c = new_capsule(ctx.accounts.owner.key(), agent, ctx.accounts.mint.key(), ctx.accounts.vault.key(), capsule_id, ctx.bumps.capsule, &rules)?;
+    ctx.accounts.capsule.set_inner(c);
+    Ok(())
+}
+
+/// Build a validated capsule; shared by the plain and SGT-verified creation paths.
+pub fn new_capsule(owner: Pubkey, agent: Pubkey, mint: Pubkey, vault: Pubkey, capsule_id: u64, bump: u8, rules: &Rules) -> Result<Capsule> {
     let now = Clock::get()?.slot;
     rules.validate(now)?;
     let mut c = Capsule {
-        owner: ctx.accounts.owner.key(),
+        owner,
         agent,
-        mint: ctx.accounts.mint.key(),
-        vault: ctx.accounts.vault.key(),
+        mint,
+        vault,
         per_tx_cap: 0,
         daily_cap: 0,
         spent_in_cycle: 0,
@@ -91,11 +98,10 @@ pub fn create_capsule(ctx: Context<CreateCapsule>, capsule_id: u64, rules: Rules
         sgt_mint: Pubkey::default(),
         frozen: false,
         capsule_id,
-        bump: ctx.bumps.capsule,
+        bump,
     };
     rules.apply(&mut c);
-    ctx.accounts.capsule.set_inner(c);
-    Ok(())
+    Ok(c)
 }
 
 /// Shared accounts for owner-only state changes.
