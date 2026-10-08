@@ -8,6 +8,11 @@ import app.tally.BuildConfig
 import app.tally.agent.AgentResult
 import app.tally.agent.AgentSource
 import app.tally.core.Accounts
+import app.tally.core.AssociatedToken
+import app.tally.core.Lighthouse
+import app.tally.core.Sgt
+import app.tally.core.SystemProgram
+import app.tally.core.sha256
 import app.tally.core.Base58
 import app.tally.core.Ed25519
 import app.tally.core.Hex
@@ -62,6 +67,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     var capsule by mutableStateOf<Accounts.Capsule?>(null)
     var vaultBalance by mutableStateOf(0L)
     var agentSol by mutableStateOf(0L)
+    /** The owner's Seeker Genesis Token `(token account, mint)`, when this device has one. */
+    var sgt by mutableStateOf<Pair<String, String>?>(null)
 
     var payload by mutableStateOf<SignedPayload?>(null)
     var merchant by mutableStateOf<Accounts.Merchant?>(null)
@@ -111,19 +118,93 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val c = capsuleAddress?.let { rpc.getAccountData(it) }?.let(Accounts::capsule)
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
+        sgt = ownerAddress?.let { findSgt(it) }
     }
 
-    suspend fun createCapsule(rules: ParsedRules, fundMicro: Long) = work("Waiting for Seed Vault") {
+    /** Look for a Seeker Genesis Token of the configured collection in the owner's Token-2022 accounts. */
+    private fun findSgt(owner: String): Pair<String, String>? = runCatching {
+        if (config.sgtGroup.isBlank()) return null
+        val ownerKey = Base58.decode(owner)
+        g.rpc.getTokenAccountsByOwner(owner, Programs.TOKEN_2022).firstNotNullOfOrNull { (acct, data) ->
+            val (mint, _) = Sgt.holding(data, ownerKey) ?: return@firstNotNullOfOrNull null
+            val mintData = g.rpc.getAccountData(mint) ?: return@firstNotNullOfOrNull null
+            if (Sgt.groupOf(mintData, Base58.decode(mint)) == config.sgtGroup) acct to mint else null
+        }
+    }.getOrNull()
+
+    suspend fun createCapsule(rules: ParsedRules, fundMicro: Long, requireLighthouse: Boolean = false) = work("Waiting for Seed Vault") {
         val ownerAddr = ownerAddress ?: owner.connect().also { ownerAddress = it; g.store.ownerAddress = it }
         val usdcMint = config.usdcMint.ifBlank { error("Cluster config missing: run scripts/export-app-config.ts") }
         val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
         val expiry = slot + 30L * 216_000 // ~30 days
-        val ixs = mutableListOf<Instruction>(TallyIx.createCapsule(ownerAddr, g.store.capsuleId, rules.toRules(expiry), agentAddress, usdcMint))
+        val r = rules.toRules(expiry, flags = if (requireLighthouse) 1 else 0)
+        val seeker = withContext(Dispatchers.IO) { findSgt(ownerAddr) }
+        val ixs = mutableListOf<Instruction>(TallyIx.createCapsule(ownerAddr, g.store.capsuleId, r, agentAddress, usdcMint, sgt = seeker))
         if (fundMicro > 0) ixs += TallyIx.fund(ownerAddr, TallyPda.capsule(ownerAddr, g.store.capsuleId), usdcMint, fundMicro)
         val sig = owner.signAndSend(ixs, g.rpc)
         log("Capsule created", "Tally", fundMicro, "paid", "Rules signed in ${owner.label}", sig)
         refreshNow()
         screen = Screen.Home
+    }
+
+    suspend fun updateRules(rules: ParsedRules, requireLighthouse: Boolean) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val cap = capsuleAddress ?: return@work
+        val expiry = capsule?.expirySlot ?: (withContext(Dispatchers.IO) { g.rpc.getSlot() } + 30L * 216_000)
+        // The program keeps FLAG_SGT_VERIFIED itself; owner rules may not set it.
+        val r = rules.toRules(expiry, flags = if (requireLighthouse) 1 else 0)
+        owner.signAndSend(listOf(TallyIx.updateRules(o, cap, r)), g.rpc)
+        refreshNow()
+        screen = Screen.Home
+    }
+
+    suspend fun fund(amountMicro: Long) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        owner.signAndSend(listOf(TallyIx.fund(o, capsuleAddress!!, c.mint, amountMicro)), g.rpc)
+        refreshNow()
+    }
+
+    suspend fun withdraw(amountMicro: Long) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        owner.signAndSend(listOf(AssociatedToken.createIdempotent(o, o, c.mint), TallyIx.withdraw(o, capsuleAddress!!, c.mint, amountMicro)), g.rpc)
+        refreshNow()
+    }
+
+    /** The agent pays network fees and receipt rent; the owner tops it up with SOL. */
+    suspend fun topUpAgent(lamports: Long = 50_000_000) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        owner.signAndSend(listOf(SystemProgram.transfer(o, agentAddress, lamports)), g.rpc)
+        refreshNow()
+    }
+
+    /** Seeker-only promo: one on-chain claim per Seeker Genesis Token per promo id. */
+    suspend fun claimPromo(promoId: Long = 1) = work("Claiming Seeker promo") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        val sig = owner.signAndSend(listOf(TallyIx.claimPromo(o, capsuleAddress!!, c.sgtMint, promoId)), g.rpc)
+        log("Seeker promo #$promoId claimed", "Tally", 0, "paid", "One claim per Seeker Genesis Token", sig)
+    }
+
+    /** Anyone can slash a merchant whose own signed menu contradicts its certified cheapest price. */
+    suspend fun reportFraud() = work("Reporting merchant") {
+        val o = ownerAddress ?: owner.connect()
+        val p = payload ?: return@work
+        val ixs = TallyIx.fraudReport(o, p.menu, config.skrMint) ?: error("This menu has no provable contradiction")
+        val sig = owner.signAndSend(listOf(AssociatedToken.createIdempotent(o, o, config.skrMint)) + ixs, g.rpc)
+        log("Reported ${merchant?.name}: contradictory floor", merchant?.name ?: "", 0, "blocked", "Fraud proof accepted: part of the merchant's SKR bond was slashed (10% to you, 90% to the compensation pool).", sig, attack = true)
+        toast = "Fraud proven on-chain. The merchant's bond was slashed."
+    }
+
+    /** Dispute a settled purchase (wrong goods, not delivered); the configured arbiter resolves it. */
+    suspend fun dispute(entry: LogEntry, reason: String) = work("Opening dispute") {
+        val o = ownerAddress ?: return@work
+        val receipt = entry.receipt ?: error("This entry has no on-chain receipt")
+        val merchantPda = entry.merchantPda ?: error("Unknown merchant")
+        val sig = owner.signAndSend(listOf(TallyIx.openDispute(o, capsuleAddress!!, receipt, merchantPda, sha256(reason.toByteArray()))), g.rpc)
+        g.store.markDisputed(receipt)
+        log("Dispute opened: ${entry.title}", entry.merchant, entry.amountMicro, "pending", "Reason: $reason. The merchant's bond can't be withdrawn while this is open.", sig)
     }
 
     suspend fun setFrozen(frozen: Boolean) = work(if (frozen) "Freezing" else "Unfreezing") {
@@ -174,12 +255,12 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         return PowSolution(nonceBytes, slot)
     }
 
-    private fun params(p: SignedPayload, index: Int, ownerSigns: Boolean, overridePayout: String? = null, pow: PowSolution? = null): PayOfferParams {
+    private fun params(p: SignedPayload, index: Int, ownerSigns: Boolean, overridePayout: String? = null, pow: PowSolution? = null, lighthouseVaultAfter: Long? = null): PayOfferParams {
         val c = capsule ?: error("Create a capsule first")
         val m = merchant ?: error("Scan a merchant first")
         return PayOfferParams(
             menu = p.menu, index = index, capsule = capsuleAddress!!, owner = c.owner, vault = c.vault, mint = c.mint,
-            agent = agentAddress, payout = overridePayout ?: m.payout, ownerSigns = ownerSigns, pow = pow,
+            agent = agentAddress, payout = overridePayout ?: m.payout, ownerSigns = ownerSigns, pow = pow, lighthouseVaultAfter = lighthouseVaultAfter,
             computeUnitLimit = 80_000, priorityMicroLamports = 10_000,
         )
     }
@@ -198,7 +279,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         }
         val needsOwner = Purchase.needsOwner(item, m.skrBonded, c.minMerchantBond, p.menu.window)
         val pow = withContext(Dispatchers.Default) { powFor(m, capsuleAddress!!, p.menu.menuNonce) }
-        val ixs = PayOffer.build(params(p, index, needsOwner, pow = pow))
+        val lighthouse = if (c.flags and 1 != 0) vaultBalance - item.price else null
+        val ixs = PayOffer.build(params(p, index, needsOwner, pow = pow, lighthouseVaultAfter = lighthouse))
         val wire = g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
         if (needsOwner) {
             val post = withContext(Dispatchers.IO) { g.rpc.simulate(wire, listOf(c.vault)) }
@@ -234,7 +316,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
             is Outcome.Reverted -> PayResult(false, "Blocked on-chain", outcome.sentence, sig)
             is Outcome.Pending -> PayResult(false, "Still confirming", "The network is slow; check Receipts in a moment.", sig)
         }
-        log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack)
+        val receipt = payload?.let { pl -> capsuleAddress?.let { TallyPda.receipt(it, pl.menu.merchant, pl.menu.menuNonce, item.id) } }
+        log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack, receipt.takeIf { r.ok }, payload?.menu?.merchant)
         payResult = r
         refreshNow()
         return r
@@ -276,8 +359,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
 
     // ------------------------------------------------------------------ log
 
-    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false) {
-        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack))
+    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false, receipt: String? = null, merchantPda: String? = null) {
+        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack, receipt, merchantPda))
         logVersion++
         app.tally.widget.TallyWidget.refresh(context)
     }

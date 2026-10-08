@@ -15,6 +15,10 @@ data class LogEntry(
     val detail: String,
     val signature: String? = null,
     val attack: Boolean = false,
+    /** Receipt PDA of a settled purchase (enables disputes) and the merchant registry entry. */
+    val receipt: String? = null,
+    val merchantPda: String? = null,
+    val disputed: Boolean = false,
 )
 
 /** Small persisted app state (SharedPreferences + JSON). */
@@ -42,10 +46,20 @@ class Store(context: Context) {
         get() = prefs.getString("rpc", null)
         set(v) = prefs.edit().putString("rpc", v).apply()
 
+    /** The merchant terminal's editable catalog (defaults to the demo café). */
+    var catalog: List<app.tally.merchant.Catalog.Entry>
+        get() = prefs.getString("catalog", null)?.let { runCatching { json.decodeFromString<List<app.tally.merchant.Catalog.Entry>>(it) }.getOrNull() }
+            ?: app.tally.merchant.Catalog.DEFAULT
+        set(v) = prefs.edit().putString("catalog", json.encodeToString(v)).apply()
+
     fun log(): List<LogEntry> = prefs.getString("log", null)?.let { runCatching { json.decodeFromString<List<LogEntry>>(it) }.getOrNull() } ?: emptyList()
 
     fun append(e: LogEntry) {
         prefs.edit().putString("log", json.encodeToString(listOf(e) + log().take(199))).apply()
+    }
+
+    fun markDisputed(receipt: String) {
+        prefs.edit().putString("log", json.encodeToString(log().map { if (it.receipt == receipt) it.copy(disputed = true) else it })).apply()
     }
 
     fun attacksBlockedThisWeek(now: Long = System.currentTimeMillis()): Int =
