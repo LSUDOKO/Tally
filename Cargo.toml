@@ -11,3 +11,8 @@ repository = "https://github.com/LSUDOKO/Tally"
 overflow-checks = true
 lto = "fat"
 codegen-units = 1
+
+# Test builds pull in the whole Agave runtime (LiteSVM); skipping debug info keeps target/ small.
+[profile.dev]
+debug = 0
+incremental = false
