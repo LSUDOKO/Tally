@@ -98,6 +98,17 @@ pub struct Dispute {
     pub bump: u8,
 }
 
+/// Nullifier for a proven floor contradiction: one slash per (merchant, signed menu root).
+#[account]
+#[derive(InitSpace)]
+pub struct FraudRecord {
+    pub merchant: Pubkey,
+    pub menu_root: [u8; 32],
+    pub reporter: Pubkey,
+    pub amount: u64,
+    pub slot: u64,
+}
+
 /// One promo claim per Seeker Genesis Token per promo id.
 #[account]
 #[derive(InitSpace)]

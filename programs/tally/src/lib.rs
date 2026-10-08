@@ -86,4 +86,15 @@ pub mod tally {
     pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         instructions::pay_offer::pay_offer(ctx, args)
     }
+
+    pub fn prove_floor_fraud(
+        ctx: Context<ProveFloorFraud>,
+        header: MenuHeaderArgs,
+        leaf_a: LeafArgs,
+        proof_a: Vec<[u8; 32]>,
+        leaf_b: LeafArgs,
+        proof_b: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        instructions::slashing::prove_floor_fraud(ctx, header, leaf_a, proof_a, leaf_b, proof_b)
+    }
 }

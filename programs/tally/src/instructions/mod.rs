@@ -7,3 +7,5 @@ pub mod capsule;
 pub use capsule::*;
 pub mod pay_offer;
 pub use pay_offer::*;
+pub mod slashing;
+pub use slashing::*;

@@ -21,3 +21,4 @@ pub const KNOWN_FLAGS: u8 = FLAG_REQUIRE_LIGHTHOUSE | FLAG_SGT_VERIFIED | FLAG_A
 /// `fixtures/programs/lighthouse.so` and executing real assertions in the test suite.
 pub const LIGHTHOUSE_ID: anchor_lang::prelude::Pubkey =
     anchor_lang::prelude::Pubkey::from_str_const("L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95");
+pub const FRAUD_SEED: &[u8] = b"fraud";
