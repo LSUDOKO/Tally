@@ -85,7 +85,12 @@ pub fn rotate_signing_key(ctx: Context<MerchantAdmin>, new_key: Pubkey) -> Resul
 }
 
 pub fn set_active(ctx: Context<MerchantAdmin>, active: bool) -> Result<()> {
-    ctx.accounts.merchant.active = active;
+    let m = &mut ctx.accounts.merchant;
+    m.active = active;
+    if active {
+        // Re-activating cancels a pending bond unlock.
+        m.bond_unlock_slot = 0;
+    }
     Ok(())
 }
 

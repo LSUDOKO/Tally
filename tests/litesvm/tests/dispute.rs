@@ -109,3 +109,34 @@ fn bond_withdraw_after_delay() {
     let m: tally::state::Merchant = e.fetch(&e.merchant);
     assert_eq!(m.skr_bonded, 0);
 }
+
+#[test]
+fn withdraw_relocks_bond() {
+    let mut e = Env::funded();
+    e.try_request_bond_unlock().unwrap();
+    let s = e.slot();
+    e.warp(s + 1_000);
+    e.try_withdraw_bond(1_000).unwrap();
+    assert_custom_err(
+        &e.try_withdraw_bond(1_000),
+        tally_err(TallyError::BondLocked),
+    );
+}
+
+#[test]
+fn unlock_request_deactivates_merchant() {
+    let mut e = Env::funded();
+    e.try_request_bond_unlock().unwrap();
+    assert_custom_err(&e.pay().send(), tally_err(TallyError::MerchantInactive));
+}
+
+#[test]
+fn reactivating_cancels_unlock() {
+    let mut e = Env::funded();
+    e.try_request_bond_unlock().unwrap();
+    e.set_merchant_active(true);
+    let s = e.slot();
+    e.warp(s + 1_000);
+    assert_custom_err(&e.try_withdraw_bond(1), tally_err(TallyError::BondLocked));
+    e.pay().send().unwrap();
+}

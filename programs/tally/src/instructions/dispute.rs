@@ -146,9 +146,12 @@ pub struct BondAdmin<'info> {
 
 pub fn request_bond_unlock(ctx: Context<BondAdmin>) -> Result<()> {
     let now = Clock::get()?.slot;
-    ctx.accounts.merchant.bond_unlock_slot = now
+    let m = &mut ctx.accounts.merchant;
+    m.bond_unlock_slot = now
         .checked_add(ctx.accounts.config.bond_unlock_delay)
         .ok_or(TallyError::Overflow)?;
+    // A merchant that is leaving cannot keep trading on a bond it is about to withdraw.
+    m.active = false;
     Ok(())
 }
 
@@ -194,5 +197,7 @@ pub fn withdraw_bond(ctx: Context<WithdrawBond>, amount: u64) -> Result<()> {
     )?;
     let m = &mut ctx.accounts.merchant;
     m.skr_bonded = m.skr_bonded.saturating_sub(amount);
+    // Each withdrawal needs a fresh unlock request (and a fresh delay).
+    m.bond_unlock_slot = 0;
     Ok(())
 }
