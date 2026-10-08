@@ -1,11 +1,52 @@
+//! Tally: binds an autonomous agent's purchase to a merchant-signed catalog leaf and the owner's
+//! on-chain rules, inside one atomic transaction. See `docs/00-whitepaper.md`.
 use anchor_lang::prelude::*;
 
 pub mod constants;
 pub mod errors;
 pub mod events;
+pub mod instructions;
 pub mod state;
+
+use instructions::*;
 
 declare_id!("3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk");
 
 #[program]
-pub mod tally {}
+pub mod tally {
+    use super::*;
+
+    pub fn initialize_config(
+        ctx: Context<InitializeConfig>,
+        arbiter: Pubkey,
+        sgt_group: Pubkey,
+        slash_bps: u16,
+        bond_unlock_delay: u64,
+    ) -> Result<()> {
+        instructions::config::initialize_config(ctx, arbiter, sgt_group, slash_bps, bond_unlock_delay)
+    }
+
+    pub fn register_merchant(ctx: Context<RegisterMerchant>, name: [u8; 32], signing_key: Pubkey, bond: u64) -> Result<()> {
+        instructions::merchant::register_merchant(ctx, name, signing_key, bond)
+    }
+
+    pub fn rotate_signing_key(ctx: Context<MerchantAdmin>, new_key: Pubkey) -> Result<()> {
+        instructions::merchant::rotate_signing_key(ctx, new_key)
+    }
+
+    pub fn set_active(ctx: Context<MerchantAdmin>, active: bool) -> Result<()> {
+        instructions::merchant::set_active(ctx, active)
+    }
+
+    pub fn set_pow_difficulty(ctx: Context<MerchantAdmin>, difficulty: u8) -> Result<()> {
+        instructions::merchant::set_pow_difficulty(ctx, difficulty)
+    }
+
+    pub fn set_payout(ctx: Context<SetPayout>) -> Result<()> {
+        instructions::merchant::set_payout(ctx)
+    }
+
+    pub fn top_up_bond(ctx: Context<TopUpBond>, amount: u64) -> Result<()> {
+        instructions::merchant::top_up_bond(ctx, amount)
+    }
+}
