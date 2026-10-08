@@ -15,14 +15,19 @@ fn register_rejects_fake_skr_mint() {
     let mut env = Env::new();
     let fake = env.create_mint(6);
     let r = env.try_register_merchant(fake, 1);
-    assert_custom_err(&r, anchor_err(anchor_lang::error::ErrorCode::ConstraintAddress));
+    assert_custom_err(
+        &r,
+        anchor_err(anchor_lang::error::ErrorCode::ConstraintAddress),
+    );
 }
 
 #[test]
 fn only_authority_rotates_key() {
     let mut env = Env::new().with_merchant(1);
     let intruder = solana_keypair::Keypair::new();
-    assert!(env.try_rotate_signing_key_as(&intruder, solana_pubkey::Pubkey::new_unique()).is_err());
+    assert!(env
+        .try_rotate_signing_key_as(&intruder, solana_pubkey::Pubkey::new_unique())
+        .is_err());
 }
 
 #[test]

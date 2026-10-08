@@ -5,7 +5,12 @@ use crate::hash::sha256v;
 
 /// `SHA256("TALLY_POW_V1" || menu_nonce_le64 || capsule || slot_hash)`.
 pub fn pow_challenge(menu_nonce: u64, capsule: &[u8; 32], slot_hash: &[u8; 32]) -> [u8; 32] {
-    sha256v(&[b"TALLY_POW_V1", &menu_nonce.to_le_bytes(), capsule, slot_hash])
+    sha256v(&[
+        b"TALLY_POW_V1",
+        &menu_nonce.to_le_bytes(),
+        capsule,
+        slot_hash,
+    ])
 }
 
 pub fn leading_zero_bits(h: &[u8; 32]) -> u32 {

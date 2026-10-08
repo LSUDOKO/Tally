@@ -58,12 +58,22 @@ mod tests {
     use alloc::vec::Vec;
 
     fn it(n: u8, cat: u16, price: u64) -> Item {
-        Item { id: [n; 16], category: cat, price, floor: 0 }
+        Item {
+            id: [n; 16],
+            category: cat,
+            price,
+            floor: 0,
+        }
     }
 
     #[test]
     fn leaf_preimage_is_prefix_id_cat_price_floor() {
-        let i = Item { id: [9; 16], category: 0x0103, price: 4_500_000, floor: 3_500_000 };
+        let i = Item {
+            id: [9; 16],
+            category: 0x0103,
+            price: 4_500_000,
+            floor: 3_500_000,
+        };
         let mut pre = alloc::vec![0x00u8];
         pre.extend_from_slice(&[9; 16]);
         pre.extend_from_slice(&0x0103u16.to_le_bytes());
@@ -75,7 +85,12 @@ mod tests {
 
     #[test]
     fn changing_price_changes_leaf() {
-        let a = Item { id: [1; 16], category: 3, price: 450, floor: 450 };
+        let a = Item {
+            id: [1; 16],
+            category: 3,
+            price: 450,
+            floor: 450,
+        };
         let b = Item { price: 990, ..a };
         assert_ne!(leaf_hash(&a), leaf_hash(&b));
     }
@@ -84,7 +99,10 @@ mod tests {
     fn floors_are_min_per_category() {
         let mut v = alloc::vec![it(1, 3, 590), it(2, 3, 450), it(3, 0, 300), it(4, 3, 520)];
         compute_floors(&mut v);
-        assert_eq!(v.iter().map(|i| i.floor).collect::<Vec<_>>(), [450, 450, 300, 450]);
+        assert_eq!(
+            v.iter().map(|i| i.floor).collect::<Vec<_>>(),
+            [450, 450, 300, 450]
+        );
         assert_eq!(find_floor_contradiction(&v), None);
     }
 

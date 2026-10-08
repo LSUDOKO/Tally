@@ -8,7 +8,11 @@ fn pay_offer_under_45k_cu() {
     let mut e = Env::funded();
     let m = e.pay().send().unwrap();
     println!("pay_offer CU (8-item menu) = {}", m.compute_units_consumed);
-    assert!(m.compute_units_consumed < 45_000, "pay_offer used {} CU", m.compute_units_consumed);
+    assert!(
+        m.compute_units_consumed < 45_000,
+        "pay_offer used {} CU",
+        m.compute_units_consumed
+    );
 }
 
 #[test]
@@ -18,13 +22,21 @@ fn deep_proof_stays_cheap() {
         .map(|i| {
             let mut id = [0u8; 16];
             id[..4].copy_from_slice(&i.to_le_bytes());
-            Item { id, category: 3, price: 4_500_000 + u64::from(i), floor: 0 }
+            Item {
+                id,
+                category: 3,
+                price: 4_500_000 + u64::from(i),
+                floor: 0,
+            }
         })
         .collect();
     compute_floors(&mut items);
     let mut e = Env::funded();
     let m = e.pay().items(items).item(0).send().unwrap();
-    println!("pay_offer CU (4,096-item menu, depth 12) = {}", m.compute_units_consumed);
+    println!(
+        "pay_offer CU (4,096-item menu, depth 12) = {}",
+        m.compute_units_consumed
+    );
     assert!(m.compute_units_consumed < 45_000);
 }
 
@@ -36,6 +48,9 @@ fn full_featured_pay_under_45k_cu() {
     let capsule = e.capsule;
     let sol = e.solve_pow_for(capsule, 1, 8);
     let m = e.pay().pow(sol).send().unwrap();
-    println!("pay_offer CU (lighthouse + pow) = {}", m.compute_units_consumed);
+    println!(
+        "pay_offer CU (lighthouse + pow) = {}",
+        m.compute_units_consumed
+    );
     assert!(m.compute_units_consumed < 45_000);
 }

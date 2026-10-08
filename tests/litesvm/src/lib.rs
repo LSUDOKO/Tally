@@ -1,6 +1,10 @@
 //! LiteSVM harness for the Tally program. Loads `target/deploy/tally.so`, creates test mints
 //! (USDC 6dp, SKR 6dp), initialises `Config`, and offers builders for merchants, capsules
 //! and `pay_offer` transactions so each threat-model test is a few lines.
+// `TxResult` mirrors LiteSVM's large error type, and tamper hooks take `&mut Vec<Instruction>`
+// because attacks insert and remove instructions.
+#![allow(clippy::result_large_err, clippy::ptr_arg)]
+
 use anchor_lang::{AccountDeserialize, InstructionData, ToAccountMetas};
 use litesvm::{
     types::{FailedTransactionMetadata, TransactionMetadata},
@@ -43,9 +47,15 @@ pub fn assert_custom_err(r: &TxResult, code: u32) {
     match r {
         Err(f) => match &f.err {
             TransactionError::InstructionError(_, InstructionError::Custom(c)) if *c == code => {}
-            other => panic!("expected custom error {code}, got {other:?}\nlogs:\n{}", f.meta.logs.join("\n")),
+            other => panic!(
+                "expected custom error {code}, got {other:?}\nlogs:\n{}",
+                f.meta.logs.join("\n")
+            ),
         },
-        Ok(m) => panic!("expected custom error {code}, but tx succeeded\nlogs:\n{}", m.logs.join("\n")),
+        Ok(m) => panic!(
+            "expected custom error {code}, but tx succeeded\nlogs:\n{}",
+            m.logs.join("\n")
+        ),
     }
 }
 
@@ -100,16 +110,31 @@ impl Env {
     pub fn new() -> Self {
         let mut svm = LiteSVM::new();
         let so = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/deploy/tally.so");
-        assert!(std::path::Path::new(so).exists(), "run `cargo build-sbf --manifest-path programs/tally/Cargo.toml` first");
-        svm.add_program_from_file(tally::ID, so).expect("load tally.so");
-        let lh = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/programs/lighthouse.so");
-        svm.add_program_from_file(lighthouse::LIGHTHOUSE_ID, lh).expect("load lighthouse.so");
+        assert!(
+            std::path::Path::new(so).exists(),
+            "run `cargo build-sbf --manifest-path programs/tally/Cargo.toml` first"
+        );
+        svm.add_program_from_file(tally::ID, so)
+            .expect("load tally.so");
+        let lh = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/programs/lighthouse.so"
+        );
+        svm.add_program_from_file(lighthouse::LIGHTHOUSE_ID, lh)
+            .expect("load lighthouse.so");
         let admin = Keypair::new();
         svm.airdrop(&admin.pubkey(), 100_000_000_000).unwrap();
-        let usdc = CreateMint::new(&mut svm, &admin).decimals(6).send().unwrap();
-        let skr = CreateMint::new(&mut svm, &admin).decimals(6).send().unwrap();
+        let usdc = CreateMint::new(&mut svm, &admin)
+            .decimals(6)
+            .send()
+            .unwrap();
+        let skr = CreateMint::new(&mut svm, &admin)
+            .decimals(6)
+            .send()
+            .unwrap();
         let merchant_auth = Keypair::new();
-        svm.airdrop(&merchant_auth.pubkey(), 10_000_000_000).unwrap();
+        svm.airdrop(&merchant_auth.pubkey(), 10_000_000_000)
+            .unwrap();
         let merchant = pda(&[MERCHANT_SEED, merchant_auth.pubkey().as_ref()]);
         let mut env = Env {
             svm,
@@ -133,7 +158,8 @@ impl Env {
         env.svm.airdrop(&o, 10_000_000_000).unwrap();
         env.svm.airdrop(&a, 10_000_000_000).unwrap();
         env.capsule = pda(&[CAPSULE_SEED, o.as_ref(), &env.capsule_id.to_le_bytes()]);
-        env.vault = anchor_spl::associated_token::get_associated_token_address(&env.capsule, &env.usdc);
+        env.vault =
+            anchor_spl::associated_token::get_associated_token_address(&env.capsule, &env.usdc);
         env.sgt_group_mint = env.create_sgt_group();
         env.initialize_config().expect("initialize_config");
         env
@@ -141,14 +167,22 @@ impl Env {
 
     pub fn send(&mut self, ixs: &[Instruction], signers: &[&Keypair]) -> TxResult {
         let payer = signers.first().map(|k| k.pubkey());
-        let tx = Transaction::new_signed_with_payer(ixs, payer.as_ref(), signers, self.svm.latest_blockhash());
+        let tx = Transaction::new_signed_with_payer(
+            ixs,
+            payer.as_ref(),
+            signers,
+            self.svm.latest_blockhash(),
+        );
         let r = self.svm.send_transaction(tx);
         self.svm.expire_blockhash();
         r
     }
 
     pub fn fetch<T: AccountDeserialize>(&self, key: &Pubkey) -> T {
-        let acc = self.svm.get_account(key).unwrap_or_else(|| panic!("account {key} missing"));
+        let acc = self
+            .svm
+            .get_account(key)
+            .unwrap_or_else(|| panic!("account {key} missing"));
         T::try_deserialize(&mut &acc.data[..]).expect("deserialize")
     }
 
@@ -157,9 +191,11 @@ impl Env {
     }
 
     pub fn token_balance(&self, account: &Pubkey) -> u64 {
-        litesvm_token::get_spl_account::<litesvm_token::spl_token::state::Account>(&self.svm, account)
-            .map(|a| a.amount)
-            .unwrap_or(0)
+        litesvm_token::get_spl_account::<litesvm_token::spl_token::state::Account>(
+            &self.svm, account,
+        )
+        .map(|a| a.amount)
+        .unwrap_or(0)
     }
 
     pub fn slot(&self) -> u64 {
@@ -171,15 +207,23 @@ impl Env {
     }
 
     pub fn create_mint(&mut self, decimals: u8) -> Pubkey {
-        CreateMint::new(&mut self.svm, &self.admin).decimals(decimals).send().unwrap()
+        CreateMint::new(&mut self.svm, &self.admin)
+            .decimals(decimals)
+            .send()
+            .unwrap()
     }
 
     pub fn ata(&mut self, owner: &Pubkey, mint: &Pubkey) -> Pubkey {
-        CreateAssociatedTokenAccount::new(&mut self.svm, &self.admin, mint).owner(owner).send().unwrap()
+        CreateAssociatedTokenAccount::new(&mut self.svm, &self.admin, mint)
+            .owner(owner)
+            .send()
+            .unwrap()
     }
 
     pub fn mint_to(&mut self, mint: &Pubkey, account: &Pubkey, amount: u64) {
-        MintTo::new(&mut self.svm, &self.admin, mint, account, amount).send().unwrap();
+        MintTo::new(&mut self.svm, &self.admin, mint, account, amount)
+            .send()
+            .unwrap();
     }
 
     pub fn pool(&self) -> Pubkey {
@@ -217,7 +261,8 @@ impl Env {
 
     /// Register the default merchant with `bond` SKR. Mints the SKR to the authority first.
     pub fn with_merchant(mut self, bond: u64) -> Self {
-        self.try_register_merchant(self.skr, bond).expect("register_merchant");
+        self.try_register_merchant(self.skr, bond)
+            .expect("register_merchant");
         self
     }
 
@@ -247,7 +292,9 @@ impl Env {
             .to_account_metas(None),
             data: tally::instruction::RegisterMerchant {
                 name,
-                signing_key: Pubkey::new_from_array(self.merchant_signer.verifying_key().to_bytes()),
+                signing_key: Pubkey::new_from_array(
+                    self.merchant_signer.verifying_key().to_bytes(),
+                ),
                 bond,
             }
             .data(),
@@ -258,32 +305,49 @@ impl Env {
     pub fn merchant_admin_ix(&self, authority: &Pubkey, data: Vec<u8>) -> Instruction {
         Instruction {
             program_id: tally::ID,
-            accounts: tally::accounts::MerchantAdmin { authority: *authority, merchant: self.merchant }.to_account_metas(None),
+            accounts: tally::accounts::MerchantAdmin {
+                authority: *authority,
+                merchant: self.merchant,
+            }
+            .to_account_metas(None),
             data,
         }
     }
 
     pub fn try_rotate_signing_key_as(&mut self, signer: &Keypair, new_key: Pubkey) -> TxResult {
-        let ix = self.merchant_admin_ix(&signer.pubkey(), tally::instruction::RotateSigningKey { new_key }.data());
+        let ix = self.merchant_admin_ix(
+            &signer.pubkey(),
+            tally::instruction::RotateSigningKey { new_key }.data(),
+        );
         self.svm.airdrop(&signer.pubkey(), 1_000_000_000).unwrap();
         self.send(&[ix], &[signer])
     }
 
     pub fn rotate_signing_key(&mut self, new_signer: ed25519_dalek::SigningKey) {
         let auth = self.merchant_auth.insecure_clone();
-        self.try_rotate_signing_key_as(&auth, Pubkey::new_from_array(new_signer.verifying_key().to_bytes())).unwrap();
+        self.try_rotate_signing_key_as(
+            &auth,
+            Pubkey::new_from_array(new_signer.verifying_key().to_bytes()),
+        )
+        .unwrap();
         self.merchant_signer = new_signer;
     }
 
     pub fn set_merchant_active(&mut self, active: bool) {
         let auth = self.merchant_auth.insecure_clone();
-        let ix = self.merchant_admin_ix(&auth.pubkey(), tally::instruction::SetActive { active }.data());
+        let ix = self.merchant_admin_ix(
+            &auth.pubkey(),
+            tally::instruction::SetActive { active }.data(),
+        );
         self.send(&[ix], &[&auth]).unwrap();
     }
 
     pub fn set_pow_difficulty(&mut self, difficulty: u8) {
         let auth = self.merchant_auth.insecure_clone();
-        let ix = self.merchant_admin_ix(&auth.pubkey(), tally::instruction::SetPowDifficulty { difficulty }.data());
+        let ix = self.merchant_admin_ix(
+            &auth.pubkey(),
+            tally::instruction::SetPowDifficulty { difficulty }.data(),
+        );
         self.send(&[ix], &[&auth]).unwrap();
     }
 }
@@ -309,12 +373,19 @@ impl Env {
     fn capsule_owner_ix(&self, data: Vec<u8>) -> Instruction {
         Instruction {
             program_id: tally::ID,
-            accounts: tally::accounts::CapsuleOwner { owner: self.owner.pubkey(), capsule: self.capsule }.to_account_metas(None),
+            accounts: tally::accounts::CapsuleOwner {
+                owner: self.owner.pubkey(),
+                capsule: self.capsule,
+            }
+            .to_account_metas(None),
             data,
         }
     }
 
-    fn resolve(&self, mut rules: tally::instructions::capsule::Rules) -> tally::instructions::capsule::Rules {
+    fn resolve(
+        &self,
+        mut rules: tally::instructions::capsule::Rules,
+    ) -> tally::instructions::capsule::Rules {
         if rules.expiry_slot == 0 {
             rules.expiry_slot = self.slot() + RELATIVE_EXPIRY;
         }
@@ -337,7 +408,12 @@ impl Env {
                 system_program: SYSTEM,
             }
             .to_account_metas(None),
-            data: tally::instruction::CreateCapsule { capsule_id: self.capsule_id, rules, agent: self.agent.pubkey() }.data(),
+            data: tally::instruction::CreateCapsule {
+                capsule_id: self.capsule_id,
+                rules,
+                agent: self.agent.pubkey(),
+            }
+            .data(),
         };
         self.send(&[ix], &[&owner])
     }
@@ -382,7 +458,8 @@ impl Env {
     }
 
     pub fn freeze(&mut self) {
-        self.try_owner_op(tally::instruction::Freeze {}.data()).unwrap();
+        self.try_owner_op(tally::instruction::Freeze {}.data())
+            .unwrap();
     }
 
     pub fn update_rules(&mut self, rules: tally::instructions::capsule::Rules) -> TxResult {
@@ -429,22 +506,41 @@ impl Env {
     }
 
     /// Register a second merchant (fresh authority) that uses `signing_key`. Returns `(merchant, payout)`.
-    pub fn register_extra_merchant(&mut self, signing_key: &ed25519_dalek::SigningKey, bond: u64) -> (Pubkey, Pubkey) {
-        let saved = (self.merchant_auth.insecure_clone(), self.merchant, self.payout, self.merchant_signer.clone());
+    pub fn register_extra_merchant(
+        &mut self,
+        signing_key: &ed25519_dalek::SigningKey,
+        bond: u64,
+    ) -> (Pubkey, Pubkey) {
+        let saved = (
+            self.merchant_auth.insecure_clone(),
+            self.merchant,
+            self.payout,
+            self.merchant_signer.clone(),
+        );
         self.merchant_auth = Keypair::new();
-        self.svm.airdrop(&self.merchant_auth.pubkey(), 10_000_000_000).unwrap();
+        self.svm
+            .airdrop(&self.merchant_auth.pubkey(), 10_000_000_000)
+            .unwrap();
         self.merchant = pda(&[MERCHANT_SEED, self.merchant_auth.pubkey().as_ref()]);
         self.merchant_signer = signing_key.clone();
         let skr = self.skr;
-        self.try_register_merchant(skr, bond).expect("register extra merchant");
+        self.try_register_merchant(skr, bond)
+            .expect("register extra merchant");
         let out = (self.merchant, self.payout);
-        (self.merchant_auth, self.merchant, self.payout, self.merchant_signer) = saved;
+        (
+            self.merchant_auth,
+            self.merchant,
+            self.payout,
+            self.merchant_signer,
+        ) = saved;
         out
     }
 
     /// Standard funded environment: merchant bonded with 5,000 SKR, coffee capsule with $20.
     pub fn funded() -> Self {
-        Env::new().with_merchant(5_000_000_000).with_capsule(coffee_rules(), 20_000_000)
+        Env::new()
+            .with_merchant(5_000_000_000)
+            .with_capsule(coffee_rules(), 20_000_000)
     }
 }
 

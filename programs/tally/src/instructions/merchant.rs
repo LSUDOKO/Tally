@@ -34,7 +34,12 @@ pub struct RegisterMerchant<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn register_merchant(ctx: Context<RegisterMerchant>, name: [u8; 32], signing_key: Pubkey, bond: u64) -> Result<()> {
+pub fn register_merchant(
+    ctx: Context<RegisterMerchant>,
+    name: [u8; 32],
+    signing_key: Pubkey,
+    bond: u64,
+) -> Result<()> {
     if bond > 0 {
         token_interface::transfer_checked(
             CpiContext::new(
@@ -136,6 +141,9 @@ pub fn top_up_bond(ctx: Context<TopUpBond>, amount: u64) -> Result<()> {
         ctx.accounts.skr_mint.decimals,
     )?;
     let m = &mut ctx.accounts.merchant;
-    m.skr_bonded = m.skr_bonded.checked_add(amount).ok_or(TallyError::Overflow)?;
+    m.skr_bonded = m
+        .skr_bonded
+        .checked_add(amount)
+        .ok_or(TallyError::Overflow)?;
     Ok(())
 }

@@ -72,14 +72,35 @@ pub struct CreateCapsule<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn create_capsule(ctx: Context<CreateCapsule>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
-    let c = new_capsule(ctx.accounts.owner.key(), agent, ctx.accounts.mint.key(), ctx.accounts.vault.key(), capsule_id, ctx.bumps.capsule, &rules)?;
+pub fn create_capsule(
+    ctx: Context<CreateCapsule>,
+    capsule_id: u64,
+    rules: Rules,
+    agent: Pubkey,
+) -> Result<()> {
+    let c = new_capsule(
+        ctx.accounts.owner.key(),
+        agent,
+        ctx.accounts.mint.key(),
+        ctx.accounts.vault.key(),
+        capsule_id,
+        ctx.bumps.capsule,
+        &rules,
+    )?;
     ctx.accounts.capsule.set_inner(c);
     Ok(())
 }
 
 /// Build a validated capsule; shared by the plain and SGT-verified creation paths.
-pub fn new_capsule(owner: Pubkey, agent: Pubkey, mint: Pubkey, vault: Pubkey, capsule_id: u64, bump: u8, rules: &Rules) -> Result<Capsule> {
+pub fn new_capsule(
+    owner: Pubkey,
+    agent: Pubkey,
+    mint: Pubkey,
+    vault: Pubkey,
+    capsule_id: u64,
+    bump: u8,
+    rules: &Rules,
+) -> Result<Capsule> {
     let now = Clock::get()?.slot;
     rules.validate(now)?;
     let mut c = Capsule {

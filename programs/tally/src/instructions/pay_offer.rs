@@ -10,7 +10,10 @@ use tally_core::{
 };
 
 use crate::{
-    checks::{introspection::verify_prev_ed25519, lighthouse::require_terminal_lighthouse, pow::verify_pow},
+    checks::{
+        introspection::verify_prev_ed25519, lighthouse::require_terminal_lighthouse,
+        pow::verify_pow,
+    },
     constants::*,
     errors::TallyError,
     events::Paid,
@@ -93,23 +96,41 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         menu_nonce: args.menu_nonce,
         item_count: args.item_count,
     });
-    verify_prev_ed25519(&ctx.accounts.ix_sysvar.to_account_info(), &merchant.signing_key, &header)?;
+    verify_prev_ed25519(
+        &ctx.accounts.ix_sysvar.to_account_info(),
+        &merchant.signing_key,
+        &header,
+    )?;
 
     // 4. freshness tiers: <=150 slots autonomous; up to 9,000 only if the capsule allows it
     //    and the owner co-signs (enforced with invariant 8 below)
-    require!(args.issued_slot <= slot && slot <= args.expires_slot, TallyError::Stale);
+    require!(
+        args.issued_slot <= slot && slot <= args.expires_slot,
+        TallyError::Stale
+    );
     let window = args.expires_slot - args.issued_slot;
     let extended = window > MAX_AUTONOMOUS_WINDOW;
     require!(window <= MAX_EXTENDED_WINDOW, TallyError::WindowTooLong);
     if extended {
-        require!(ctx.accounts.capsule.flags & FLAG_ALLOW_EXTENDED != 0, TallyError::WindowTooLong);
+        require!(
+            ctx.accounts.capsule.flags & FLAG_ALLOW_EXTENDED != 0,
+            TallyError::WindowTooLong
+        );
     }
 
     // 5. registry payout: `has_one = payout` + mint constraint in the accounts struct
 
     // 6. Merkle inclusion of the leaf the program hashes itself
-    let leaf = leaf_hash(&Item { id: args.item_id, category: args.category, price: args.price, floor: args.category_floor });
-    require!(verify_proof(leaf, &args.proof, args.menu_root), TallyError::NotOnMenu);
+    let leaf = leaf_hash(&Item {
+        id: args.item_id,
+        category: args.category,
+        price: args.price,
+        floor: args.category_floor,
+    });
+    require!(
+        verify_proof(leaf, &args.proof, args.menu_root),
+        TallyError::NotOnMenu
+    );
 
     // G1. merchant-enabled proof-of-work anti-flood gate
     if merchant.pow_difficulty > 0 {
@@ -130,13 +151,20 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         cap.cycle_start_slot = slot;
         cap.spent_in_cycle = 0;
     }
-    let new_total = cap.spent_in_cycle.checked_add(args.price).ok_or(TallyError::Overflow)?;
+    let new_total = cap
+        .spent_in_cycle
+        .checked_add(args.price)
+        .ok_or(TallyError::Overflow)?;
     require!(new_total <= cap.daily_cap, TallyError::OverDaily);
 
     // 8. Cheapest-Match Invariant, bond tier and extended windows all need the owner
-    let needs_owner = args.price > args.category_floor || merchant.skr_bonded < cap.min_merchant_bond || extended;
+    let needs_owner =
+        args.price > args.category_floor || merchant.skr_bonded < cap.min_merchant_bond || extended;
     if needs_owner {
-        require!(ctx.accounts.owner.is_signer, TallyError::OwnerCosignRequired);
+        require!(
+            ctx.accounts.owner.is_signer,
+            TallyError::OwnerCosignRequired
+        );
     }
 
     // 9. duplicate-settlement nullifier: the Receipt PDA is `init` in the accounts struct
@@ -163,11 +191,20 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
     ctx.accounts.vault.reload()?;
     ctx.accounts.payout.reload()?;
     require!(
-        check_exact_deltas(vault_before, ctx.accounts.vault.amount, payout_before, ctx.accounts.payout.amount, args.price),
+        check_exact_deltas(
+            vault_before,
+            ctx.accounts.vault.amount,
+            payout_before,
+            ctx.accounts.payout.amount,
+            args.price
+        ),
         TallyError::PostCondition
     );
     if ctx.accounts.capsule.flags & FLAG_REQUIRE_LIGHTHOUSE != 0 {
-        require_terminal_lighthouse(&ctx.accounts.ix_sysvar.to_account_info(), &ctx.accounts.vault.key())?;
+        require_terminal_lighthouse(
+            &ctx.accounts.ix_sysvar.to_account_info(),
+            &ctx.accounts.vault.key(),
+        )?;
     }
     ctx.accounts.capsule.spent_in_cycle = new_total;
 
@@ -185,6 +222,12 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         cosigned: needs_owner,
         disputed: false,
     });
-    emit!(Paid { capsule: capsule_key, merchant: merchant_key, item_id: args.item_id, price: args.price, cosigned: needs_owner });
+    emit!(Paid {
+        capsule: capsule_key,
+        merchant: merchant_key,
+        item_id: args.item_id,
+        price: args.price,
+        cosigned: needs_owner
+    });
     Ok(())
 }

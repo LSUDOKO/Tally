@@ -48,7 +48,11 @@ pub fn open_dispute(ctx: Context<OpenDispute>, evidence_hash: [u8; 32]) -> Resul
         opened_slot: Clock::get()?.slot,
         bump: ctx.bumps.dispute,
     });
-    emit!(DisputeOpened { dispute: ctx.accounts.dispute.key(), receipt, claimant });
+    emit!(DisputeOpened {
+        dispute: ctx.accounts.dispute.key(),
+        receipt,
+        claimant
+    });
     Ok(())
 }
 
@@ -70,8 +74,15 @@ pub struct ResolveDispute<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn resolve_dispute(ctx: Context<ResolveDispute>, upheld: bool, slash_amount: u64) -> Result<()> {
-    require!(ctx.accounts.dispute.status == DisputeStatus::Open, TallyError::WrongDisputeState);
+pub fn resolve_dispute(
+    ctx: Context<ResolveDispute>,
+    upheld: bool,
+    slash_amount: u64,
+) -> Result<()> {
+    require!(
+        ctx.accounts.dispute.status == DisputeStatus::Open,
+        TallyError::WrongDisputeState
+    );
     let mut amount = 0;
     if upheld {
         amount = slash_amount.min(ctx.accounts.bond_vault.amount);
@@ -98,14 +109,29 @@ pub fn resolve_dispute(ctx: Context<ResolveDispute>, upheld: bool, slash_amount:
     let m = &mut ctx.accounts.merchant;
     m.open_disputes = m.open_disputes.saturating_sub(1);
     m.skr_bonded = m.skr_bonded.saturating_sub(amount);
-    m.slashed_total = m.slashed_total.checked_add(amount).ok_or(TallyError::Overflow)?;
+    m.slashed_total = m
+        .slashed_total
+        .checked_add(amount)
+        .ok_or(TallyError::Overflow)?;
     let d = &mut ctx.accounts.dispute;
-    d.status = if upheld { DisputeStatus::Upheld } else { DisputeStatus::Rejected };
+    d.status = if upheld {
+        DisputeStatus::Upheld
+    } else {
+        DisputeStatus::Rejected
+    };
     d.slash_amount = amount;
     if amount > 0 {
-        emit!(Slashed { merchant: m.key(), amount, reason: 1 });
+        emit!(Slashed {
+            merchant: m.key(),
+            amount,
+            reason: 1
+        });
     }
-    emit!(DisputeResolved { dispute: d.key(), upheld, slash_amount: amount });
+    emit!(DisputeResolved {
+        dispute: d.key(),
+        upheld,
+        slash_amount: amount
+    });
     Ok(())
 }
 
@@ -120,8 +146,9 @@ pub struct BondAdmin<'info> {
 
 pub fn request_bond_unlock(ctx: Context<BondAdmin>) -> Result<()> {
     let now = Clock::get()?.slot;
-    ctx.accounts.merchant.bond_unlock_slot =
-        now.checked_add(ctx.accounts.config.bond_unlock_delay).ok_or(TallyError::Overflow)?;
+    ctx.accounts.merchant.bond_unlock_slot = now
+        .checked_add(ctx.accounts.config.bond_unlock_delay)
+        .ok_or(TallyError::Overflow)?;
     Ok(())
 }
 
@@ -144,7 +171,10 @@ pub struct WithdrawBond<'info> {
 pub fn withdraw_bond(ctx: Context<WithdrawBond>, amount: u64) -> Result<()> {
     let now = Clock::get()?.slot;
     let m = &ctx.accounts.merchant;
-    require!(m.bond_unlock_slot != 0 && now >= m.bond_unlock_slot, TallyError::BondLocked);
+    require!(
+        m.bond_unlock_slot != 0 && now >= m.bond_unlock_slot,
+        TallyError::BondLocked
+    );
     require!(m.open_disputes == 0, TallyError::DisputeOpen);
     let (authority, bump) = (m.authority, [m.bump]);
     let seeds: &[&[u8]] = &[MERCHANT_SEED, authority.as_ref(), &bump];

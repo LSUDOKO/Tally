@@ -74,7 +74,9 @@ mod tests {
 
     #[test]
     fn sha256v_matches_known_vector() {
-        let expected = hex::decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").unwrap();
+        let expected =
+            hex::decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+                .unwrap();
         assert_eq!(crate::hash::sha256v(&[b"a", b"bc"]).to_vec(), expected);
     }
 }

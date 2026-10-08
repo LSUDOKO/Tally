@@ -5,7 +5,9 @@ use tally_litesvm::*;
 
 #[test]
 fn create_and_fund() {
-    let env = Env::new().with_merchant(1).with_capsule(coffee_rules(), 10_000_000);
+    let env = Env::new()
+        .with_merchant(1)
+        .with_capsule(coffee_rules(), 10_000_000);
     assert_eq!(env.token_balance(&env.vault), 10_000_000);
     let c = env.capsule_state();
     assert_eq!(c.owner, env.owner.pubkey());
@@ -19,7 +21,10 @@ fn rules_reject_per_tx_above_daily() {
     let mut env = Env::new();
     let mut r = coffee_rules();
     r.per_tx_cap = r.daily_cap + 1;
-    assert_custom_err(&env.try_create_capsule(r), tally_err(TallyError::InvalidRules));
+    assert_custom_err(
+        &env.try_create_capsule(r),
+        tally_err(TallyError::InvalidRules),
+    );
 }
 
 #[test]
@@ -27,7 +32,10 @@ fn rules_reject_past_expiry() {
     let mut env = Env::new();
     let mut r = coffee_rules();
     r.expiry_slot = env.slot();
-    assert_custom_err(&env.try_create_capsule(r), tally_err(TallyError::InvalidRules));
+    assert_custom_err(
+        &env.try_create_capsule(r),
+        tally_err(TallyError::InvalidRules),
+    );
 }
 
 #[test]
@@ -35,7 +43,10 @@ fn rules_cannot_self_set_sgt_flag() {
     let mut env = Env::new();
     let mut r = coffee_rules();
     r.flags |= FLAG_SGT_VERIFIED;
-    assert_custom_err(&env.try_create_capsule(r), tally_err(TallyError::InvalidRules));
+    assert_custom_err(
+        &env.try_create_capsule(r),
+        tally_err(TallyError::InvalidRules),
+    );
 }
 
 #[test]
@@ -53,7 +64,8 @@ fn freeze_and_unfreeze() {
     let mut env = Env::new().with_capsule(coffee_rules(), 0);
     env.freeze();
     assert!(env.capsule_state().frozen);
-    env.try_owner_op(tally::instruction::Unfreeze {}.data()).unwrap();
+    env.try_owner_op(tally::instruction::Unfreeze {}.data())
+        .unwrap();
     assert!(!env.capsule_state().frozen);
 }
 
@@ -61,7 +73,8 @@ fn freeze_and_unfreeze() {
 fn set_agent_rotates() {
     let mut env = Env::new().with_capsule(coffee_rules(), 0);
     let next = Keypair::new().pubkey();
-    env.try_owner_op(tally::instruction::SetAgent { new_agent: next }.data()).unwrap();
+    env.try_owner_op(tally::instruction::SetAgent { new_agent: next }.data())
+        .unwrap();
     assert_eq!(env.capsule_state().agent, next);
 }
 
@@ -84,4 +97,3 @@ fn close_returns_funds() {
     assert_eq!(env.token_balance(&env.owner_usdc()), before + 7_000_000);
     assert!(!env.exists(&env.capsule));
 }
-

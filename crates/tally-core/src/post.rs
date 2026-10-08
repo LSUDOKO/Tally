@@ -2,7 +2,13 @@
 
 /// True only when `vault_before - vault_after == price` and `payout_after - payout_before == price`.
 /// Catches extra drains, fee-on-transfer mints shorting the payee, and arithmetic underflow.
-pub fn check_exact_deltas(vault_before: u64, vault_after: u64, payout_before: u64, payout_after: u64, price: u64) -> bool {
+pub fn check_exact_deltas(
+    vault_before: u64,
+    vault_after: u64,
+    payout_before: u64,
+    payout_after: u64,
+    price: u64,
+) -> bool {
     matches!(
         (vault_before.checked_sub(vault_after), payout_after.checked_sub(payout_before)),
         (Some(out), Some(inc)) if out == price && inc == price

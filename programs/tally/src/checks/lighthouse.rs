@@ -14,7 +14,14 @@ pub fn require_terminal_lighthouse(ix_sysvar_account: &AccountInfo, vault: &Pubk
     let cur = ix_sysvar::load_current_index_checked(ix_sysvar_account)? as usize;
     require!(count > cur + 1, TallyError::LighthouseMissing);
     let last = ix_sysvar::load_instruction_at_checked(count - 1, ix_sysvar_account)?;
-    require_keys_eq!(last.program_id, LIGHTHOUSE_ID, TallyError::LighthouseMissing);
-    require!(last.accounts.first().is_some_and(|a| a.pubkey == *vault), TallyError::LighthouseMissing);
+    require_keys_eq!(
+        last.program_id,
+        LIGHTHOUSE_ID,
+        TallyError::LighthouseMissing
+    );
+    require!(
+        last.accounts.first().is_some_and(|a| a.pubkey == *vault),
+        TallyError::LighthouseMissing
+    );
     Ok(())
 }

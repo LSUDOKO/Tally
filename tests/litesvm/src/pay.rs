@@ -34,7 +34,14 @@ pub fn default_items() -> Vec<Item> {
     let mut items: Vec<Item> = raw
         .iter()
         .enumerate()
-        .map(|(i, (c, p))| Item { id: tally_core::hash::sha256v(&[format!("tally-item-{i}").as_bytes()])[..16].try_into().unwrap(), category: *c, price: *p, floor: 0 })
+        .map(|(i, (c, p))| Item {
+            id: tally_core::hash::sha256v(&[format!("tally-item-{i}").as_bytes()])[..16]
+                .try_into()
+                .unwrap(),
+            category: *c,
+            price: *p,
+            floor: 0,
+        })
         .collect();
     compute_floors(&mut items);
     items
@@ -87,28 +94,82 @@ impl Env {
     }
 
     pub fn receipt_address(&self, menu_nonce: u64, item_id: &[u8; 16]) -> Pubkey {
-        pda(&[RECEIPT_SEED, self.capsule.as_ref(), &menu_nonce.to_le_bytes(), item_id])
+        pda(&[
+            RECEIPT_SEED,
+            self.capsule.as_ref(),
+            &menu_nonce.to_le_bytes(),
+            item_id,
+        ])
     }
 }
 
 impl<'a> PayBuilder<'a> {
-    pub fn item(mut self, i: usize) -> Self { self.item = i; self }
-    pub fn items(mut self, items: Vec<Item>) -> Self { self.items = items; self }
-    pub fn owner_signs(mut self) -> Self { self.owner_signs = true; self }
-    pub fn window(mut self, w: u64) -> Self { self.window = w; self }
-    pub fn issued_at(mut self, slot: u64) -> Self { self.issued_at = Some(slot); self }
-    pub fn nonce(mut self, n: u64) -> Self { self.menu_nonce = Some(n); self }
-    pub fn menu_signer(mut self, k: SigningKey) -> Self { self.menu_signer = Some(k); self }
-    pub fn agent(mut self, k: Keypair) -> Self { self.agent = Some(k); self }
-    pub fn payout(mut self, p: Pubkey) -> Self { self.payout = Some(p); self }
+    pub fn item(mut self, i: usize) -> Self {
+        self.item = i;
+        self
+    }
+    pub fn items(mut self, items: Vec<Item>) -> Self {
+        self.items = items;
+        self
+    }
+    pub fn owner_signs(mut self) -> Self {
+        self.owner_signs = true;
+        self
+    }
+    pub fn window(mut self, w: u64) -> Self {
+        self.window = w;
+        self
+    }
+    pub fn issued_at(mut self, slot: u64) -> Self {
+        self.issued_at = Some(slot);
+        self
+    }
+    pub fn nonce(mut self, n: u64) -> Self {
+        self.menu_nonce = Some(n);
+        self
+    }
+    pub fn menu_signer(mut self, k: SigningKey) -> Self {
+        self.menu_signer = Some(k);
+        self
+    }
+    pub fn agent(mut self, k: Keypair) -> Self {
+        self.agent = Some(k);
+        self
+    }
+    pub fn payout(mut self, p: Pubkey) -> Self {
+        self.payout = Some(p);
+        self
+    }
     /// Pay through a different merchant registry entry `(merchant_pda, payout)`.
-    pub fn merchant(mut self, m: (Pubkey, Pubkey)) -> Self { self.merchant = Some(m); self }
-    pub fn pow(mut self, p: PowSolution) -> Self { self.pow = Some(p); self }
-    pub fn lighthouse(mut self, on: bool) -> Self { self.lighthouse = Some(on); self }
-    pub fn lighthouse_amount_off_by(mut self, d: i64) -> Self { self.lighthouse_delta = d; self.lighthouse = Some(true); self }
-    pub fn extra_signer(mut self, k: Keypair) -> Self { self.extra_signers.push(k); self }
-    pub fn args(mut self, f: impl FnOnce(&mut PayOfferArgs) + 'static) -> Self { self.args_hooks.push(Box::new(f)); self }
-    pub fn ixs(mut self, f: impl FnOnce(&mut Vec<Instruction>) + 'static) -> Self { self.ixs_hooks.push(Box::new(f)); self }
+    pub fn merchant(mut self, m: (Pubkey, Pubkey)) -> Self {
+        self.merchant = Some(m);
+        self
+    }
+    pub fn pow(mut self, p: PowSolution) -> Self {
+        self.pow = Some(p);
+        self
+    }
+    pub fn lighthouse(mut self, on: bool) -> Self {
+        self.lighthouse = Some(on);
+        self
+    }
+    pub fn lighthouse_amount_off_by(mut self, d: i64) -> Self {
+        self.lighthouse_delta = d;
+        self.lighthouse = Some(true);
+        self
+    }
+    pub fn extra_signer(mut self, k: Keypair) -> Self {
+        self.extra_signers.push(k);
+        self
+    }
+    pub fn args(mut self, f: impl FnOnce(&mut PayOfferArgs) + 'static) -> Self {
+        self.args_hooks.push(Box::new(f));
+        self
+    }
+    pub fn ixs(mut self, f: impl FnOnce(&mut Vec<Instruction>) + 'static) -> Self {
+        self.ixs_hooks.push(Box::new(f));
+        self
+    }
 
     /// Fresh nonce per call so successive purchases do not collide on the receipt PDA.
     pub fn fresh_menu(self) -> Self {
@@ -124,7 +185,11 @@ impl<'a> PayBuilder<'a> {
         self.env.send(&ixs, &refs)
     }
 
-    fn build(&self, args_hooks: Vec<ArgsHook>, ixs_hooks: Vec<IxsHook>) -> (Vec<Instruction>, Vec<Keypair>) {
+    fn build(
+        &self,
+        args_hooks: Vec<ArgsHook>,
+        ixs_hooks: Vec<IxsHook>,
+    ) -> (Vec<Instruction>, Vec<Keypair>) {
         let env = &*self.env;
         let now = env.slot();
         let issued = self.issued_at.unwrap_or(now);
@@ -154,16 +219,27 @@ impl<'a> PayBuilder<'a> {
             menu_nonce: args.menu_nonce,
             item_count: args.item_count,
         });
-        let signer = self.menu_signer.clone().unwrap_or_else(|| env.merchant_signer.clone());
+        let signer = self
+            .menu_signer
+            .clone()
+            .unwrap_or_else(|| env.merchant_signer.clone());
         let sig = signer.sign(&header).to_bytes();
-        let ed_ix = Instruction { program_id: ED25519_PROGRAM, accounts: vec![], data: build_ix_data(&signer.verifying_key().to_bytes(), &sig, &header) };
+        let ed_ix = Instruction {
+            program_id: ED25519_PROGRAM,
+            accounts: vec![],
+            data: build_ix_data(&signer.verifying_key().to_bytes(), &sig, &header),
+        };
 
         // args hooks run *after* signing: they model a client tampering with the payload.
         for h in args_hooks {
             h(&mut args);
         }
         let item_id_for_receipt = args.item_id;
-        let agent = self.agent.as_ref().map(|k| k.insecure_clone()).unwrap_or_else(|| env.agent.insecure_clone());
+        let agent = self
+            .agent
+            .as_ref()
+            .map(|k| k.insecure_clone())
+            .unwrap_or_else(|| env.agent.insecure_clone());
         let mut metas = tally::accounts::PayOffer {
             capsule: env.capsule,
             agent: agent.pubkey(),
@@ -186,12 +262,21 @@ impl<'a> PayBuilder<'a> {
                 }
             }
         }
-        let pay_ix = Instruction { program_id: tally::ID, accounts: metas, data: tally::instruction::PayOffer { args: args.clone() }.data() };
+        let pay_ix = Instruction {
+            program_id: tally::ID,
+            accounts: metas,
+            data: tally::instruction::PayOffer { args: args.clone() }.data(),
+        };
         let mut ixs = vec![ed_ix, pay_ix];
-        let want_lighthouse = self.lighthouse.unwrap_or_else(|| env.capsule_flags() & crate::FLAG_REQUIRE_LIGHTHOUSE != 0);
+        let want_lighthouse = self
+            .lighthouse
+            .unwrap_or_else(|| env.capsule_flags() & crate::FLAG_REQUIRE_LIGHTHOUSE != 0);
         if want_lighthouse {
-            let expected = (env.token_balance(&env.vault) as i64 - args.price as i64 + self.lighthouse_delta) as u64;
-            ixs.push(crate::lighthouse::assert_token_amount_eq(env.vault, expected));
+            let expected = (env.token_balance(&env.vault) as i64 - args.price as i64
+                + self.lighthouse_delta) as u64;
+            ixs.push(crate::lighthouse::assert_token_amount_eq(
+                env.vault, expected,
+            ));
         }
         for h in ixs_hooks {
             h(&mut ixs);
@@ -243,7 +328,22 @@ pub fn make_two_sig_ix(ix: &mut Instruction, extra: &SigningKey) {
     let (pk2o, s2o) = (m1o + msg.len() as u16, m1o + msg.len() as u16 + 32);
     let m2o = s2o + 64;
     let mut out = vec![2u8, 0];
-    for v in [s1o, u16::MAX, pk1o, u16::MAX, m1o, msg.len() as u16, u16::MAX, s2o, u16::MAX, pk2o, u16::MAX, m2o, junk.len() as u16, u16::MAX] {
+    for v in [
+        s1o,
+        u16::MAX,
+        pk1o,
+        u16::MAX,
+        m1o,
+        msg.len() as u16,
+        u16::MAX,
+        s2o,
+        u16::MAX,
+        pk2o,
+        u16::MAX,
+        m2o,
+        junk.len() as u16,
+        u16::MAX,
+    ] {
         out.extend_from_slice(&v.to_le_bytes());
     }
     out.extend_from_slice(pk);
@@ -265,7 +365,13 @@ impl Env {
 
     /// Solve the hashcash challenge for `capsule` and `menu_nonce` (client-side work).
     pub fn solve_pow_for(&self, capsule: Pubkey, menu_nonce: u64, difficulty: u8) -> PowSolution {
-        let challenge = tally_core::pow::pow_challenge(menu_nonce, &capsule.to_bytes(), &self.recent_slot_hash());
-        PowSolution { nonce: tally_core::pow::solve_hashcash(&challenge, difficulty) }
+        let challenge = tally_core::pow::pow_challenge(
+            menu_nonce,
+            &capsule.to_bytes(),
+            &self.recent_slot_hash(),
+        );
+        PowSolution {
+            nonce: tally_core::pow::solve_hashcash(&challenge, difficulty),
+        }
     }
 }

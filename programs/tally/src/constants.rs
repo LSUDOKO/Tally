@@ -1,4 +1,6 @@
-pub use tally_core::{CYCLE_SLOTS, HEADER_LEN, MAX_AUTONOMOUS_WINDOW, MAX_EXTENDED_WINDOW, MAX_PROOF_DEPTH};
+pub use tally_core::{
+    CYCLE_SLOTS, HEADER_LEN, MAX_AUTONOMOUS_WINDOW, MAX_EXTENDED_WINDOW, MAX_PROOF_DEPTH,
+};
 
 pub const CONFIG_SEED: &[u8] = b"config";
 pub const MERCHANT_SEED: &[u8] = b"merchant";

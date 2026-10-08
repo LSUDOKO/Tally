@@ -7,7 +7,9 @@ use std::str::FromStr;
 use ed25519_dalek::{Signer, SigningKey};
 use serde_json::{json, Value};
 use solana_pubkey::Pubkey;
-use tally_core::{ed25519, hash::sha256v, header::*, menu::*, merkle::MerkleTree, pow, PROGRAM_ID_STR};
+use tally_core::{
+    ed25519, hash::sha256v, header::*, menu::*, merkle::MerkleTree, pow, PROGRAM_ID_STR,
+};
 
 const NAMES: [(&str, u16, u64); 8] = [
     ("Oat latte (regular)", 3, 4_500_000),
@@ -21,7 +23,9 @@ const NAMES: [(&str, u16, u64); 8] = [
 ];
 
 fn item_id(i: usize) -> [u8; 16] {
-    sha256v(&[format!("tally-item-{i}").as_bytes()])[..16].try_into().unwrap()
+    sha256v(&[format!("tally-item-{i}").as_bytes()])[..16]
+        .try_into()
+        .unwrap()
 }
 
 fn menu_json(items: &[Item], names: &[&str], tree: &MerkleTree) -> Vec<Value> {
@@ -36,18 +40,36 @@ fn main() {
     let out = std::env::args().nth(1).expect("output path");
     let program_id = Pubkey::from_str(PROGRAM_ID_STR).unwrap();
     let signer = SigningKey::from_bytes(&[7u8; 32]);
-    let authority = Pubkey::new_from_array(SigningKey::from_bytes(&[8u8; 32]).verifying_key().to_bytes());
-    let (merchant_pda, _) = Pubkey::find_program_address(&[b"merchant", authority.as_ref()], &program_id);
+    let authority = Pubkey::new_from_array(
+        SigningKey::from_bytes(&[8u8; 32])
+            .verifying_key()
+            .to_bytes(),
+    );
+    let (merchant_pda, _) =
+        Pubkey::find_program_address(&[b"merchant", authority.as_ref()], &program_id);
 
     // Honest menu.
-    let mut items: Vec<Item> = NAMES.iter().enumerate()
-        .map(|(i, (_, c, p))| Item { id: item_id(i), category: *c, price: *p, floor: 0 }).collect();
+    let mut items: Vec<Item> = NAMES
+        .iter()
+        .enumerate()
+        .map(|(i, (_, c, p))| Item {
+            id: item_id(i),
+            category: *c,
+            price: *p,
+            floor: 0,
+        })
+        .collect();
     compute_floors(&mut items);
     let names: Vec<&str> = NAMES.iter().map(|n| n.0).collect();
     let tree = MerkleTree::new(items.iter().map(leaf_hash).collect());
     let fields = HeaderFields {
-        program_id: program_id.to_bytes(), merchant_pda: merchant_pda.to_bytes(), menu_root: tree.root(),
-        issued_slot: 1000, expires_slot: 1100, menu_nonce: 42, item_count: items.len() as u32,
+        program_id: program_id.to_bytes(),
+        merchant_pda: merchant_pda.to_bytes(),
+        menu_root: tree.root(),
+        issued_slot: 1000,
+        expires_slot: 1100,
+        menu_nonce: 42,
+        item_count: items.len() as u32,
     };
     let header = build_header(&fields);
     let sig = signer.sign(&header).to_bytes();
@@ -55,12 +77,25 @@ fn main() {
     // Fraud menu: a cheaper drip coffee (honest leaf) appears while the other coffee leaves
     // still certify a 4.50 floor, so the merchant has signed a self-contradiction.
     let mut fraud = items.clone();
-    fraud.insert(0, Item { id: item_id(100), category: 3, price: 3_250_000, floor: 3_250_000 });
+    fraud.insert(
+        0,
+        Item {
+            id: item_id(100),
+            category: 3,
+            price: 3_250_000,
+            floor: 3_250_000,
+        },
+    );
     let mut fraud_names = vec!["Drip coffee"];
     fraud_names.extend(names.iter());
     let (cheap, claimed) = find_floor_contradiction(&fraud).expect("contradiction");
     let ftree = MerkleTree::new(fraud.iter().map(leaf_hash).collect());
-    let ffields = HeaderFields { menu_root: ftree.root(), menu_nonce: 43, item_count: fraud.len() as u32, ..fields };
+    let ffields = HeaderFields {
+        menu_root: ftree.root(),
+        menu_nonce: 43,
+        item_count: fraud.len() as u32,
+        ..fields
+    };
     let fheader = build_header(&ffields);
     let fsig = signer.sign(&fheader).to_bytes();
 

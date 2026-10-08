@@ -8,11 +8,19 @@ use tally_core::{
 
 use crate::errors::TallyError;
 
-pub fn verify_prev_ed25519(ix_sysvar_account: &AccountInfo, key: &Pubkey, msg: &[u8; HEADER_LEN]) -> Result<()> {
+pub fn verify_prev_ed25519(
+    ix_sysvar_account: &AccountInfo,
+    key: &Pubkey,
+    msg: &[u8; HEADER_LEN],
+) -> Result<()> {
     let cur = ix_sysvar::load_current_index_checked(ix_sysvar_account)? as usize;
     require!(cur > 0, TallyError::MissingSig);
     let ix = ix_sysvar::load_instruction_at_checked(cur - 1, ix_sysvar_account)?;
-    require_keys_eq!(ix.program_id, solana_sdk_ids::ed25519_program::ID, TallyError::MissingSig);
+    require_keys_eq!(
+        ix.program_id,
+        solana_sdk_ids::ed25519_program::ID,
+        TallyError::MissingSig
+    );
     require!(ix.accounts.is_empty(), TallyError::BadSigIx);
     let view = parse_single(&ix.data, HEADER_LEN).map_err(|e| match e {
         SigIxError::BadMessageLen => TallyError::WrongMessage,

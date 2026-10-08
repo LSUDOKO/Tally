@@ -15,21 +15,33 @@ fn honest_signature_passes_introspection() {
 #[test]
 fn missing_ed25519() {
     let mut e = Env::funded();
-    let r = e.pay().ixs(|v| { v.remove(0); }).send();
+    let r = e
+        .pay()
+        .ixs(|v| {
+            v.remove(0);
+        })
+        .send();
     assert_custom_err(&r, tally_err(TallyError::MissingSig));
 }
 
 #[test]
 fn ed25519_not_adjacent() {
     let mut e = Env::funded();
-    let r = e.pay().ixs(|v| v.insert(1, ComputeBudgetInstruction::set_compute_unit_limit(400_000))).send();
+    let r = e
+        .pay()
+        .ixs(|v| v.insert(1, ComputeBudgetInstruction::set_compute_unit_limit(400_000)))
+        .send();
     assert_custom_err(&r, tally_err(TallyError::MissingSig));
 }
 
 #[test]
 fn ed25519_cross_ix_exploit_shape_rejected() {
     let mut e = Env::funded();
-    let r = e.pay().args(|a| a.menu_nonce += 1).ixs(cross_ix_exploit).send();
+    let r = e
+        .pay()
+        .args(|a| a.menu_nonce += 1)
+        .ixs(cross_ix_exploit)
+        .send();
     assert_custom_err(&r, tally_err(TallyError::BadSigIx));
 }
 
@@ -43,21 +55,33 @@ fn ed25519_offset_into_header_reverts() {
 #[test]
 fn ed25519_two_sigs() {
     let mut e = Env::funded();
-    let r = e.pay().ixs(|v| make_two_sig_ix(&mut v[0], &SigningKey::from_bytes(&[3; 32]))).send();
+    let r = e
+        .pay()
+        .ixs(|v| make_two_sig_ix(&mut v[0], &SigningKey::from_bytes(&[3; 32])))
+        .send();
     assert_custom_err(&r, tally_err(TallyError::BadSigIx));
 }
 
 #[test]
 fn ed25519_with_accounts() {
     let mut e = Env::funded();
-    let r = e.pay().ixs(|v| v[0].accounts.push(AccountMeta::new_readonly(Pubkey::new_unique(), false))).send();
+    let r = e
+        .pay()
+        .ixs(|v| {
+            v[0].accounts
+                .push(AccountMeta::new_readonly(Pubkey::new_unique(), false))
+        })
+        .send();
     assert_custom_err(&r, tally_err(TallyError::BadSigIx));
 }
 
 #[test]
 fn forged_menu() {
     let mut e = Env::funded();
-    let r = e.pay().menu_signer(SigningKey::from_bytes(&[99; 32])).send();
+    let r = e
+        .pay()
+        .menu_signer(SigningKey::from_bytes(&[99; 32]))
+        .send();
     assert_custom_err(&r, tally_err(TallyError::WrongSigner));
 }
 
@@ -103,9 +127,14 @@ fn rotated_key_rejects_old_menu() {
 fn wrong_agent() {
     let mut e = Env::funded();
     let k = Keypair::new();
-    e.svm.airdrop(&solana_signer::Signer::pubkey(&k), 1_000_000_000).unwrap();
+    e.svm
+        .airdrop(&solana_signer::Signer::pubkey(&k), 1_000_000_000)
+        .unwrap();
     let r = e.pay().agent(k).send();
-    assert_custom_err(&r, anchor_err(anchor_lang::error::ErrorCode::ConstraintHasOne));
+    assert_custom_err(
+        &r,
+        anchor_err(anchor_lang::error::ErrorCode::ConstraintHasOne),
+    );
 }
 
 #[test]

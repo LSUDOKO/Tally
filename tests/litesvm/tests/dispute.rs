@@ -16,7 +16,8 @@ fn dispute_upheld_slashes_to_claimant() {
     e.try_open_dispute(1, 0).unwrap();
     assert!(e.receipt(1, 0).disputed);
     let arbiter = e.admin.insecure_clone();
-    e.try_resolve_dispute(&arbiter, 1, 0, true, 100_000_000).unwrap();
+    e.try_resolve_dispute(&arbiter, 1, 0, true, 100_000_000)
+        .unwrap();
     let skr = e.owner_skr();
     assert_eq!(e.token_balance(&skr), 100_000_000);
     let m: tally::state::Merchant = e.fetch(&e.merchant);
@@ -29,7 +30,8 @@ fn dispute_rejected_no_slash() {
     let mut e = paid();
     e.try_open_dispute(1, 0).unwrap();
     let arbiter = e.admin.insecure_clone();
-    e.try_resolve_dispute(&arbiter, 1, 0, false, 100_000_000).unwrap();
+    e.try_resolve_dispute(&arbiter, 1, 0, false, 100_000_000)
+        .unwrap();
     assert_eq!(e.token_balance(&e.bond_vault()), BOND);
 }
 
@@ -38,7 +40,9 @@ fn only_arbiter_resolves() {
     let mut e = paid();
     e.try_open_dispute(1, 0).unwrap();
     let rando = Keypair::new();
-    e.svm.airdrop(&solana_signer::Signer::pubkey(&rando), 1_000_000_000).unwrap();
+    e.svm
+        .airdrop(&solana_signer::Signer::pubkey(&rando), 1_000_000_000)
+        .unwrap();
     assert!(e.try_resolve_dispute(&rando, 1, 0, true, 1).is_err());
 }
 
@@ -48,7 +52,10 @@ fn cannot_resolve_twice() {
     e.try_open_dispute(1, 0).unwrap();
     let arbiter = e.admin.insecure_clone();
     e.try_resolve_dispute(&arbiter, 1, 0, true, 1).unwrap();
-    assert_custom_err(&e.try_resolve_dispute(&arbiter, 1, 0, true, 1), tally_err(TallyError::WrongDisputeState));
+    assert_custom_err(
+        &e.try_resolve_dispute(&arbiter, 1, 0, true, 1),
+        tally_err(TallyError::WrongDisputeState),
+    );
 }
 
 #[test]
@@ -63,7 +70,8 @@ fn slash_capped_at_bond() {
     let mut e = paid();
     e.try_open_dispute(1, 0).unwrap();
     let arbiter = e.admin.insecure_clone();
-    e.try_resolve_dispute(&arbiter, 1, 0, true, u64::MAX).unwrap();
+    e.try_resolve_dispute(&arbiter, 1, 0, true, u64::MAX)
+        .unwrap();
     assert_eq!(e.token_balance(&e.bond_vault()), 0);
 }
 

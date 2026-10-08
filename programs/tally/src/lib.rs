@@ -24,10 +24,21 @@ pub mod tally {
         slash_bps: u16,
         bond_unlock_delay: u64,
     ) -> Result<()> {
-        instructions::config::initialize_config(ctx, arbiter, sgt_group, slash_bps, bond_unlock_delay)
+        instructions::config::initialize_config(
+            ctx,
+            arbiter,
+            sgt_group,
+            slash_bps,
+            bond_unlock_delay,
+        )
     }
 
-    pub fn register_merchant(ctx: Context<RegisterMerchant>, name: [u8; 32], signing_key: Pubkey, bond: u64) -> Result<()> {
+    pub fn register_merchant(
+        ctx: Context<RegisterMerchant>,
+        name: [u8; 32],
+        signing_key: Pubkey,
+        bond: u64,
+    ) -> Result<()> {
         instructions::merchant::register_merchant(ctx, name, signing_key, bond)
     }
 
@@ -51,7 +62,12 @@ pub mod tally {
         instructions::merchant::top_up_bond(ctx, amount)
     }
 
-    pub fn create_capsule(ctx: Context<CreateCapsule>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
+    pub fn create_capsule(
+        ctx: Context<CreateCapsule>,
+        capsule_id: u64,
+        rules: Rules,
+        agent: Pubkey,
+    ) -> Result<()> {
         instructions::capsule::create_capsule(ctx, capsule_id, rules, agent)
     }
 
@@ -102,7 +118,11 @@ pub mod tally {
         instructions::dispute::open_dispute(ctx, evidence_hash)
     }
 
-    pub fn resolve_dispute(ctx: Context<ResolveDispute>, upheld: bool, slash_amount: u64) -> Result<()> {
+    pub fn resolve_dispute(
+        ctx: Context<ResolveDispute>,
+        upheld: bool,
+        slash_amount: u64,
+    ) -> Result<()> {
         instructions::dispute::resolve_dispute(ctx, upheld, slash_amount)
     }
 
@@ -114,7 +134,12 @@ pub mod tally {
         instructions::dispute::withdraw_bond(ctx, amount)
     }
 
-    pub fn create_capsule_with_sgt(ctx: Context<CreateCapsuleWithSgt>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
+    pub fn create_capsule_with_sgt(
+        ctx: Context<CreateCapsuleWithSgt>,
+        capsule_id: u64,
+        rules: Rules,
+        agent: Pubkey,
+    ) -> Result<()> {
         instructions::sgt::create_capsule_with_sgt(ctx, capsule_id, rules, agent)
     }
 

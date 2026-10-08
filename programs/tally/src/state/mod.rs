@@ -124,7 +124,10 @@ mod tests {
 
     #[test]
     fn receipt_space_matches_doc() {
-        assert_eq!(Receipt::INIT_SPACE, 32 + 32 + 32 + 16 + 2 + 8 + 8 + 8 + 1 + 1);
+        assert_eq!(
+            Receipt::INIT_SPACE,
+            32 + 32 + 32 + 16 + 2 + 8 + 8 + 8 + 1 + 1
+        );
     }
 
     #[test]

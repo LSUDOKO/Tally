@@ -34,7 +34,15 @@ const MSG_OFF: u16 = 112;
 pub fn build_ix_data(pubkey: &[u8; 32], sig: &[u8; 64], msg: &[u8]) -> Vec<u8> {
     let mut d = Vec::with_capacity(MSG_OFF as usize + msg.len());
     d.extend_from_slice(&[1, 0]);
-    for v in [SIG_OFF, u16::MAX, PK_OFF, u16::MAX, MSG_OFF, msg.len() as u16, u16::MAX] {
+    for v in [
+        SIG_OFF,
+        u16::MAX,
+        PK_OFF,
+        u16::MAX,
+        MSG_OFF,
+        msg.len() as u16,
+        u16::MAX,
+    ] {
         d.extend_from_slice(&v.to_le_bytes());
     }
     d.extend_from_slice(pubkey);

@@ -23,11 +23,24 @@ pub struct Sgt {
 }
 
 impl Env {
-    fn create_t22_mint(&mut self, kp: &Keypair, ext: ExtensionType, variable_extra: usize) -> Vec<Instruction> {
+    fn create_t22_mint(
+        &mut self,
+        kp: &Keypair,
+        ext: ExtensionType,
+        variable_extra: usize,
+    ) -> Vec<Instruction> {
         let payer = self.admin.pubkey();
         let len = ExtensionType::try_calculate_account_len::<Mint>(&[ext]).unwrap();
-        let lamports = self.svm.minimum_balance_for_rent_exemption(len + variable_extra + 64);
-        vec![solana_system_interface::instruction::create_account(&payer, &kp.pubkey(), lamports, len as u64, &TOKEN_2022)]
+        let lamports = self
+            .svm
+            .minimum_balance_for_rent_exemption(len + variable_extra + 64);
+        vec![solana_system_interface::instruction::create_account(
+            &payer,
+            &kp.pubkey(),
+            lamports,
+            len as u64,
+            &TOKEN_2022,
+        )]
     }
 
     /// Create an SGT collection (group) and return its mint address.
@@ -35,9 +48,26 @@ impl Env {
         let admin = self.admin.insecure_clone();
         let g = Keypair::new();
         let mut ixs = self.create_t22_mint(&g, ExtensionType::GroupPointer, 80);
-        ixs.push(group_pointer::instruction::initialize(&TOKEN_2022, &g.pubkey(), Some(admin.pubkey()), Some(g.pubkey())).unwrap());
-        ixs.push(t22::initialize_mint2(&TOKEN_2022, &g.pubkey(), &admin.pubkey(), None, 0).unwrap());
-        ixs.push(spl_token_group_interface::instruction::initialize_group(&TOKEN_2022, &g.pubkey(), &g.pubkey(), &admin.pubkey(), Some(admin.pubkey()), 1_000_000));
+        ixs.push(
+            group_pointer::instruction::initialize(
+                &TOKEN_2022,
+                &g.pubkey(),
+                Some(admin.pubkey()),
+                Some(g.pubkey()),
+            )
+            .unwrap(),
+        );
+        ixs.push(
+            t22::initialize_mint2(&TOKEN_2022, &g.pubkey(), &admin.pubkey(), None, 0).unwrap(),
+        );
+        ixs.push(spl_token_group_interface::instruction::initialize_group(
+            &TOKEN_2022,
+            &g.pubkey(),
+            &g.pubkey(),
+            &admin.pubkey(),
+            Some(admin.pubkey()),
+            1_000_000,
+        ));
         self.send(&ixs, &[&admin, &g]).expect("create sgt group");
         g.pubkey()
     }
@@ -47,16 +77,43 @@ impl Env {
         let admin = self.admin.insecure_clone();
         let m = Keypair::new();
         let mut ixs = self.create_t22_mint(&m, ExtensionType::GroupMemberPointer, 80);
-        ixs.push(group_member_pointer::instruction::initialize(&TOKEN_2022, &m.pubkey(), Some(admin.pubkey()), Some(m.pubkey())).unwrap());
-        ixs.push(t22::initialize_mint2(&TOKEN_2022, &m.pubkey(), &admin.pubkey(), None, 0).unwrap());
-        ixs.push(spl_token_group_interface::instruction::initialize_member(&TOKEN_2022, &m.pubkey(), &m.pubkey(), &admin.pubkey(), &group, &admin.pubkey()));
-        let ata = anchor_spl::associated_token::get_associated_token_address_with_program_id(owner, &m.pubkey(), &TOKEN_2022);
+        ixs.push(
+            group_member_pointer::instruction::initialize(
+                &TOKEN_2022,
+                &m.pubkey(),
+                Some(admin.pubkey()),
+                Some(m.pubkey()),
+            )
+            .unwrap(),
+        );
+        ixs.push(
+            t22::initialize_mint2(&TOKEN_2022, &m.pubkey(), &admin.pubkey(), None, 0).unwrap(),
+        );
+        ixs.push(spl_token_group_interface::instruction::initialize_member(
+            &TOKEN_2022,
+            &m.pubkey(),
+            &m.pubkey(),
+            &admin.pubkey(),
+            &group,
+            &admin.pubkey(),
+        ));
+        let ata = anchor_spl::associated_token::get_associated_token_address_with_program_id(
+            owner,
+            &m.pubkey(),
+            &TOKEN_2022,
+        );
         ixs.push(anchor_spl::associated_token::spl_associated_token_account::instruction::create_associated_token_account(&admin.pubkey(), owner, &m.pubkey(), &TOKEN_2022));
         if amount > 0 {
-            ixs.push(t22::mint_to(&TOKEN_2022, &m.pubkey(), &ata, &admin.pubkey(), &[], amount).unwrap());
+            ixs.push(
+                t22::mint_to(&TOKEN_2022, &m.pubkey(), &ata, &admin.pubkey(), &[], amount).unwrap(),
+            );
         }
         self.send(&ixs, &[&admin, &m]).expect("mint sgt");
-        Sgt { group, mint: m.pubkey(), token_account: ata }
+        Sgt {
+            group,
+            mint: m.pubkey(),
+            token_account: ata,
+        }
     }
 
     /// Re-run `initialize_config` is not possible; instead tests create the config with this group.
@@ -86,7 +143,12 @@ impl Env {
                 system_program: SYSTEM,
             }
             .to_account_metas(None),
-            data: tally::instruction::CreateCapsuleWithSgt { capsule_id: self.capsule_id, rules, agent: self.agent.pubkey() }.data(),
+            data: tally::instruction::CreateCapsuleWithSgt {
+                capsule_id: self.capsule_id,
+                rules,
+                agent: self.agent.pubkey(),
+            }
+            .data(),
         };
         self.send(&[ix], &[&owner])
     }

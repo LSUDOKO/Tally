@@ -37,7 +37,12 @@ pub struct LeafArgs {
 
 impl From<LeafArgs> for Item {
     fn from(l: LeafArgs) -> Self {
-        Item { id: l.item_id, category: l.category, price: l.price, floor: l.floor }
+        Item {
+            id: l.item_id,
+            category: l.category,
+            price: l.price,
+            floor: l.floor,
+        }
     }
 }
 
@@ -90,14 +95,28 @@ pub fn prove_floor_fraud(
         menu_nonce: header.menu_nonce,
         item_count: header.item_count,
     });
-    verify_prev_ed25519(&ctx.accounts.ix_sysvar.to_account_info(), &ctx.accounts.merchant.signing_key, &msg)?;
-    require!(verify_proof(leaf_hash(&leaf_a.into()), &proof_a, header.menu_root), TallyError::NotOnMenu);
-    require!(verify_proof(leaf_hash(&leaf_b.into()), &proof_b, header.menu_root), TallyError::NotOnMenu);
-    require!(leaf_a.category == leaf_b.category && leaf_a.price < leaf_b.floor, TallyError::NotAFraud);
+    verify_prev_ed25519(
+        &ctx.accounts.ix_sysvar.to_account_info(),
+        &ctx.accounts.merchant.signing_key,
+        &msg,
+    )?;
+    require!(
+        verify_proof(leaf_hash(&leaf_a.into()), &proof_a, header.menu_root),
+        TallyError::NotOnMenu
+    );
+    require!(
+        verify_proof(leaf_hash(&leaf_b.into()), &proof_b, header.menu_root),
+        TallyError::NotOnMenu
+    );
+    require!(
+        leaf_a.category == leaf_b.category && leaf_a.price < leaf_b.floor,
+        TallyError::NotAFraud
+    );
 
     let vault_amount = ctx.accounts.bond_vault.amount;
     let bps = u128::from(ctx.accounts.config.slash_bps);
-    let mut amount = u64::try_from(u128::from(vault_amount) * bps / 10_000).map_err(|_| TallyError::Overflow)?;
+    let mut amount =
+        u64::try_from(u128::from(vault_amount) * bps / 10_000).map_err(|_| TallyError::Overflow)?;
     if amount == 0 {
         amount = vault_amount;
     }
@@ -108,7 +127,10 @@ pub fn prove_floor_fraud(
     let (authority, bump) = (m.authority, [m.bump]);
     let seeds: &[&[u8]] = &[MERCHANT_SEED, authority.as_ref(), &bump];
     let decimals = ctx.accounts.skr_mint.decimals;
-    for (to, value) in [(ctx.accounts.reporter_skr.to_account_info(), to_reporter), (ctx.accounts.pool.to_account_info(), to_pool)] {
+    for (to, value) in [
+        (ctx.accounts.reporter_skr.to_account_info(), to_reporter),
+        (ctx.accounts.pool.to_account_info(), to_pool),
+    ] {
         if value > 0 {
             token_interface::transfer_checked(
                 CpiContext::new_with_signer(
@@ -129,7 +151,10 @@ pub fn prove_floor_fraud(
 
     let m = &mut ctx.accounts.merchant;
     m.skr_bonded = m.skr_bonded.saturating_sub(amount);
-    m.slashed_total = m.slashed_total.checked_add(amount).ok_or(TallyError::Overflow)?;
+    m.slashed_total = m
+        .slashed_total
+        .checked_add(amount)
+        .ok_or(TallyError::Overflow)?;
     ctx.accounts.fraud_record.set_inner(FraudRecord {
         merchant: merchant_key,
         menu_root: header.menu_root,
@@ -137,6 +162,10 @@ pub fn prove_floor_fraud(
         amount,
         slot: Clock::get()?.slot,
     });
-    emit!(Slashed { merchant: merchant_key, amount, reason: 0 });
+    emit!(Slashed {
+        merchant: merchant_key,
+        amount,
+        reason: 0
+    });
     Ok(())
 }

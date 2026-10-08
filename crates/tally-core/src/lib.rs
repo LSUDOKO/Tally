@@ -17,10 +17,10 @@ pub const ED25519_HEADER_LEN: usize = 16;
 pub const LEAF_PREFIX: u8 = 0x00;
 pub const NODE_PREFIX: u8 = 0x01;
 
+pub mod ed25519;
 pub mod hash;
 pub mod header;
 pub mod menu;
 pub mod merkle;
-pub mod ed25519;
 pub mod post;
 pub mod pow;

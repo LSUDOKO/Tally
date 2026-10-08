@@ -15,5 +15,9 @@ pub fn assert_token_amount_eq(token_account: Pubkey, amount: u64) -> Instruction
     let mut data = vec![ASSERT_TOKEN_ACCOUNT, LOG_SILENT, ASSERTION_AMOUNT];
     data.extend_from_slice(&amount.to_le_bytes());
     data.push(OP_EQUAL);
-    Instruction { program_id: LIGHTHOUSE_ID, accounts: vec![AccountMeta::new_readonly(token_account, false)], data }
+    Instruction {
+        program_id: LIGHTHOUSE_ID,
+        accounts: vec![AccountMeta::new_readonly(token_account, false)],
+        data,
+    }
 }

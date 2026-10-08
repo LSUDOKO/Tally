@@ -27,7 +27,13 @@ impl MerkleTree {
             }
             let next = prev
                 .chunks(2)
-                .map(|p| if p.len() == 2 { node_hash(&p[0], &p[1]) } else { p[0] })
+                .map(|p| {
+                    if p.len() == 2 {
+                        node_hash(&p[0], &p[1])
+                    } else {
+                        p[0]
+                    }
+                })
                 .collect();
             levels.push(next);
         }
@@ -67,7 +73,9 @@ mod tests {
     use alloc::vec::Vec;
 
     fn leaves(n: usize) -> Vec<[u8; 32]> {
-        (0..n).map(|i| crate::hash::sha256v(&[&[i as u8]])).collect()
+        (0..n)
+            .map(|i| crate::hash::sha256v(&[&[i as u8]]))
+            .collect()
     }
 
     #[test]

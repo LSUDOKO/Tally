@@ -20,12 +20,25 @@ use crate::{default_items, Env, TxResult, ED25519_PROGRAM, SPL_TOKEN};
 /// other coffee leaf still certifies a 4.50 floor. Index 0 = drip, index 1 = oat latte.
 pub fn fraud_items() -> Vec<Item> {
     let mut v = default_items();
-    v.insert(0, Item { id: [0xd1; 16], category: 3, price: 3_250_000, floor: 3_250_000 });
+    v.insert(
+        0,
+        Item {
+            id: [0xd1; 16],
+            category: 3,
+            price: 3_250_000,
+            floor: 3_250_000,
+        },
+    );
     v
 }
 
 fn leaf_args(i: &Item) -> LeafArgs {
-    LeafArgs { item_id: i.id, category: i.category, price: i.price, floor: i.floor }
+    LeafArgs {
+        item_id: i.id,
+        category: i.category,
+        price: i.price,
+        floor: i.floor,
+    }
 }
 
 impl Env {
@@ -37,10 +50,24 @@ impl Env {
         (k, ata)
     }
 
-    pub fn try_prove_fraud(&mut self, items: &[Item], a: usize, b: usize, signer: &SigningKey, reporter: &Keypair, reporter_skr: Pubkey) -> TxResult {
+    pub fn try_prove_fraud(
+        &mut self,
+        items: &[Item],
+        a: usize,
+        b: usize,
+        signer: &SigningKey,
+        reporter: &Keypair,
+        reporter_skr: Pubkey,
+    ) -> TxResult {
         let tree = MerkleTree::new(items.iter().map(leaf_hash).collect());
         let now = self.slot();
-        let h = MenuHeaderArgs { menu_root: tree.root(), issued_slot: now, expires_slot: now + 100, menu_nonce: 777, item_count: items.len() as u32 };
+        let h = MenuHeaderArgs {
+            menu_root: tree.root(),
+            issued_slot: now,
+            expires_slot: now + 100,
+            menu_nonce: 777,
+            item_count: items.len() as u32,
+        };
         let header = build_header(&HeaderFields {
             program_id: tally::ID.to_bytes(),
             merchant_pda: self.merchant.to_bytes(),
@@ -51,7 +78,11 @@ impl Env {
             item_count: h.item_count,
         });
         let sig = signer.sign(&header).to_bytes();
-        let ed = Instruction { program_id: ED25519_PROGRAM, accounts: vec![], data: build_ix_data(&signer.verifying_key().to_bytes(), &sig, &header) };
+        let ed = Instruction {
+            program_id: ED25519_PROGRAM,
+            accounts: vec![],
+            data: build_ix_data(&signer.verifying_key().to_bytes(), &sig, &header),
+        };
         let ix = Instruction {
             program_id: tally::ID,
             accounts: tally::accounts::ProveFloorFraud {
@@ -62,7 +93,11 @@ impl Env {
                 skr_mint: self.skr,
                 reporter_skr,
                 pool: self.pool(),
-                fraud_record: crate::pda(&[tally::constants::FRAUD_SEED, self.merchant.as_ref(), &tree.root()]),
+                fraud_record: crate::pda(&[
+                    tally::constants::FRAUD_SEED,
+                    self.merchant.as_ref(),
+                    &tree.root(),
+                ]),
                 system_program: crate::SYSTEM,
                 ix_sysvar: solana_sdk_ids::sysvar::instructions::ID,
                 token_program: SPL_TOKEN,

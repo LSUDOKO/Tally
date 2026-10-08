@@ -21,9 +21,22 @@ pub fn recent_slot_hash(slot_hashes: &AccountInfo) -> Result<[u8; 32]> {
 }
 
 #[inline(never)]
-pub fn verify_pow(slot_hashes: &AccountInfo, capsule: &Pubkey, menu_nonce: u64, pow: Option<&PowSolution>, difficulty: u8) -> Result<()> {
+pub fn verify_pow(
+    slot_hashes: &AccountInfo,
+    capsule: &Pubkey,
+    menu_nonce: u64,
+    pow: Option<&PowSolution>,
+    difficulty: u8,
+) -> Result<()> {
     let pow = pow.ok_or(TallyError::PowRequired)?;
-    let challenge = pow_challenge(menu_nonce, &capsule.to_bytes(), &recent_slot_hash(slot_hashes)?);
-    require!(verify_hashcash(&challenge, &pow.nonce, difficulty), TallyError::PowInvalid);
+    let challenge = pow_challenge(
+        menu_nonce,
+        &capsule.to_bytes(),
+        &recent_slot_hash(slot_hashes)?,
+    );
+    require!(
+        verify_hashcash(&challenge, &pow.nonce, difficulty),
+        TallyError::PowInvalid
+    );
     Ok(())
 }

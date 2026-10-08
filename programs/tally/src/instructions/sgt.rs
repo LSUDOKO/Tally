@@ -43,7 +43,12 @@ pub struct CreateCapsuleWithSgt<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn create_capsule_with_sgt(ctx: Context<CreateCapsuleWithSgt>, capsule_id: u64, rules: Rules, agent: Pubkey) -> Result<()> {
+pub fn create_capsule_with_sgt(
+    ctx: Context<CreateCapsuleWithSgt>,
+    capsule_id: u64,
+    rules: Rules,
+    agent: Pubkey,
+) -> Result<()> {
     let owner = ctx.accounts.owner.key();
     let sgt_mint = verify_sgt(
         &ctx.accounts.sgt_token_account.to_account_info(),
@@ -51,7 +56,15 @@ pub fn create_capsule_with_sgt(ctx: Context<CreateCapsuleWithSgt>, capsule_id: u
         &owner,
         &ctx.accounts.config.sgt_group,
     )?;
-    let mut c = new_capsule(owner, agent, ctx.accounts.mint.key(), ctx.accounts.vault.key(), capsule_id, ctx.bumps.capsule, &rules)?;
+    let mut c = new_capsule(
+        owner,
+        agent,
+        ctx.accounts.mint.key(),
+        ctx.accounts.vault.key(),
+        capsule_id,
+        ctx.bumps.capsule,
+        &rules,
+    )?;
     c.flags |= FLAG_SGT_VERIFIED;
     c.sgt_mint = sgt_mint;
     ctx.accounts.capsule.set_inner(c);
@@ -76,6 +89,10 @@ pub struct ClaimPromo<'info> {
 pub fn claim_promo(ctx: Context<ClaimPromo>, promo_id: u64) -> Result<()> {
     let c = &ctx.accounts.capsule;
     require!(c.flags & FLAG_SGT_VERIFIED != 0, TallyError::InvalidSgt);
-    ctx.accounts.sgt_claim.set_inner(SgtClaim { sgt_mint: c.sgt_mint, promo_id, owner: c.owner });
+    ctx.accounts.sgt_claim.set_inner(SgtClaim {
+        sgt_mint: c.sgt_mint,
+        promo_id,
+        owner: c.owner,
+    });
     Ok(())
 }

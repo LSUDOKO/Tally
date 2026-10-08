@@ -10,7 +10,8 @@ fn floor_fraud_proof_slashes_bond() {
     let mut e = Env::funded();
     let (rep, rep_skr) = e.reporter();
     let signer = e.merchant_signer.clone();
-    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr).unwrap();
+    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
+        .unwrap();
     // slash_bps = 5000 → 2,500 SKR slashed: 1,250 to the reporter, 1,250 to the pool.
     assert_eq!(e.token_balance(&e.bond_vault()), BOND / 2);
     assert_eq!(e.token_balance(&rep_skr), BOND / 4);
@@ -44,7 +45,14 @@ fn different_categories_are_not_a_fraud() {
 fn fraud_signed_by_someone_else_is_rejected() {
     let mut e = Env::funded();
     let (rep, rep_skr) = e.reporter();
-    let r = e.try_prove_fraud(&fraud_items(), 0, 1, &SigningKey::from_bytes(&[42; 32]), &rep, rep_skr);
+    let r = e.try_prove_fraud(
+        &fraud_items(),
+        0,
+        1,
+        &SigningKey::from_bytes(&[42; 32]),
+        &rep,
+        rep_skr,
+    );
     assert_custom_err(&r, tally_err(TallyError::WrongSigner));
 }
 
@@ -53,9 +61,12 @@ fn same_evidence_cannot_slash_twice() {
     let mut e = Env::funded();
     let (rep, rep_skr) = e.reporter();
     let signer = e.merchant_signer.clone();
-    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr).unwrap();
+    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
+        .unwrap();
     // same menu root again (even with a different leaf pair) is nullified
-    assert!(e.try_prove_fraud(&fraud_items(), 0, 2, &signer, &rep, rep_skr).is_err());
+    assert!(e
+        .try_prove_fraud(&fraud_items(), 0, 2, &signer, &rep, rep_skr)
+        .is_err());
     assert_eq!(e.token_balance(&e.bond_vault()), BOND / 2);
 }
 
@@ -64,10 +75,12 @@ fn a_second_fraudulent_menu_slashes_again() {
     let mut e = Env::funded();
     let (rep, rep_skr) = e.reporter();
     let signer = e.merchant_signer.clone();
-    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr).unwrap();
+    e.try_prove_fraud(&fraud_items(), 0, 1, &signer, &rep, rep_skr)
+        .unwrap();
     let mut other = fraud_items();
     other[0].price = 3_000_000;
     other[0].floor = 3_000_000;
-    e.try_prove_fraud(&other, 0, 1, &signer, &rep, rep_skr).unwrap();
+    e.try_prove_fraud(&other, 0, 1, &signer, &rep, rep_skr)
+        .unwrap();
     assert_eq!(e.token_balance(&e.bond_vault()), BOND / 4);
 }
