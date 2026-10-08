@@ -68,6 +68,17 @@ describe('tampering', () => {
   });
 });
 
+describe('phantom add-on', () => {
+  it('keeps the signed item_count when an unsigned item is appended', async () => {
+    const s = await setup();
+    const extra = { id: new Uint8Array(16).fill(9), category: 3, price: 2_990_000n, floor: 2_990_000n };
+    const ixs = await buildPayOfferInstructions({ menu: { ...s.menu, items: [...s.menu.items, extra] }, index: 3, capsule: s.capsule, agent: s.agent, payout: s.payout });
+    const data = ixs[ixs.length - 1].data!;
+    // disc(8) root(32) issued(8) expires(8) nonce(8) → item_count u32 at offset 64
+    expect(new DataView(data.buffer, data.byteOffset).getUint32(64, true)).toBe(3);
+  });
+});
+
 describe('error sentences', () => {
   it('explains known codes in plain language', () => {
     expect(explainError(6013)).toBe("That's pricier than the cheapest match, so your approval is needed.");

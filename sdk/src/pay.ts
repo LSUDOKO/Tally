@@ -119,7 +119,8 @@ export async function buildPayOfferInstructions(p: PayOfferParams): Promise<Inst
     issuedSlot: p.menu.issuedSlot,
     expiresSlot: p.menu.expiresSlot,
     menuNonce: p.menu.menuNonce,
-    itemCount: p.menu.items.length,
+    // The signed count (header bytes 136..140), never items.length: appended items must not re-sign.
+    itemCount: new DataView(p.menu.header.buffer, p.menu.header.byteOffset).getUint32(136, true),
     itemId: item.id,
     category: item.category,
     price: item.price,
