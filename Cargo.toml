@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/tally-core", "programs/tally"]
+members = ["crates/tally-core", "programs/tally", "tests/litesvm"]
 
 [workspace.package]
 edition = "2021"
