@@ -10,7 +10,7 @@ use tally_core::{
 };
 
 use crate::{
-    checks::introspection::verify_prev_ed25519,
+    checks::{introspection::verify_prev_ed25519, lighthouse::require_terminal_lighthouse},
     constants::*,
     errors::TallyError,
     events::Paid,
@@ -155,6 +155,9 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         check_exact_deltas(vault_before, ctx.accounts.vault.amount, payout_before, ctx.accounts.payout.amount, args.price),
         TallyError::PostCondition
     );
+    if ctx.accounts.capsule.flags & FLAG_REQUIRE_LIGHTHOUSE != 0 {
+        require_terminal_lighthouse(&ctx.accounts.ix_sysvar.to_account_info(), &ctx.accounts.vault.key())?;
+    }
     ctx.accounts.capsule.spent_in_cycle = new_total;
 
     let capsule_key = ctx.accounts.capsule.key();

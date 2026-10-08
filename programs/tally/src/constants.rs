@@ -16,3 +16,8 @@ pub const FLAG_SGT_VERIFIED: u8 = 1 << 1;
 /// Capsule flag: menus with windows above 150 slots are allowed (still need owner co-sign).
 pub const FLAG_ALLOW_EXTENDED: u8 = 1 << 2;
 pub const KNOWN_FLAGS: u8 = FLAG_REQUIRE_LIGHTHOUSE | FLAG_SGT_VERIFIED | FLAG_ALLOW_EXTENDED;
+
+/// Lighthouse assertion program (Jac0xb/lighthouse), verified by dumping mainnet into
+/// `fixtures/programs/lighthouse.so` and executing real assertions in the test suite.
+pub const LIGHTHOUSE_ID: anchor_lang::prelude::Pubkey =
+    anchor_lang::prelude::Pubkey::from_str_const("L2TExMFKdjpN9kozasaurPirfHy9P8sbXoAN1qA3S95");
