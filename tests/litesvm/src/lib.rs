@@ -475,3 +475,11 @@ pub fn items_in_category(category: u16) -> Vec<tally_core::menu::Item> {
     tally_core::menu::compute_floors(&mut v);
     v
 }
+
+impl Env {
+    /// Receipt for `item` (index into `default_items()`) bought from menu rotation `nonce`.
+    pub fn receipt(&self, nonce: u64, item: usize) -> tally::state::Receipt {
+        let id = default_items()[item].id;
+        self.fetch(&self.receipt_address(nonce, &id))
+    }
+}
