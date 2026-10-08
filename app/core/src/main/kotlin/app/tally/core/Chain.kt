@@ -33,9 +33,19 @@ class Rpc(private val transport: (String) -> String) {
             put("method", method)
             put("params", buildJsonArray { params.forEach { add(it) } })
         }.toString()
-        val res = Json.parseToJsonElement(transport(body)).jsonObject
-        res["error"]?.let { throw RpcException(it.jsonObject["message"]?.jsonPrimitive?.contentOrNull ?: it.toString()) }
-        return res["result"] ?: JsonNull
+        var wait = 500L
+        repeat(6) { attempt ->
+            val raw = runCatching { transport(body) }.getOrElse { if (attempt == 5) throw RpcException(it.message ?: "RPC unreachable") else null }
+            val res = raw?.let { runCatching { Json.parseToJsonElement(it).jsonObject }.getOrNull() }
+            val err = res?.get("error")
+            val message = err?.jsonObject?.get("message")?.jsonPrimitive?.contentOrNull
+            val retryable = res == null || (message != null && ("Too many requests" in message || "rate limit" in message.lowercase()))
+            if (res != null && err == null) return res["result"] ?: JsonNull
+            if (!retryable || attempt == 5) throw RpcException(message ?: err.toString())
+            Thread.sleep(wait)
+            wait *= 2
+        }
+        throw RpcException("unreachable")
     }
 
     private fun str(v: String) = kotlinx.serialization.json.JsonPrimitive(v)
@@ -189,6 +199,7 @@ object ErrorText {
         6027 to "A merchant cannot report itself.",
         6028 to "That evidence was signed with a key retired too long ago.",
         2001 to "The payee or account doesn't match the merchant's registry.",
+        3012 to "A required account doesn't exist yet.",
     )
 
     fun sentence(code: Int): String = SENTENCES[code] ?: "Transaction failed (code $code)."
