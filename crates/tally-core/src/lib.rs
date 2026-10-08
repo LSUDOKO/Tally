@@ -16,3 +16,6 @@ pub const MAX_PROOF_DEPTH: usize = 16;
 pub const ED25519_HEADER_LEN: usize = 16;
 pub const LEAF_PREFIX: u8 = 0x00;
 pub const NODE_PREFIX: u8 = 0x01;
+
+pub mod hash;
+pub mod header;
