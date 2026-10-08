@@ -132,6 +132,9 @@ object TallyIx {
     private val UPDATE_RULES = disc(9, 156, 238, 50, 25, 101, 141, 28)
     private val REGISTER_MERCHANT = disc(238, 245, 77, 132, 161, 88, 216, 248)
     private val SET_POW_DIFFICULTY = disc(246, 197, 49, 165, 77, 79, 63, 196)
+    private val OPEN_DISPUTE = disc(137, 25, 99, 119, 23, 223, 161, 42)
+    private val CLAIM_PROMO = disc(236, 205, 177, 4, 130, 30, 37, 238)
+    private val PROVE_FLOOR_FRAUD = disc(38, 11, 22, 2, 124, 42, 99, 200)
 
     private fun w(k: String) = AccountMeta(k, false, true)
     private fun r(k: String) = AccountMeta(k, false, false)
@@ -186,4 +189,58 @@ object TallyIx {
         listOf(signerR(authority), w(TallyPda.merchant(authority))),
         Borsh().bytes(SET_POW_DIFFICULTY).u8(difficulty).toByteArray(),
     )
+
+    /** Capsule owner disputes a settled receipt (wrong goods, not delivered); the arbiter resolves it. */
+    fun openDispute(owner: String, capsule: String, receipt: String, merchant: String, evidenceHash: ByteArray) = Instruction(
+        Tally.PROGRAM_ID,
+        listOf(signerW(owner), r(capsule), w(receipt), w(merchant), w(TallyPda.dispute(receipt)), r(Programs.SYSTEM)),
+        Borsh().bytes(OPEN_DISPUTE).bytes(evidenceHash).toByteArray(),
+    )
+
+    /** One Seeker-only promo claim per device (SGT) per promo id. */
+    fun claimPromo(owner: String, capsule: String, sgtMint: String, promoId: Long) = Instruction(
+        Tally.PROGRAM_ID,
+        listOf(signerW(owner), r(capsule), w(TallyPda.sgtClaim(sgtMint, promoId)), r(Programs.SYSTEM)),
+        Borsh().bytes(CLAIM_PROMO).u64(promoId).toByteArray(),
+    )
+
+    private fun leaf(b: Borsh, i: Item) = b.bytes(i.id).u16(i.category).u64(i.price).u64(i.floor)
+
+    /**
+     * Anyone may prove that a merchant's own signed menu contradicts its certified floor
+     * (`leafA.price < leafB.floor`, same category). Must be preceded by the Ed25519 instruction
+     * over the menu header (see [fraudReport]).
+     */
+    fun proveFloorFraud(
+        reporter: String, merchant: String, skrMint: String, signingKey: String,
+        menuRoot: ByteArray, issuedSlot: Long, expiresSlot: Long, menuNonce: Long, itemCount: Int,
+        leafA: Item, proofA: List<ByteArray>, leafB: Item, proofB: List<ByteArray>,
+    ): Instruction {
+        val b = Borsh().bytes(PROVE_FLOOR_FRAUD).bytes(menuRoot).u64(issuedSlot).u64(expiresSlot).u64(menuNonce).u32(itemCount)
+        leaf(b, leafA).vec32(proofA)
+        leaf(b, leafB).vec32(proofB)
+        return Instruction(
+            Tally.PROGRAM_ID,
+            listOf(
+                signerW(reporter), r(TallyPda.config()), w(merchant), w(TallyPda.bondVault(merchant)), r(skrMint),
+                w(Pda.ata(reporter, skrMint)), w(TallyPda.pool()), r(TallyPda.keyRecord(merchant, signingKey)),
+                w(TallyPda.fraudRecord(merchant, menuRoot)), r(Programs.SYSVAR_INSTRUCTIONS), r(Programs.TOKEN), r(Programs.SYSTEM),
+            ),
+            b.toByteArray(),
+        )
+    }
+
+    /** The complete fraud report for a scanned menu: `[Ed25519 verify(header), prove_floor_fraud]`. */
+    fun fraudReport(reporter: String, menu: SignedMenu, skrMint: String): List<Instruction>? {
+        val (cheap, claimed) = Menu.findFloorContradiction(menu.items) ?: return null
+        val tree = MerkleTree(menu.items.map(Menu::leafHash))
+        return listOf(
+            Instruction(Tally.ED25519_PROGRAM_ID, emptyList(), Menu.ed25519IxData(menu.signerPubkey, menu.signature, menu.header)),
+            proveFloorFraud(
+                reporter, menu.merchant, skrMint, Base58.encode(menu.signerPubkey),
+                menu.root, menu.issuedSlot, menu.expiresSlot, menu.menuNonce, menu.itemCount,
+                menu.items[cheap], tree.proof(cheap), menu.items[claimed], tree.proof(claimed),
+            ),
+        )
+    }
 }
