@@ -109,8 +109,19 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
     let leaf = leaf_hash(&Item { id: args.item_id, category: args.category, price: args.price, floor: args.category_floor });
     require!(verify_proof(leaf, &args.proof, args.menu_root), TallyError::NotOnMenu);
 
-    // 8 (partial). extended windows need the owner's signature
-    let needs_owner = extended;
+    // 7. capsule policy: category bitmap, per-purchase cap, rolling ~24h cycle cap
+    let cap = &mut ctx.accounts.capsule;
+    require!(cap.allows_category(args.category), TallyError::Category);
+    require!(args.price <= cap.per_tx_cap, TallyError::OverPerTx);
+    if slot.saturating_sub(cap.cycle_start_slot) >= CYCLE_SLOTS {
+        cap.cycle_start_slot = slot;
+        cap.spent_in_cycle = 0;
+    }
+    let new_total = cap.spent_in_cycle.checked_add(args.price).ok_or(TallyError::Overflow)?;
+    require!(new_total <= cap.daily_cap, TallyError::OverDaily);
+
+    // 8. Cheapest-Match Invariant, bond tier and extended windows all need the owner
+    let needs_owner = args.price > args.category_floor || merchant.skr_bonded < cap.min_merchant_bond || extended;
     if needs_owner {
         require!(ctx.accounts.owner.is_signer, TallyError::OwnerCosignRequired);
     }
