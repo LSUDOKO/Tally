@@ -95,7 +95,7 @@ CBOR map, version 1:
 
 ### QR (CameraX + ML Kit)
 
-- URI form: `tally:v1?d=<base45(CBOR)>`. Use Base45 for QR alphanumeric mode, with error correction level **M**.
+- **As built:** `TALLY:V1:<base45(CBOR)>`. The earlier `tally:v1?d=` form contained `?` and `=`, which aren't in the QR alphanumeric set and would have forced the denser byte mode. The uppercase prefix keeps the whole string alphanumeric. Use error correction level **M**.
 - **Mode A (inline):** up to about 20 items. Header plus signature is about 200 B, and each item about 40–55 B with a short name.
 - **Mode B (by reference):** the QR carries the header, the signature and `u`. The phone downloads the list and **rebuilds the root**, and rejects the list if the root differs. The server can't change prices without breaking the signature.
 - Rotating codes are redrawn on each re-sign. ML Kit decodes a high-density code (version 15–25) in about 100 ms on a Seeker-class device. Measure this.
