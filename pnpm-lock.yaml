@@ -8,6 +8,37 @@ importers:
 
   .: {}
 
+  scripts:
+    dependencies:
+      '@noble/ed25519':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@solana-program/system':
+        specifier: ^0.15.0
+        version: 0.15.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana-program/token':
+        specifier: ^0.17.0
+        version: 0.17.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana-program/token-2022':
+        specifier: ^0.19.0
+        version: 0.19.0(@solana/kit@8.4.0(typescript@5.9.3))(@solana/sysvars@8.4.0(typescript@5.9.3))
+      '@solana/kit':
+        specifier: ^8.4.0
+        version: 8.4.0(typescript@5.9.3)
+      '@tally/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.4
+        version: 26.6.4
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   sdk:
     dependencies:
       '@noble/ed25519':
@@ -258,6 +289,10 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@noble/curves@2.4.0':
+    resolution: {integrity: sha512-P4/62zrgfH33CneE3Dn4WhJVA22YUU0eR51wKIan4NVRvwsA0YnPTwWGpNbpuacSujmSFLvyzpyuR30+fbq2Ew==}
+    engines: {node: '>= 20.19.0'}
+
   '@noble/ed25519@3.2.0':
     resolution: {integrity: sha512-criDgRlnUA09hchYrTy/JUWPIEap5rZxQe6wDWzRx51oWWpDRcUpuNzlgPxDJaOK6AsW9c0wKcj3rKRv6t+bPQ==}
 
@@ -366,15 +401,40 @@ packages:
     peerDependencies:
       '@solana/kit': ^8.3.0
 
+  '@solana-program/record@0.5.0':
+    resolution: {integrity: sha512-Hie4a3hJhyk0ER2O+T2YQFBRB69xraIcmH/U5S/DOGv6ig3DMsPCO1Jqt6+0BZ/fS+vHouX/wededWTviLEm7A==}
+    peerDependencies:
+      '@solana/kit': ^8.3.0
+
+  '@solana-program/system@0.14.1':
+    resolution: {integrity: sha512-K6ZiIrAKoJAfcwfUdsoFvfSAxeRJaRrV7BPFTJvUVRS4m3zszN+nLcdaNMMe2F1/zTriZqC+xh+Kgw6ziGUqpQ==}
+    peerDependencies:
+      '@solana/kit': ^8.0.0
+
   '@solana-program/system@0.15.0':
     resolution: {integrity: sha512-xE08wZCyNRhOaO/XNRd9A3kSLfUrTe/BnmAHhql8uqc2eriNy2ZmnvaGRrs0m+kOSihvUbANzHljmJsTzGL5kg==}
     peerDependencies:
       '@solana/kit': ^8.3.0
 
+  '@solana-program/token-2022@0.19.0':
+    resolution: {integrity: sha512-oCCko/n8X6ote2A27HyNpCOIpksiHUnndQQ5wUr2pRm89rrfcKOvRd/zhIXW8z8tpemlPYp05XYUGFBo0GxhBg==}
+    peerDependencies:
+      '@solana/kit': ^8.3.0
+      '@solana/sysvars': ^8.0.0
+      '@solana/zk-sdk': ^0.5.1
+    peerDependenciesMeta:
+      '@solana/zk-sdk':
+        optional: true
+
   '@solana-program/token@0.17.0':
     resolution: {integrity: sha512-l7EhF3lCWXXdOllGI8qnbF4Pj7pCT/5zJTW2lPsNUQfa7G28pnFhSssHW2GCW7dzGttSHgPdJYdQRB5rvQoN9Q==}
     peerDependencies:
       '@solana/kit': ^8.3.0
+
+  '@solana-program/zk-elgamal-proof@0.4.0':
+    resolution: {integrity: sha512-bf2Q3f25xcCNaLm/MR4lwoAguJzEW2eeLdrJb6rUjMcA63qcgyJOWl6To7Bn4e+0OyWBa+J7YP2BUhi//VPz3g==}
+    peerDependencies:
+      '@solana/kit': ^8.0.0
 
   '@solana/accounts@8.4.0':
     resolution: {integrity: sha512-YklERWeG5UD2fzxR0zwWgzCVyuHRqg6eTIyGBAe8hOWIim8TYS1aPBVFAlVkSZiAXaFRxmu1E3IRfeCe/QSQmg==}
@@ -1345,6 +1405,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
+  '@noble/curves@2.4.0':
+    dependencies:
+      '@noble/hashes': 2.4.0
+
   '@noble/ed25519@3.2.0': {}
 
   '@noble/hashes@2.4.0': {}
@@ -1402,13 +1466,36 @@ snapshots:
     dependencies:
       '@solana/kit': 8.4.0(typescript@5.9.3)
 
+  '@solana-program/record@0.5.0(@solana/kit@8.4.0(typescript@5.9.3))':
+    dependencies:
+      '@solana-program/system': 0.15.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana/kit': 8.4.0(typescript@5.9.3)
+
+  '@solana-program/system@0.14.1(@solana/kit@8.4.0(typescript@5.9.3))':
+    dependencies:
+      '@solana/kit': 8.4.0(typescript@5.9.3)
+
   '@solana-program/system@0.15.0(@solana/kit@8.4.0(typescript@5.9.3))':
     dependencies:
       '@solana/kit': 8.4.0(typescript@5.9.3)
 
+  '@solana-program/token-2022@0.19.0(@solana/kit@8.4.0(typescript@5.9.3))(@solana/sysvars@8.4.0(typescript@5.9.3))':
+    dependencies:
+      '@noble/curves': 2.4.0
+      '@solana-program/record': 0.5.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana-program/system': 0.15.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana-program/zk-elgamal-proof': 0.4.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana/kit': 8.4.0(typescript@5.9.3)
+      '@solana/sysvars': 8.4.0(typescript@5.9.3)
+
   '@solana-program/token@0.17.0(@solana/kit@8.4.0(typescript@5.9.3))':
     dependencies:
       '@solana-program/system': 0.15.0(@solana/kit@8.4.0(typescript@5.9.3))
+      '@solana/kit': 8.4.0(typescript@5.9.3)
+
+  '@solana-program/zk-elgamal-proof@0.4.0(@solana/kit@8.4.0(typescript@5.9.3))':
+    dependencies:
+      '@solana-program/system': 0.14.1(@solana/kit@8.4.0(typescript@5.9.3))
       '@solana/kit': 8.4.0(typescript@5.9.3)
 
   '@solana/accounts@8.4.0(typescript@5.9.3)':
