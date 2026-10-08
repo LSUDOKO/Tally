@@ -449,3 +449,29 @@ impl Env {
         self
     }
 }
+
+impl Env {
+    /// Apply `f` to the default rules and push them on-chain.
+    pub fn with_rules(mut self, f: impl FnOnce(&mut tally::instructions::capsule::Rules)) -> Self {
+        let mut r = coffee_rules();
+        f(&mut r);
+        self.update_rules(r).expect("update_rules");
+        self
+    }
+
+    /// A fresh USDC token account owned by `owner`.
+    pub fn create_usdc_account(&mut self, owner: &Pubkey) -> Pubkey {
+        let usdc = self.usdc;
+        self.ata(owner, &usdc)
+    }
+}
+
+/// A single-category menu where every item has `category`.
+pub fn items_in_category(category: u16) -> Vec<tally_core::menu::Item> {
+    let mut v = default_items();
+    for i in v.iter_mut() {
+        i.category = category;
+    }
+    tally_core::menu::compute_floors(&mut v);
+    v
+}

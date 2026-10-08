@@ -58,6 +58,7 @@ pub struct PayBuilder<'a> {
     pow: Option<[u8; 8]>,
     lighthouse: Option<bool>,
     lighthouse_delta: i64,
+    extra_signers: Vec<Keypair>,
     args_hooks: Vec<ArgsHook>,
     ixs_hooks: Vec<IxsHook>,
 }
@@ -79,6 +80,7 @@ impl Env {
             pow: None,
             lighthouse: None,
             lighthouse_delta: 0,
+            extra_signers: vec![],
             args_hooks: vec![],
             ixs_hooks: vec![],
         }
@@ -104,6 +106,7 @@ impl<'a> PayBuilder<'a> {
     pub fn pow(mut self, n: [u8; 8]) -> Self { self.pow = Some(n); self }
     pub fn lighthouse(mut self, on: bool) -> Self { self.lighthouse = Some(on); self }
     pub fn lighthouse_amount_off_by(mut self, d: i64) -> Self { self.lighthouse_delta = d; self.lighthouse = Some(true); self }
+    pub fn extra_signer(mut self, k: Keypair) -> Self { self.extra_signers.push(k); self }
     pub fn args(mut self, f: impl FnOnce(&mut PayOfferArgs) + 'static) -> Self { self.args_hooks.push(Box::new(f)); self }
     pub fn ixs(mut self, f: impl FnOnce(&mut Vec<Instruction>) + 'static) -> Self { self.ixs_hooks.push(Box::new(f)); self }
 
@@ -197,6 +200,7 @@ impl<'a> PayBuilder<'a> {
         if self.owner_signs {
             signers.push(env.owner.insecure_clone());
         }
+        signers.extend(self.extra_signers.iter().map(|k| k.insecure_clone()));
         (ixs, signers)
     }
 }
