@@ -207,6 +207,7 @@ pub fn pay_offer(ctx: Context<PayOffer>, args: PayOfferArgs) -> Result<()> {
         require_terminal_lighthouse(
             &ctx.accounts.ix_sysvar.to_account_info(),
             &ctx.accounts.vault.key(),
+            ctx.accounts.vault.amount,
         )?;
     }
     ctx.accounts.capsule.spent_in_cycle = new_total;

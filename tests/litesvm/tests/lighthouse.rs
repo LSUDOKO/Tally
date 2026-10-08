@@ -69,3 +69,20 @@ fn optional_lighthouse_accepted_without_flag() {
     let mut e = Env::funded();
     e.pay().lighthouse(true).send().unwrap();
 }
+
+#[test]
+fn trivially_true_lighthouse_assertion_is_rejected() {
+    // `vault amount >= 0` always passes Lighthouse, so it must not count as the required check.
+    let mut e = Env::funded().with_flags(FLAG_REQUIRE_LIGHTHOUSE);
+    let vault = e.vault;
+    let r = e
+        .pay()
+        .lighthouse(false)
+        .ixs(move |v| {
+            v.push(tally_litesvm::lighthouse::assert_token_amount_op(
+                vault, 0, 4,
+            ))
+        })
+        .send();
+    assert_custom_err(&r, tally_err(TallyError::LighthouseMissing));
+}

@@ -21,3 +21,12 @@ pub fn assert_token_amount_eq(token_account: Pubkey, amount: u64) -> Instruction
         data,
     }
 }
+
+/// Same assertion with an arbitrary `IntegerOperator` (e.g. 4 = GreaterThanOrEqual), used to
+/// show that a trivially-true assertion does not satisfy a capsule's Lighthouse requirement.
+pub fn assert_token_amount_op(token_account: Pubkey, amount: u64, operator: u8) -> Instruction {
+    let mut ix = assert_token_amount_eq(token_account, amount);
+    let last = ix.data.len() - 1;
+    ix.data[last] = operator;
+    ix
+}

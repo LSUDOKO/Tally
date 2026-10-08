@@ -1,11 +1,22 @@
 //! Invariant 10, defence in depth: when a capsule sets `FLAG_REQUIRE_LIGHTHOUSE`, the last
-//! instruction of the transaction must be a Lighthouse assertion that reads the vault. The
-//! program cannot make the client *include* an assertion, but it can refuse to pay without one.
+//! instruction of the transaction must be exactly a Lighthouse
+//! `AssertTokenAccount { Amount == vault_after }` over the vault. The program cannot make the
+//! client *include* an assertion, but it refuses to pay without that precise one, so a
+//! trivially-true assertion (e.g. `amount >= 0`) does not satisfy the requirement.
 use anchor_lang::{compat::solana_instructions_sysvar as ix_sysvar, prelude::*};
 
 use crate::{constants::LIGHTHOUSE_ID, errors::TallyError};
 
-pub fn require_terminal_lighthouse(ix_sysvar_account: &AccountInfo, vault: &Pubkey) -> Result<()> {
+const ASSERT_TOKEN_ACCOUNT: u8 = 9;
+const MAX_LOG_LEVEL: u8 = 6;
+const ASSERTION_AMOUNT: u8 = 2;
+const OP_EQUAL: u8 = 0;
+
+pub fn require_terminal_lighthouse(
+    ix_sysvar_account: &AccountInfo,
+    vault: &Pubkey,
+    vault_after: u64,
+) -> Result<()> {
     let count = {
         let data = ix_sysvar_account.try_borrow_data()?;
         require!(data.len() >= 2, TallyError::LighthouseMissing);
@@ -21,6 +32,16 @@ pub fn require_terminal_lighthouse(ix_sysvar_account: &AccountInfo, vault: &Pubk
     );
     require!(
         last.accounts.first().is_some_and(|a| a.pubkey == *vault),
+        TallyError::LighthouseMissing
+    );
+    let d = &last.data;
+    require!(
+        d.len() == 12
+            && d[0] == ASSERT_TOKEN_ACCOUNT
+            && d[1] <= MAX_LOG_LEVEL
+            && d[2] == ASSERTION_AMOUNT
+            && d[3..11] == vault_after.to_le_bytes()
+            && d[11] == OP_EQUAL,
         TallyError::LighthouseMissing
     );
     Ok(())
