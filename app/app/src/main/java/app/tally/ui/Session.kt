@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import app.tally.BuildConfig
 import app.tally.agent.AgentResult
 import app.tally.agent.AgentSource
+import app.tally.chain.ConfirmingOwner
+import app.tally.merchant.MerchantTerminal
 import app.tally.core.Accounts
 import app.tally.core.AssociatedToken
 import app.tally.core.Lighthouse
@@ -85,7 +87,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     val claudeAvailable get() = g.claude.available
 
     val owner: Owner
-        get() = if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner
+        get() = ConfirmingOwner(if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner, g.submitter)
 
     val capsuleAddress: String? get() = ownerAddress?.let { TallyPda.capsule(it, g.store.capsuleId) }
 
@@ -238,6 +240,20 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         screen = Screen.Checkout
     }
 
+    /** Debug builds: sign a fresh menu with this phone's own merchant key and check out against it. */
+    suspend fun payOwnMerchant() {
+        val auth = ownerAddress ?: return
+        val slot = work("Signing a fresh menu") { withContext(Dispatchers.IO) { g.rpc.getSlot() } } ?: return
+        onPayload(signOwnMenu(auth, slot))
+    }
+
+    private fun signOwnMenu(auth: String, slot: Long): SignedPayload {
+        val terminal = MerchantTerminal(g.merchantMenuKey)
+        val (p, _) = terminal.publish(terminal.merchantAddress(auth), slot, System.currentTimeMillis(), g.store.catalog)
+        terminal.stop()
+        return p
+    }
+
     suspend fun askAgent(request: String) = work("Agent is choosing") {
         val p = payload ?: return@work
         val c = capsule
@@ -326,7 +342,15 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     // ------------------------------------------------------------------ red team (docs/14)
 
     suspend fun runRedTeam() = work("Running attacks") {
-        val p = payload ?: error("Scan a merchant menu first")
+        var p = payload ?: error("Scan a merchant menu first")
+        val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
+        if (Purchase.gate(slot, p.menu.expiresSlot) == Purchase.Gate.Rescan) {
+            // Debug loopback: this phone is the merchant, so it can simply re-sign. Otherwise the attacks
+            // would all fail on staleness and prove nothing about the specific checks.
+            val own = ownerAddress?.takeIf { BuildConfig.DEMO_OWNER_ALLOWED && p.menu.merchant == TallyPda.merchant(it) }
+                ?: error("That menu has expired. Scan the counter again, then run the attacks.")
+            p = signOwnMenu(own, slot).also { payload = it }
+        }
         val results = mutableListOf<PayResult>()
         suspend fun attack(title: String, ixs: List<Instruction>, item: Item) {
             val wire = g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
@@ -340,11 +364,18 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
             results += r
             redTeam = results.toList()
         }
-        val floorIdx = p.menu.items.indices.minBy { p.menu.items[it].price + if (p.menu.items[it].price == p.menu.items[it].floor) 0 else Long.MAX_VALUE / 2 }
+        // Target the cheapest at-floor item the capsule's rules actually allow, so each attack is stopped
+        // by the check it is aimed at rather than by the category rule.
+        val allowed = p.menu.items.indices.filter { i -> capsule?.allows(p.menu.items[i].category) ?: true }.ifEmpty { error("Your rules allow nothing on this menu") }
+        val floorIdx = allowed.minBy { p.menu.items[it].price + if (p.menu.items[it].price == p.menu.items[it].floor) 0 else Long.MAX_VALUE / 2 }
         // A real, initialised USDC account that is not the merchant's registered payout (the owner's own).
-        val evil = Pda.ata(ownerAddress!!, capsule?.mint ?: config.usdcMint)
+        val mint = capsule?.mint ?: config.usdcMint
+        val ownerAta = Pda.ata(ownerAddress!!, mint)
+        // When this phone is also the merchant, the owner's account *is* the payout; aim at the agent's own
+        // USDC account instead (created in the same transaction so the swap reaches the payee check).
+        val (evil, setup) = if (ownerAta == merchant?.payout) Pda.ata(agentAddress, mint) to listOf(AssociatedToken.createIdempotent(agentAddress, agentAddress, mint)) else ownerAta to emptyList()
         // 1. payee swap
-        attack("Payee swap → attacker account", PayOffer.build(params(p, floorIdx, false, overridePayout = evil)), p.menu.items[floorIdx])
+        attack("Payee swap → attacker account", setup + PayOffer.build(params(p, floorIdx, false, overridePayout = evil)), p.menu.items[floorIdx])
         // 2. phantom add-on: an unsigned $2.99 fee appended to the signed menu
         val fee = Item(ByteArray(16) { 0xfe.toByte() }, p.menu.items[floorIdx].category, 2_990_000, 2_990_000)
         val tampered = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items + fee, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names + "Service fee", p.descriptions + null)
@@ -353,7 +384,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val inflated = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items.mapIndexed { i, it -> if (i == floorIdx) it.copy(price = it.price * 2, floor = it.price * 2) else it }, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names, p.descriptions)
         attack("Price tampering: 2× the signed price", PayOffer.build(params(inflated, floorIdx, false)), inflated.menu.items[floorIdx])
         // 4. Whisper upsell without the owner: pick the priciest same-category item
-        val upsell = p.menu.items.indices.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx }.maxByOrNull { p.menu.items[it].price }
+        val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= (capsule?.perTxCap ?: Long.MAX_VALUE) }.maxByOrNull { p.menu.items[it].price }
         if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", PayOffer.build(params(p, upsell, false)), p.menu.items[upsell])
         redTeam = results.toList()
     }

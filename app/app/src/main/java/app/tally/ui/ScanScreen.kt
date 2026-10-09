@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import app.tally.BuildConfig
 import app.tally.core.Payload
 import app.tally.core.SignedPayload
 import app.tally.ui.theme.TallyColors
@@ -75,6 +76,10 @@ fun ScanScreen(s: Session, nfcStatus: String) {
             Chip(nfcStatus, TallyColors.Accent)
             s.store.lastPayloadQr?.let { last ->
                 Secondary("Use last scanned menu (demo)", { runCatching { Payload.fromQr(last) }.onSuccess(onPayload) })
+            }
+            // Debug builds: one phone can be both counter and customer (Merchant mode broadcasts here).
+            if (BuildConfig.DEMO_OWNER_ALLOWED && s.ownerAddress != null) {
+                Secondary("Pay this phone's merchant menu (demo)", { scope.launch { s.payOwnMerchant() } })
             }
         }
     }
