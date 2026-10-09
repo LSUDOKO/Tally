@@ -44,6 +44,7 @@ Agent payment systems today sign the *transaction* but not the *decision* behind
 | 18 | [18-testing.md](18-testing.md) | Program tests per attack, app tests, device checklist |
 | 19 | [19-sources.md](19-sources.md) | Every paper and project referenced, plus verification notes |
 | 20 | [20-sgt-and-ore.md](20-sgt-and-ore.md) | Seeker Genesis Token anti-sybil + ORE DrillX PoW anti-flood |
+| 21 | [21-real-phone-run.md](21-real-phone-run.md) | The full flow on a stock phone with Solflare on devnet: every transaction, and what it changed |
 
 ---
 

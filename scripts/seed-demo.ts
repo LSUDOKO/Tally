@@ -4,18 +4,9 @@
 //
 // In the real app the owner is the Seeker's Seed Vault wallet; here it is a script key.
 // Usage: TALLY_CLUSTER=devnet pnpm -C scripts seed
-import { getAddressDecoder, generateKeyPairSigner, lamports, type Address, type KeyPairSigner } from '@solana/kit';
-import { getCreateAccountInstruction, getTransferSolInstruction } from '@solana-program/system';
+import { getAddressDecoder, lamports, type Address, type KeyPairSigner } from '@solana/kit';
+import { getTransferSolInstruction } from '@solana-program/system';
 import { TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda, getCreateAssociatedTokenIdempotentInstructionAsync, getMintToInstruction } from '@solana-program/token';
-import {
-  TOKEN_2022_PROGRAM_ADDRESS,
-  getCreateAssociatedTokenIdempotentInstructionAsync as getCreateAta22,
-  getInitializeGroupMemberPointerInstruction,
-  getInitializeMint2Instruction as getInitializeMint2Instruction22,
-  getInitializeTokenGroupMemberInstruction,
-  getMintSize as getMintSize22,
-  getMintToInstruction as getMintToInstruction22,
-} from '@solana-program/token-2022';
 import * as ed from '@noble/ed25519';
 import {
   fetchMaybeCapsule,
@@ -26,6 +17,7 @@ import {
   getFundInstruction,
   getRegisterMerchantInstructionAsync,
 } from '@tally/sdk';
+import { mintSgt } from './lib/sgt';
 import { explorerAddress, loadState, namedSecret, namedSigner, payer, rpc, saveState, sendOk } from './lib/env';
 
 const USDC = 1_000_000n;
@@ -42,29 +34,6 @@ async function fundSol(fee: KeyPairSigner, to: Address, sol: number) {
   if (bal.value < 50_000_000n) {
     await sendOk(fee, [getTransferSolInstruction({ source: fee, destination: to, amount: lamports(BigInt(Math.round(sol * 1e9))) })], `fund ${to} with ${sol} SOL`);
   }
-}
-
-async function mintSgt(fee: KeyPairSigner, group: Address, owner: Address): Promise<{ mint: Address; account: Address }> {
-  const mint = await generateKeyPairSigner();
-  const pointer = { __kind: 'GroupMemberPointer' as const, authority: fee.address, memberAddress: mint.address };
-  const member = { __kind: 'TokenGroupMember' as const, mint: mint.address, group, memberNumber: 1n };
-  const space = getMintSize22([pointer]);
-  const rent = await rpc.getMinimumBalanceForRentExemption(BigInt(getMintSize22([pointer, member]))).send();
-  const createAta = await getCreateAta22({ payer: fee, owner, mint: mint.address, tokenProgram: TOKEN_2022_PROGRAM_ADDRESS });
-  const account = createAta.accounts[1].address;
-  await sendOk(
-    fee,
-    [
-      getCreateAccountInstruction({ payer: fee, newAccount: mint, lamports: rent, space, programAddress: TOKEN_2022_PROGRAM_ADDRESS }),
-      getInitializeGroupMemberPointerInstruction({ mint: mint.address, authority: fee.address, memberAddress: mint.address }),
-      getInitializeMint2Instruction22({ mint: mint.address, decimals: 0, mintAuthority: fee.address }),
-      getInitializeTokenGroupMemberInstruction({ member: mint.address, memberMint: mint.address, memberMintAuthority: fee, group, groupUpdateAuthority: fee }),
-      createAta,
-      getMintToInstruction22({ mint: mint.address, token: account, mintAuthority: fee, amount: 1n }),
-    ],
-    `mint Seeker Genesis Token ${mint.address} to ${owner}`,
-  );
-  return { mint: mint.address, account };
 }
 
 async function main() {

@@ -169,6 +169,9 @@ object Accounts {
 
 object ErrorText {
     private val SENTENCES = mapOf(
+        // System program "account already in use": pay_offer's receipt PDA already exists, i.e. the
+        // duplicate-settlement nullifier caught a second payment for the same item on the same menu.
+        0 to "Already paid: this item was bought from this exact menu. Tally never charges twice.",
         6000 to "This capsule is frozen. Unfreeze it to let your agent pay.",
         6001 to "This capsule has expired. Create a new one to keep paying.",
         6002 to "This merchant is not accepting agent payments right now.",
@@ -223,6 +226,10 @@ object Purchase {
 
     fun needsOwner(item: Item, merchantBond: Long, minBond: Long, window: Long) =
         item.price > item.floor || merchantBond < minBond || window > Tally.MAX_AUTONOMOUS_WINDOW
+
+    /** What the capsule may still spend today, mirroring pay_offer's cycle reset. */
+    fun dailyRemaining(dailyCap: Long, spentInCycle: Long, cycleStartSlot: Long, currentSlot: Long): Long =
+        if (currentSlot - cycleStartSlot >= Tally.CYCLE_SLOTS) dailyCap else (dailyCap - spentInCycle).coerceAtLeast(0)
 
     fun gate(currentSlot: Long, expiresSlot: Long) = if (currentSlot + EXPIRY_MARGIN > expiresSlot) Gate.Rescan else Gate.Ok
 

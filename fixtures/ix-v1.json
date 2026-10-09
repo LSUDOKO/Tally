@@ -204,6 +204,42 @@
       }
     ]
   },
+  "close_capsule": {
+    "program": "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk",
+    "data_hex": "10f6a7ab2d48ab7a",
+    "accounts": [
+      {
+        "address": "5XPdQGRroRqUycg4rCsLV5ir7owe87jLn7vDGXjkpFqH",
+        "signer": true,
+        "writable": true
+      },
+      {
+        "address": "3kqwY6q7L4puVdS4p82fWhQ1nmLwhP9biMHXjQwEWnGD",
+        "signer": false,
+        "writable": true
+      },
+      {
+        "address": "3GEU4u1stvyvBo2834pgt1vMVsBiDWiZJHsmiWSE8Da5",
+        "signer": false,
+        "writable": false
+      },
+      {
+        "address": "G7fujkCpPtsz7wg7Mm2J15dVzybogPbCND7cLRs1KMAQ",
+        "signer": false,
+        "writable": true
+      },
+      {
+        "address": "mpvMURvnjiTGXeuj2v2WqjQx5PRAaZJ4xBVYdrAYxXr",
+        "signer": false,
+        "writable": true
+      },
+      {
+        "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "signer": false,
+        "writable": false
+      }
+    ]
+  },
   "set_agent": {
     "program": "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk",
     "data_hex": "9a4a795b891365a6c480b582d8304c505fc9cd83b3a970b4eba05878d2ae6f66af80b75ed0af2e8b",

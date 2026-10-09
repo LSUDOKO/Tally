@@ -9,9 +9,13 @@ import java.io.ByteArrayOutputStream
 object Apdu {
     val AID = byteArrayOf(0xF0.toByte(), 0x54, 0x41, 0x4C, 0x4C, 0x59, 0x01)
     const val CHUNK = 240
+
+    /** Largest menu a reader accepts (the QR path tops out near 2.9 KB; this leaves ample headroom). */
+    const val MAX_PAYLOAD = 16 * 1024
     val SW_OK = byteArrayOf(0x90.toByte(), 0x00)
     val SW_INS_NOT_SUPPORTED = byteArrayOf(0x6D, 0x00)
     val SW_WRONG_P1P2 = byteArrayOf(0x6B, 0x00)
+    val SW_CONDITIONS = byteArrayOf(0x69, 0x85.toByte())
 
     fun select(): ByteArray = byteArrayOf(0x00, 0xA4.toByte(), 0x04, 0x00, AID.size.toByte()) + AID
     fun getLength(): ByteArray = byteArrayOf(0x80.toByte(), 0xCA.toByte(), 0x00, 0x00, 0x02)
@@ -41,14 +45,38 @@ object Apdu {
         check(ok(transceive(select()))) { "Tally AID not selected" }
         val len = transceive(getLength()).also { check(ok(it)) { "length failed" } }
         val total = ((len[0].toInt() and 0xff) shl 8) or (len[1].toInt() and 0xff)
+        check(total in 1..MAX_PAYLOAD) { "terminal announced a $total-byte menu (limit $MAX_PAYLOAD)" }
         val out = ByteArrayOutputStream()
         while (out.size() < total) {
             val r = transceive(getChunk(out.size(), minOf(CHUNK, total - out.size())))
             check(ok(r)) { "chunk at ${out.size()} failed" }
-            out.write(r, 0, r.size - 2)
+            // A terminal that answers OK with no data would otherwise keep the reader looping forever.
+            check(r.size > 2) { "terminal made no progress at byte ${out.size()}" }
+            out.write(r, 0, minOf(r.size - 2, total - out.size()))
         }
         return out.toByteArray()
     }
 
     private fun ok(r: ByteArray) = r.size >= 2 && r[r.size - 2] == 0x90.toByte() && r[r.size - 1] == 0x00.toByte()
+}
+
+/**
+ * One tap, merchant side. The menu is snapshotted at SELECT and served from that snapshot until
+ * `reset` (card deactivation), so the terminal's ~20 s re-sign can never splice two menus into one
+ * read. Without a prior SELECT, or with the terminal off, every command is refused.
+ */
+class ApduSession(private val current: () -> ByteArray?) {
+    @Volatile private var snapshot: ByteArray? = null
+
+    fun respond(apdu: ByteArray): ByteArray {
+        if (apdu.size >= 2 && apdu[0] == 0x00.toByte() && apdu[1] == 0xA4.toByte()) {
+            val payload = current() ?: return Apdu.SW_CONDITIONS
+            return Apdu.respond(apdu, payload).also { if (it.contentEquals(byteArrayOf(0x01) + Apdu.SW_OK)) snapshot = payload }
+        }
+        return Apdu.respond(apdu, snapshot ?: return Apdu.SW_CONDITIONS)
+    }
+
+    fun reset() {
+        snapshot = null
+    }
 }

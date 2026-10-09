@@ -71,6 +71,11 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     var capsule by mutableStateOf<Accounts.Capsule?>(null)
     var vaultBalance by mutableStateOf(0L)
     var agentSol by mutableStateOf(0L)
+    var slot by mutableStateOf(0L)
+
+    /** Today's spend as the program counts it (zero once the 216,000-slot cycle has rolled over). */
+    val spentToday: Long
+        get() = capsule?.let { it.dailyCap - Purchase.dailyRemaining(it.dailyCap, it.spentInCycle, it.cycleStartSlot, slot) } ?: g.store.spentToday()
     /** The owner's Seeker Genesis Token `(token account, mint)`, when this device has one. */
     var sgt by mutableStateOf<Pair<String, String>?>(null)
 
@@ -87,6 +92,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     val store get() = g.store
     val agentAddress: String get() = g.agentKey.address
     val modelAvailable get() = g.agent.available
+    val modelCallsLeft get() = g.modelAllowance.remaining()
 
     val owner: Owner
         get() = ConfirmingOwner(if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner, g.submitter)
@@ -121,6 +127,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     private suspend fun refreshNow() = withContext(Dispatchers.IO) {
         val rpc = g.rpc
         agentSol = runCatching { rpc.getBalance(agentAddress) }.getOrDefault(0)
+        slot = runCatching { rpc.getSlot() }.getOrDefault(slot)
         val c = capsuleAddress?.let { rpc.getAccountData(it) }?.let(Accounts::capsule)
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
@@ -211,6 +218,19 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val sig = owner.signAndSend(listOf(TallyIx.openDispute(o, capsuleAddress!!, receipt, merchantPda, sha256(reason.toByteArray()))), g.rpc)
         g.store.markDisputed(receipt)
         log("Dispute opened: ${entry.title}", entry.merchant, entry.amountMicro, "pending", "Reason: $reason. The merchant's bond can't be withdrawn while this is open.", sig)
+    }
+
+    /**
+     * Close the capsule: the vault's USDC and both accounts' rent go back to the owner. Creating a
+     * new one afterwards picks up a Seeker Genesis Token the owner received since.
+     */
+    suspend fun closeCapsule() = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        val refund = vaultBalance
+        val sig = owner.signAndSend(listOf(AssociatedToken.createIdempotent(o, o, c.mint), TallyIx.closeCapsule(o, capsuleAddress!!, c.mint)), g.rpc)
+        log("Capsule closed", "Tally", 0, "paid", "\$${usdc(refund)} USDC and the account rent returned to your wallet.", sig)
+        refreshNow()
     }
 
     suspend fun setFrozen(frozen: Boolean) = work(if (frozen) "Freezing" else "Unfreezing") {
@@ -423,8 +443,12 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val inflated = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items.mapIndexed { i, it -> if (i == floorIdx) it.copy(price = it.price * 2, floor = it.price * 2) else it }, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names, p.descriptions)
         attack("Price tampering: 2× the signed price", hostile(inflated, floorIdx), inflated.menu.items[floorIdx])
         // 4. Whisper upsell without the owner: pick the priciest same-category item
-        val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= (capsule?.perTxCap ?: Long.MAX_VALUE) }.maxByOrNull { p.menu.items[it].price }
+        // Keep the upsell inside the per-purchase and daily limits, so it meets the cheapest-match rule
+        // rather than a budget check.
+        val budget = capsule?.let { c -> minOf(c.perTxCap, Purchase.dailyRemaining(c.dailyCap, c.spentInCycle, c.cycleStartSlot, withContext(Dispatchers.IO) { g.rpc.getSlot() })) } ?: Long.MAX_VALUE
+        val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= budget }.maxByOrNull { p.menu.items[it].price }
         if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", hostile(p, upsell), p.menu.items[upsell])
+        else log("Whisper upsell skipped", merchant?.name ?: "", 0, "pending", "No pricier item fits today's remaining budget; the daily limit already blocks it.", null, attack = true)
         redTeam = results.toList()
     }
 

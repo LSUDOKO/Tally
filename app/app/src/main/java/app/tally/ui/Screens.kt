@@ -107,12 +107,12 @@ fun HomeScreen(s: Session) {
                             Big("\$${usdc(s.vaultBalance)}")
                             Text("USDC in vault", color = TallyColors.Muted, fontSize = 13.sp)
                             Gap(14)
-                            val pct = if (c.dailyCap > 0) (c.spentInCycle.toFloat() / c.dailyCap).coerceIn(0f, 1f) else 0f
+                            val pct = if (c.dailyCap > 0) (s.spentToday.toFloat() / c.dailyCap).coerceIn(0f, 1f) else 0f
                             Box(Modifier.fillMaxWidth().background(TallyColors.SurfaceHigh, RoundedCornerShape(50)).padding(0.dp)) {
                                 Box(Modifier.fillMaxWidth(pct.coerceAtLeast(0.02f)).background(TallyColors.Paid, RoundedCornerShape(50)).padding(vertical = 4.dp))
                             }
                             Gap(6)
-                            Text("\$${usdc(c.spentInCycle)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} per purchase", color = TallyColors.Muted, fontSize = 13.sp)
+                            Text("\$${usdc(s.spentToday)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} per purchase", color = TallyColors.Muted, fontSize = 13.sp)
                             Gap(10)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (c.frozen) Chip("Frozen", TallyColors.Blocked)
@@ -142,7 +142,7 @@ fun HomeScreen(s: Session) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(Modifier.weight(1f)) { Stat("Attacks blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked) }
-                    Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.store.spentToday())}", TallyColors.Paid) }
+                    Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Paid) }
                 }
                 Primary("Scan or tap to pay", { s.screen = Screen.Scan }, enabled = s.capsule != null)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -434,12 +434,20 @@ fun SettingsScreen(s: Session) {
                     Mono("agent   ${s.agentAddress}")
                     Mono("agent SOL for fees: ${"%.4f".format(s.agentSol / 1e9)}")
                     Mono("capsule ${s.capsuleAddress ?: "—"}")
-                    Mono("agent model: ${if (s.modelAvailable) "${GroqAgent.MODEL} on Groq (structured fields only)" else "rule-based (no API key)"}")
+                    Mono("agent model: ${if (s.modelAvailable) "${GroqAgent.MODEL} on Groq, ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "rule-based (no API key)"}")
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Secondary(if (s.capsule?.frozen == true) "Unfreeze capsule" else "Freeze capsule", { scope.launch { s.setFrozen(s.capsule?.frozen != true) } }, Modifier.weight(1f), enabled = s.capsule != null)
                 Secondary("Rotate agent key", { scope.launch { s.rotateAgent() } }, Modifier.weight(1f), enabled = s.capsule != null)
+            }
+            if (s.capsule != null) {
+                // Two taps: closing returns the money but ends this capsule's rules and history.
+                var confirmClose by remember { mutableStateOf(false) }
+                Secondary(
+                    if (confirmClose) "Tap again: close and refund \$${usdc(s.vaultBalance)}" else "Close capsule",
+                    { if (confirmClose) { confirmClose = false; scope.launch { s.closeCapsule() } } else confirmClose = true },
+                )
             }
             OutlinedTextField(rpc, { rpc = it }, Modifier.fillMaxWidth(), label = { Text("Custom RPC URL (blank = default)") })
             Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } })

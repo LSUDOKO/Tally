@@ -31,6 +31,7 @@ class FlowTest {
         assertEquals(6013, ErrorText.code(err))
         assertEquals("That's pricier than the cheapest match, so your approval is needed.", ErrorText.sentence(6013))
         assertEquals("Transaction failed (code 9999).", ErrorText.sentence(9999))
+        assertEquals("Already paid: this item was bought from this exact menu. Tally never charges twice.", ErrorText.sentence(0))
         assertEquals(null, ErrorText.code("""{"InstructionError":[0,"InvalidAccountData"]}"""))
     }
 
@@ -80,5 +81,12 @@ class FlowTest {
         assertEquals("Acc1", rpc.getTokenAccountsByOwner("o", Programs.TOKEN_2022).single().first)
         val st = rpc.getSignatureStatus("sig")!!
         assertEquals(6007, ErrorText.code(st.err!!))
+    }
+
+    @Test
+    fun dailyBudgetResetsWithTheProgramsCycle() {
+        assertEquals(4_600_000, Purchase.dailyRemaining(15_000_000, 10_400_000, cycleStartSlot = 1_000, currentSlot = 5_000))
+        assertEquals(0, Purchase.dailyRemaining(15_000_000, 16_000_000, 1_000, 5_000))
+        assertEquals(15_000_000, Purchase.dailyRemaining(15_000_000, 10_400_000, 1_000, 1_000 + Tally.CYCLE_SLOTS))
     }
 }

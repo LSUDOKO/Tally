@@ -1,6 +1,7 @@
 package app.tally.data
 
 import android.content.Context
+import app.tally.core.DailyAllowance
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -46,12 +47,10 @@ class Store(context: Context) {
         get() = prefs.getString("rpc", null)
         set(v) = prefs.edit().putString("rpc", v).apply()
 
-    /** Counts one hosted-model call against today's allowance; false once `max` calls were made today. */
-    fun tryConsumeModelCall(max: Int, today: Long = System.currentTimeMillis() / 86_400_000): Boolean {
-        val used = if (prefs.getLong("model_day", -1) == today) prefs.getInt("model_calls", 0) else 0
-        if (used >= max) return false
-        prefs.edit().putLong("model_day", today).putInt("model_calls", used + 1).apply()
-        return true
+    /** Where today's hosted-model call count is kept for the agent's DailyAllowance. */
+    val modelCalls = object : DailyAllowance.Counter {
+        override fun read() = prefs.getLong("model_day", -1) to prefs.getInt("model_calls", 0)
+        override fun write(day: Long, used: Int) { prefs.edit().putLong("model_day", day).putInt("model_calls", used).commit() }
     }
 
     /** The user's own Groq API key (app-private storage; never part of the APK). */

@@ -15,7 +15,7 @@ An AI agent buys coffee, lunch and transit for you from a Solana Seeker phone, b
 
 Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
-[Whitepaper](docs/00-whitepaper.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md)
+[Whitepaper](docs/00-whitepaper.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md) · [Real-phone run](docs/21-real-phone-run.md)
 
 </div>
 
@@ -88,8 +88,8 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 | Suite | Count | What it proves |
 |---|---|---|
 | `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
-| `pnpm -C sdk test` | **14** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` |
-| `./gradlew :core:test` (in `app/`) | **39** | Kotlin byte parity with Rust **and** `@solana/kit` (PDAs, instruction data, compiled message); firewall, agent, codec, APDU, Second Look |
+| `pnpm -C sdk test` | **15** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
+| `./gradlew :core:test` (in `app/`) | **72** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; spend allowance. One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
 
 The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
 
@@ -137,6 +137,10 @@ cd app && ./gradlew :app:assembleDebug   # app/app/build/outputs/apk/debug/app-d
 On a Seeker: **Connect with Seed Vault** → **Create a capsule** ("Coffee, max $6, $15 a day…") → on a second phone open **Merchant mode**, register with an SKR bond and broadcast → **Scan or tap** → "oat latte" → pay. Then open **Red team**.
 
 **One phone or an emulator:** debug builds have a *Demo owner* switch in Settings (a local key in place of Seed Vault; release builds never include it). Fund that address with `npx tsx faucet.ts <address>`, register it in **Merchant mode**, then use **Scan or tap → Pay this phone's merchant menu (demo)**. The phone signs a fresh menu as the merchant and pays it as the customer, so the whole flow runs on real devnet transactions: purchases, the Second Look co-sign, red team, disputes, freeze, rotation, Lighthouse and proof-of-work mode.
+
+**Any Android phone, real wallet:** Tally talks to whatever wallet answers Mobile Wallet Adapter, which is Seed Vault on a Seeker and Solflare or Phantom elsewhere. The full flow (connect, capsule, top-up, merchant registration, autonomous purchase, the co-signed Second Look purchase, red team) has been run on a Moto G34 with Solflare on devnet. Co-signing checks the wallet's capabilities and uses sign-only or sign-and-send, whichever the wallet offers. To try the Seeker-only features without a Seeker, `npx tsx faucet.ts <address> 0 0 0 --sgt` issues a devnet Seeker Genesis Token from our mock collection; close and recreate the capsule (Settings → Close capsule) to get the verified badge and the promo.
+
+**NFC without two NFC phones:** `NfcExchangeTest` runs a software tap, with the reader and the merchant's HCE responder exchanging the exact APDUs the radio would carry; the signed menu arrives byte for byte and still verifies. Each tap reads from a menu snapshot taken at SELECT, so the terminal's 20-second re-sign can't splice two menus, and the reader refuses stalled terminals and menus over 16 KB. QR carries the same signed bytes and works on every phone.
 
 Optional: paste your own Groq API key in **Settings** to use a hosted model (`openai/gpt-oss-120b` on Groq) as the agent. The key stays in app-private storage and is never built into the APK, and the app makes at most 30 model calls a day. Without a key, a deterministic rule-based agent is used. Either way the model only ever sees item ids, categories, prices, floors and dictionary-filtered name tokens, never merchant prose.
 

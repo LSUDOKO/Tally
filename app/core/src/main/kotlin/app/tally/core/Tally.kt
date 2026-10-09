@@ -7,5 +7,8 @@ object Tally {
     const val ED25519_PROGRAM_ID = "Ed25519SigVerify111111111111111111111111111"
     const val HEADER_LEN = 144
     const val MAX_AUTONOMOUS_WINDOW = 150L
+
+    /** Length of a capsule's spending day, in slots (crates/tally-core CYCLE_SLOTS). */
+    const val CYCLE_SLOTS = 216_000L
     const val MAX_PROOF_DEPTH = 16
 }
