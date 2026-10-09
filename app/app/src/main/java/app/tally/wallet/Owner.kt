@@ -13,6 +13,8 @@ import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import com.solana.mobilewalletadapter.clientlib.Solana
 import com.solana.mobilewalletadapter.clientlib.TransactionResult
 import com.solana.mobilewalletadapter.common.signin.SignInWithSolana
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class WalletException(message: String) : Exception(message)
 
@@ -64,7 +66,7 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
 
     override suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String {
         val owner = address ?: connect()
-        val blockhash = rpc.getLatestBlockhash()
+        val blockhash = withContext(Dispatchers.IO) { rpc.getLatestBlockhash() }
         val message = Message.compile(owner, blockhash, instructions)
         val unsigned = Message.serialize(message, Message.signers(owner, instructions).map { null })
         val r = adapter.transact(sender) { signAndSendTransactions(arrayOf(unsigned)) }
@@ -85,9 +87,9 @@ class DemoOwner(private val seed: ByteArray) : Owner {
     override suspend fun connect() = address
 
     override suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String {
-        val message = Message.compile(address, rpc.getLatestBlockhash(), instructions)
+        val message = Message.compile(address, withContext(Dispatchers.IO) { rpc.getLatestBlockhash() }, instructions)
         val sig = Ed25519.sign(seed, message)
-        return rpc.sendTransaction(Message.serialize(message, listOf(sig)))
+        return withContext(Dispatchers.IO) { rpc.sendTransaction(Message.serialize(message, listOf(sig))) }
     }
 
     override suspend fun cosign(wireTx: ByteArray): ByteArray = Signing.addSignature(wireTx, address) { Ed25519.sign(seed, it) }

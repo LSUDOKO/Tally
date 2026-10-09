@@ -35,7 +35,7 @@ class Rpc(private val transport: (String) -> String) {
         }.toString()
         var wait = 500L
         repeat(6) { attempt ->
-            val raw = runCatching { transport(body) }.getOrElse { if (attempt == 5) throw RpcException(it.message ?: "RPC unreachable") else null }
+            val raw = runCatching { transport(body) }.getOrElse { if (attempt == 5) throw RpcException(it.message ?: "RPC unreachable (${it.javaClass.simpleName})") else null }
             val res = raw?.let { runCatching { Json.parseToJsonElement(it).jsonObject }.getOrNull() }
             val err = res?.get("error")
             val message = err?.jsonObject?.get("message")?.jsonPrimitive?.contentOrNull
