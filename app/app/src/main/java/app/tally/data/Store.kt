@@ -65,6 +65,7 @@ class Store(context: Context) {
     fun attacksBlockedThisWeek(now: Long = System.currentTimeMillis()): Int =
         log().count { it.attack && it.outcome == "blocked" && now - it.at < 7L * 24 * 3600 * 1000 }
 
+    /** Purchases only (they carry a receipt, or slipped through red team); funding the capsule is not spending. */
     fun spentToday(now: Long = System.currentTimeMillis()): Long =
-        log().filter { it.outcome == "paid" && now - it.at < 24L * 3600 * 1000 }.sumOf { it.amountMicro }
+        log().filter { it.outcome == "paid" && (it.receipt != null || it.attack) && now - it.at < 24L * 3600 * 1000 }.sumOf { it.amountMicro }
 }

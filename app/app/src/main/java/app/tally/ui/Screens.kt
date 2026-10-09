@@ -120,7 +120,7 @@ fun HomeScreen(s: Session) {
                             Gap(12)
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Secondary("Add \$10", { scope.launch { s.fund(10_000_000) } }, Modifier.weight(1f))
-                                Secondary("Withdraw all", { scope.launch { s.withdraw(s.vaultBalance) } }, Modifier.weight(1f), enabled = s.vaultBalance > 0)
+                                Secondary("Withdraw", { scope.launch { s.withdraw(s.vaultBalance) } }, Modifier.weight(1f), enabled = s.vaultBalance > 0)
                                 Secondary("Rules", { s.screen = Screen.NewCapsule }, Modifier.weight(1f))
                             }
                         }
