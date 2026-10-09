@@ -44,6 +44,7 @@ import app.tally.graph
 import app.tally.wallet.DemoOwner
 import app.tally.wallet.Owner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
 enum class Screen { Home, NewCapsule, Scan, Checkout, Receipts, RedTeam, Merchant, Settings }
@@ -94,7 +95,9 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     private suspend fun <T> work(label: String, block: suspend () -> T): T? {
         busy = label
         return try {
-            block()
+            // Actions are started from screen-scoped coroutines; leaving the screen must not abandon a
+            // transaction half-way (sent but never confirmed or logged), so they run to completion.
+            withContext(NonCancellable) { block() }
         } catch (e: Exception) {
             toast = e.message ?: e.javaClass.simpleName
             null
