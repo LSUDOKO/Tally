@@ -1,0 +1,23 @@
+name: Request devnet test funds
+description: Get devnet SOL, test USDC and mock SKR (and optionally a test Seeker Genesis Token) to try Tally on your phone.
+title: "Test funds: "
+labels: ["test-funds"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tally runs on **Solana devnet**; these tokens have no value. Install Solflare or Phantom, switch it to **Devnet**, and paste the wallet's address below.
+        **Never post a recovery phrase or private key.** We only ever need the public address.
+  - type: input
+    id: address
+    attributes:
+      label: Devnet wallet address
+      placeholder: 9tGAS2N4DNVpLC3WwYxN8SFCR9m1AF22jVwvNAXLQX9R
+    validations:
+      required: true
+  - type: checkboxes
+    id: extras
+    attributes:
+      label: Extras
+      options:
+        - label: Also send a test Seeker Genesis Token (to try the Seeker-verified capsule and the launch promo)
