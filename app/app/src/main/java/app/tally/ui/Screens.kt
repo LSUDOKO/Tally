@@ -107,12 +107,12 @@ fun HomeScreen(s: Session) {
                             Big("\$${usdc(s.vaultBalance)}")
                             Text("USDC in vault", color = TallyColors.Muted, fontSize = 13.sp)
                             Gap(14)
-                            val pct = if (c.dailyCap > 0) (c.spentInCycle.toFloat() / c.dailyCap).coerceIn(0f, 1f) else 0f
+                            val pct = if (c.dailyCap > 0) (s.spentToday.toFloat() / c.dailyCap).coerceIn(0f, 1f) else 0f
                             Box(Modifier.fillMaxWidth().background(TallyColors.SurfaceHigh, RoundedCornerShape(50)).padding(0.dp)) {
                                 Box(Modifier.fillMaxWidth(pct.coerceAtLeast(0.02f)).background(TallyColors.Paid, RoundedCornerShape(50)).padding(vertical = 4.dp))
                             }
                             Gap(6)
-                            Text("\$${usdc(c.spentInCycle)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} per purchase", color = TallyColors.Muted, fontSize = 13.sp)
+                            Text("\$${usdc(s.spentToday)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} per purchase", color = TallyColors.Muted, fontSize = 13.sp)
                             Gap(10)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (c.frozen) Chip("Frozen", TallyColors.Blocked)
@@ -142,7 +142,7 @@ fun HomeScreen(s: Session) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(Modifier.weight(1f)) { Stat("Attacks blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked) }
-                    Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.store.spentToday())}", TallyColors.Paid) }
+                    Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Paid) }
                 }
                 Primary("Scan or tap to pay", { s.screen = Screen.Scan }, enabled = s.capsule != null)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

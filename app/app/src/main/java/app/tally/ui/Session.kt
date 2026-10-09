@@ -71,6 +71,11 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     var capsule by mutableStateOf<Accounts.Capsule?>(null)
     var vaultBalance by mutableStateOf(0L)
     var agentSol by mutableStateOf(0L)
+    var slot by mutableStateOf(0L)
+
+    /** Today's spend as the program counts it (zero once the 216,000-slot cycle has rolled over). */
+    val spentToday: Long
+        get() = capsule?.let { it.dailyCap - Purchase.dailyRemaining(it.dailyCap, it.spentInCycle, it.cycleStartSlot, slot) } ?: g.store.spentToday()
     /** The owner's Seeker Genesis Token `(token account, mint)`, when this device has one. */
     var sgt by mutableStateOf<Pair<String, String>?>(null)
 
@@ -122,6 +127,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     private suspend fun refreshNow() = withContext(Dispatchers.IO) {
         val rpc = g.rpc
         agentSol = runCatching { rpc.getBalance(agentAddress) }.getOrDefault(0)
+        slot = runCatching { rpc.getSlot() }.getOrDefault(slot)
         val c = capsuleAddress?.let { rpc.getAccountData(it) }?.let(Accounts::capsule)
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
