@@ -5,18 +5,10 @@ import app.tally.chain.Http
 import app.tally.core.AgentOutput
 import app.tally.core.AgentPick
 import app.tally.core.AgentRow
+import app.tally.core.ChatCompletions
 import app.tally.core.Firewall
 import app.tally.core.MenuRow
 import app.tally.core.RuleAgent
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -47,17 +39,7 @@ class GroqAgent(
         val key = apiKey().trim().ifBlank { return fallback("rule-based agent (no API key configured)") }
         if (!tryConsumeCall()) return fallback("daily model allowance used ($MAX_CALLS_PER_DAY); rule-based agent used")
         return runCatching {
-            val body = buildJsonObject {
-                put("model", MODEL)
-                put("max_completion_tokens", MAX_TOKENS)
-                put("reasoning_effort", "low")
-                put("temperature", 0)
-                putJsonObject("response_format") { put("type", "json_object") }
-                putJsonArray("messages") {
-                    add(buildJsonObject { put("role", "system"); put("content", Firewall.SYSTEM_PROMPT) })
-                    add(buildJsonObject { put("role", "user"); put("content", Firewall.agentPayload(request, categories, perTxMax, rows)) })
-                }
-            }.toString()
+            val body = ChatCompletions.request(MODEL, MAX_TOKENS, request, categories, perTxMax, rows)
             val req = Request.Builder()
                 .url(ENDPOINT)
                 .header("Authorization", "Bearer $key")
@@ -67,8 +49,7 @@ class GroqAgent(
                 if (!r.isSuccessful) return fallback("model unavailable (HTTP ${r.code}); rule-based agent used")
                 r.body.string()
             }
-            val text = Json.parseToJsonElement(raw).jsonObject["choices"]!!.jsonArray.first()
-                .jsonObject["message"]!!.jsonObject["content"]!!.jsonPrimitive.content
+            val text = ChatCompletions.replyText(raw) ?: return fallback("model reply was not a completion; rule-based agent used")
             AgentOutput.parse(text, agentRows)?.let { AgentResult(it, AgentSource.Model, null) }
                 ?: fallback("model reply rejected by the output schema; rule-based agent used")
         }.getOrElse { fallback("model unavailable (${it.javaClass.simpleName}); rule-based agent used") }
