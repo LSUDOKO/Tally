@@ -24,12 +24,18 @@ class AgentResult(val pick: AgentPick?, val source: AgentSource, val note: Strin
  * refusal or missing API key the deterministic RuleAgent decides. Either way the chain enforces
  * membership, price, payee, freshness and the cheapest-match rule.
  */
-class ClaudeAgent(private val apiKey: String = BuildConfig.ANTHROPIC_API_KEY) {
-    private val client: AnthropicClient? by lazy {
-        apiKey.takeIf { it.isNotBlank() }?.let { AnthropicOkHttpClient.builder().apiKey(it).build() }
-    }
+class ClaudeAgent(private val apiKey: () -> String = { BuildConfig.ANTHROPIC_API_KEY }) {
+    private var cached: Pair<String, AnthropicClient>? = null
 
-    val available get() = apiKey.isNotBlank()
+    /** Rebuilt whenever the user changes the key in Settings. */
+    private val client: AnthropicClient?
+        get() {
+            val key = apiKey().trim().takeIf { it.isNotBlank() } ?: return null
+            cached?.takeIf { it.first == key }?.let { return it.second }
+            return AnthropicOkHttpClient.builder().apiKey(key).build().also { cached = key to it }
+        }
+
+    val available get() = apiKey().isNotBlank()
 
     /** Blocking; call off the main thread. */
     fun choose(request: String, categories: List<Int>, perTxMax: Long, rows: List<MenuRow>): AgentResult {

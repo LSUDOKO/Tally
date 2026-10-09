@@ -46,6 +46,11 @@ class Store(context: Context) {
         get() = prefs.getString("rpc", null)
         set(v) = prefs.edit().putString("rpc", v).apply()
 
+    /** The user's own Anthropic API key (app-private storage; never part of the APK). */
+    var anthropicKey: String?
+        get() = prefs.getString("anthropic_key", null)
+        set(v) = prefs.edit().putString("anthropic_key", v).apply()
+
     /** The merchant terminal's editable catalog (defaults to the demo café). */
     var catalog: List<app.tally.merchant.Catalog.Entry>
         get() = prefs.getString("catalog", null)?.let { runCatching { json.decodeFromString<List<app.tally.merchant.Catalog.Entry>>(it) }.getOrNull() }

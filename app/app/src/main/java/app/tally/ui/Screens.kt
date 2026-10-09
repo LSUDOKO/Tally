@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.tally.BuildConfig
@@ -420,6 +421,7 @@ fun RedTeamScreen(s: Session) {
 fun SettingsScreen(s: Session) {
     val scope = rememberCoroutineScope()
     var rpc by remember { mutableStateOf(s.store.rpcOverride ?: "") }
+    var apiKey by remember { mutableStateOf(s.store.anthropicKey ?: "") }
     var demo by remember { mutableStateOf(s.store.useDemoOwner) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("Settings", onBack = { s.screen = Screen.Home })
@@ -440,6 +442,13 @@ fun SettingsScreen(s: Session) {
             }
             OutlinedTextField(rpc, { rpc = it }, Modifier.fillMaxWidth(), label = { Text("Custom RPC URL (blank = default)") })
             Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } })
+            OutlinedTextField(
+                apiKey, { apiKey = it.trim() }, Modifier.fillMaxWidth(), singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                label = { Text("Anthropic API key (blank = rule-based agent)") },
+            )
+            Body("Claude only ever sees item ids, categories, prices, floors and dictionary words, never merchant text. The chain still enforces every rule.", TallyColors.Muted)
+            Secondary("Save API key", { s.store.anthropicKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Claude agent enabled" })
             if (BuildConfig.DEMO_OWNER_ALLOWED) {
                 Card(accent = TallyColors.NeedsYou) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
