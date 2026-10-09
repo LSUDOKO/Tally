@@ -113,6 +113,16 @@ Every claim above can be checked on the explorer. The first six rows come from t
 
 ## Try it
 
+### On your phone in five minutes (judges)
+
+1. Install **Solflare** (or Phantom) and switch it to **Devnet** (Solflare: Settings → Network → Devnet). A fresh wallet is best.
+2. Install `tally-v1.0.0.apk` from [Releases](https://github.com/LSUDOKO/Tally/releases).
+3. Get test funds: [open a "Request devnet test funds" issue](https://github.com/LSUDOKO/Tally/issues/new?template=devnet-test-funds.yml) with your wallet address (tick the box for a test Seeker Genesis Token). These tokens are devnet-only and worthless.
+4. In Tally: **Connect** (approve in the wallet) → **Create a capsule** (approve) → **Top up agent with 0.05 SOL** (approve).
+5. Pay: **Scan or tap to pay** and scan the live counter QR. Ask for "oat latte" (pays on its own) and then "large oat latte" (Second Look asks you to approve in the wallet). Then open **Red team** and watch four attacks revert on-chain.
+
+The counter QR comes from `npx tsx scripts/counter.ts` (a laptop showing the demo café's menu, re-signed every 20 s), or from a second phone in **Merchant mode**. Optional: paste a Groq API key in Settings to use the hosted agent; without one, the built-in rule agent decides.
+
 ### Program
 
 ```bash
