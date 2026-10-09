@@ -128,6 +128,7 @@ object TallyIx {
     private val WITHDRAW = disc(183, 18, 70, 156, 148, 109, 161, 34)
     private val FREEZE = disc(255, 91, 207, 84, 251, 194, 254, 63)
     private val UNFREEZE = disc(133, 160, 68, 253, 80, 232, 218, 247)
+    private val CLOSE_CAPSULE = disc(16, 246, 167, 171, 45, 72, 171, 122)
     private val SET_AGENT = disc(154, 74, 121, 91, 137, 19, 101, 166)
     private val UPDATE_RULES = disc(9, 156, 238, 50, 25, 101, 141, 28)
     private val REGISTER_MERCHANT = disc(238, 245, 77, 132, 161, 88, 216, 248)
@@ -166,6 +167,13 @@ object TallyIx {
 
     fun freeze(owner: String, capsule: String) = ownerOp(owner, capsule, FREEZE)
     fun unfreeze(owner: String, capsule: String) = ownerOp(owner, capsule, UNFREEZE)
+
+    /** Close the capsule: the vault's balance goes back to the owner, then vault and capsule rent. */
+    fun closeCapsule(owner: String, capsule: String, mint: String) = Instruction(
+        Tally.PROGRAM_ID,
+        listOf(signerW(owner), w(capsule), r(mint), w(Pda.ata(capsule, mint)), w(Pda.ata(owner, mint)), r(Programs.TOKEN)),
+        CLOSE_CAPSULE,
+    )
     fun setAgent(owner: String, capsule: String, agent: String) = ownerOp(owner, capsule, Borsh().bytes(SET_AGENT).pubkey(agent).toByteArray())
     fun updateRules(owner: String, capsule: String, rules: Rules) =
         ownerOp(owner, capsule, Borsh().bytes(UPDATE_RULES).also { rules.encode(it) }.toByteArray())

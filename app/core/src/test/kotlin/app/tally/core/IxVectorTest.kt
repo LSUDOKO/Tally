@@ -29,6 +29,7 @@ class IxVectorTest {
     @Test fun fund() = check("fund", TallyIx.fund(owner, s("capsule"), s("usdc"), 20_000_000))
     @Test fun withdraw() = check("withdraw", TallyIx.withdraw(owner, s("capsule"), s("usdc"), 5_000_000))
     @Test fun freeze() = check("freeze", TallyIx.freeze(owner, s("capsule")))
+    @Test fun closeCapsule() = check("close_capsule", TallyIx.closeCapsule(owner, s("capsule"), s("usdc")))
     @Test fun setAgent() = check("set_agent", TallyIx.setAgent(owner, s("capsule"), s("agent")))
     @Test fun updateRules() = check("update_rules", TallyIx.updateRules(owner, s("capsule"), rules))
     @Test fun registerMerchant() = check("register_merchant", TallyIx.registerMerchant(owner, Pda.ata(owner, s("usdc")), s("skr"), "Blue Door Coffee", s("signingKey"), 5_000_000_000))
