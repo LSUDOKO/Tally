@@ -344,6 +344,37 @@
       }
     ]
   },
+  "rotate_signing_key": {
+    "program": "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk",
+    "data_hex": "e5676b2c54a285aac480b582d8304c505fc9cd83b3a970b4eba05878d2ae6f66af80b75ed0af2e8b",
+    "accounts": [
+      {
+        "address": "5XPdQGRroRqUycg4rCsLV5ir7owe87jLn7vDGXjkpFqH",
+        "signer": true,
+        "writable": true
+      },
+      {
+        "address": "E2hFJ6KUwR224HaXgAyBEVSPsw2jUg25k16UBVXiN61z",
+        "signer": false,
+        "writable": true
+      },
+      {
+        "address": "J4Kavp9dozBPqsv1h6W4gJvjdPX4bZ16vTiNhtTAcjnJ",
+        "signer": false,
+        "writable": true
+      },
+      {
+        "address": "AxGTwRz1cqZEUcuHjMmWw6uYeKE9XUiVcFDmhcbZRApv",
+        "signer": false,
+        "writable": true
+      },
+      {
+        "address": "11111111111111111111111111111111",
+        "signer": false,
+        "writable": false
+      }
+    ]
+  },
   "open_dispute": {
     "program": "3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk",
     "data_hex": "8919637717dfa12a0909090909090909090909090909090909090909090909090909090909090909",

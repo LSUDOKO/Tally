@@ -18,6 +18,7 @@ import {
   getProveFloorFraudInstructionAsync,
   getRegisterMerchantInstructionAsync,
   getSetAgentInstruction,
+  getRotateSigningKeyInstruction,
   getSetPowDifficultyInstruction,
   getUpdateRulesInstruction,
   getWithdrawInstruction,
@@ -70,6 +71,7 @@ describe('app instruction vectors', () => {
       update_rules: dump(getUpdateRulesInstruction({ owner, capsule, rules })),
       register_merchant: dump(await getRegisterMerchantInstructionAsync({ authority: owner, payout: ownerUsdc, skrMint: skr, authoritySkr: ownerSkr, name, signingKey, bond: 5_000_000_000n })),
       set_pow_difficulty: dump(getSetPowDifficultyInstruction({ authority: owner, merchant, difficulty: 8 })),
+      rotate_signing_key: dump(getRotateSigningKeyInstruction({ authority: owner, merchant, oldKeyRecord: keyRecord, newKeyRecord: (await findKeyRecordPda({ merchant, signingKey: agent }))[0], newKey: agent })),
       open_dispute: dump(await getOpenDisputeInstructionAsync({ owner, capsule, receipt, merchant, evidenceHash: new Uint8Array(32).fill(9) })),
       claim_promo: dump(getClaimPromoInstruction({
         owner, capsule, promoId: 7n,
