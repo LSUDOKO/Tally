@@ -2,7 +2,7 @@
 
 All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; nothing here is audited or meant for mainnet funds.
 
-## Unreleased
+## 1.0.0 · 2026-10-09
 
 ### Added
 - **Groq-hosted agent** (`openai/gpt-oss-120b`) in place of the Anthropic SDK. The key is entered in Settings and kept in app-private storage, never built into the APK. Calls are capped at 30 a day and 1,024 tokens each; past the allowance the deterministic rule agent decides.
@@ -11,6 +11,10 @@ All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; n
 - **One-phone demo** (debug builds): the phone signs a fresh menu as the merchant and pays it as the customer, re-signing automatically when a menu expires.
 - **`faucet.ts --sgt`** issues a mock Seeker Genesis Token on devnet, so Seeker-only features can be tried on any phone.
 - **Software NFC tap test**: a real signed menu crosses the exact APDU exchange and still verifies.
+- **Recovery after a reinstall or new phone**: "Make this phone the agent" (set_agent) and, in Merchant mode, "Use this phone's menu key" (rotate_signing_key).
+- **Seeker promo state**: the home screen reads the claim record and shows "claimed"; a second claim is explained.
+- **Signed-menu QR in the SDK** (Base45 + CBOR, byte-compatible with the app) and **`scripts/counter.ts`**, a laptop counter showing the demo café's live QR.
+- **Judge path**: a five-minute README walkthrough and an issue form for requesting devnet test funds.
 
 ### Fixed
 - Owner-signed actions failed on every phone: the blockhash was fetched on Android's main thread.
@@ -23,6 +27,7 @@ All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; n
 - Today's spend came from the phone's local log; it now comes from the chain, reset with the program's 216,000-slot cycle.
 - Red-team attacks were sometimes stopped by the wrong check (category, budget, proof of work, Lighthouse); each now meets the check it targets.
 - Funding the capsule counted as spending; rotating the agent key stranded its SOL.
+- The signed release APK crashed at launch and could not build ML Kit's scanner: R8 full mode dropped reflectively-called constructors (WorkManager's Room database, ML Kit registrars). Verified fixed by scanning and paying with the release build on a phone.
 
 ## Phase 4 · 2026-10-08 · Devnet
 - Program deployed to devnet; cluster initialised (USDC and SKR test mints, mock Seeker Genesis Token collection); demo world seeded.

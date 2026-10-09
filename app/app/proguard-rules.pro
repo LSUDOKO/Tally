@@ -8,3 +8,9 @@
 # Mobile Wallet Adapter
 -keep class com.solana.** { *; }
 -dontwarn com.solana.**
+# R8 full mode drops no-arg constructors that libraries call by reflection; found by launching the
+# release APK on a phone (crash at start, then ML Kit unable to build its barcode scanner).
+# WorkManager (used by the Glance widget) instantiates its Room database implementation by name.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+# ML Kit discovers its components through Firebase's ComponentRegistrar, also by reflection.
+-keep class * implements com.google.firebase.components.ComponentRegistrar { <init>(); }

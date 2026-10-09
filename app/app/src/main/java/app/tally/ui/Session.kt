@@ -250,6 +250,14 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         refreshNow()
     }
 
+    /** Point the capsule at this phone's existing agent key (after a reinstall or on a new phone). */
+    suspend fun adoptAgent() = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val cap = capsuleAddress ?: return@work
+        owner.signAndSend(listOf(TallyIx.setAgent(o, cap, agentAddress)), g.rpc)
+        refreshNow()
+    }
+
     suspend fun rotateAgent() = work("Rotating agent key") {
         val o = ownerAddress ?: return@work
         val cap = capsuleAddress ?: return@work
