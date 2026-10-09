@@ -9,6 +9,9 @@ import java.io.ByteArrayOutputStream
 object Apdu {
     val AID = byteArrayOf(0xF0.toByte(), 0x54, 0x41, 0x4C, 0x4C, 0x59, 0x01)
     const val CHUNK = 240
+
+    /** Largest menu a reader accepts (the QR path tops out near 2.9 KB; this leaves ample headroom). */
+    const val MAX_PAYLOAD = 16 * 1024
     val SW_OK = byteArrayOf(0x90.toByte(), 0x00)
     val SW_INS_NOT_SUPPORTED = byteArrayOf(0x6D, 0x00)
     val SW_WRONG_P1P2 = byteArrayOf(0x6B, 0x00)
@@ -42,6 +45,7 @@ object Apdu {
         check(ok(transceive(select()))) { "Tally AID not selected" }
         val len = transceive(getLength()).also { check(ok(it)) { "length failed" } }
         val total = ((len[0].toInt() and 0xff) shl 8) or (len[1].toInt() and 0xff)
+        check(total in 1..MAX_PAYLOAD) { "terminal announced a $total-byte menu (limit $MAX_PAYLOAD)" }
         val out = ByteArrayOutputStream()
         while (out.size() < total) {
             val r = transceive(getChunk(out.size(), minOf(CHUNK, total - out.size())))

@@ -69,4 +69,18 @@ class ApduTest {
         val e = assertThrows(IllegalStateException::class.java) { Apdu.readAll(stalled) }
         assertTrue("no progress" in e.message!!, e.message)
     }
+
+    @Test
+    fun anOversizedMenuIsRefusedBeforeReading() {
+        var chunkRequests = 0
+        val huge = { apdu: ByteArray ->
+            when (apdu[1]) {
+                0xCA.toByte() -> byteArrayOf(0xFF.toByte(), 0xFF.toByte()) + Apdu.SW_OK
+                0xB0.toByte() -> { chunkRequests++; ByteArray(240) + Apdu.SW_OK }
+                else -> serve(ByteArray(1), apdu)
+            }
+        }
+        assertThrows(IllegalStateException::class.java) { Apdu.readAll(huge) }
+        assertEquals(0, chunkRequests)
+    }
 }
