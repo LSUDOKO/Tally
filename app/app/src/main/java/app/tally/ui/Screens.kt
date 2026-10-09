@@ -128,6 +128,15 @@ fun HomeScreen(s: Session) {
                         }
                     }
                 }
+                if (s.capsule != null && s.capsule!!.agent != s.agentAddress) {
+                    Card(accent = TallyColors.NeedsYou) {
+                        Column {
+                            Body("This capsule's agent key lives on another phone (or an earlier install), so this phone can't pay from it.", TallyColors.NeedsYou)
+                            Gap(10)
+                            Primary("Make this phone the agent", { scope.launch { s.adoptAgent() } }, color = TallyColors.NeedsYou)
+                        }
+                    }
+                }
                 if (s.capsule != null && s.agentSol < 10_000_000) {
                     Card(accent = TallyColors.NeedsYou) {
                         Column {
