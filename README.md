@@ -93,6 +93,24 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 
 The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
 
+## On-chain evidence (devnet)
+
+Every claim above can be checked on the explorer. The first six rows come from the scripted demo ([docs/DEVNET.md](docs/DEVNET.md)), the rest from a stock Android phone with Solflare ([docs/21](docs/21-real-phone-run.md)). Program: [`3ofJ…djqk`](https://explorer.solana.com/address/3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk?cluster=devnet).
+
+| What happened | What it proves | Result | Transaction |
+|---|---|---|---|
+| Honest purchase: the agent buys the $4.50 oat latte, the cheapest match | Autonomous payments work: signed menu, cheapest-match rule, payee from the registry. No human tap. | **Paid** | [5X3y…ZwcF](https://explorer.solana.com/tx/5X3yy6tRD3nVwSWK5vFBf3shBMN8hJDksrby8kk1PUyeykkkGZCKY73i16VJta9RfpDA2piYZz7tsFoqYtWZwcF?cluster=devnet) |
+| Payee swap: pay an attacker account instead of the café | The money can only go to the merchant's registered payout. | **Reverted 2001** | [4eCo…vPCE](https://explorer.solana.com/tx/4eCo3iQviYdcfnjLxqyETCoWZTCqFskQX3uBieXeEeR9vNfVPVwK2wcQnEQ75As8p7Qw6TkyvmejuAtLN6XBvPCE?cluster=devnet) |
+| Phantom add-on: a $2.99 "service fee" the café never signed | Only items in the merchant's signed Merkle root can be paid. | **Reverted 6009** | [4oot…x8NS](https://explorer.solana.com/tx/4oot9a8F18zqqAFXjK6ntL7uKEh8s93LuaMMBqqb5shNwtqbUE8GUdsQpaghyAjH7sosj2wdoRm6yPDwbsxDx8NS?cluster=devnet) |
+| Stale menu: replay a QR from 300 slots ago | Menus expire on-chain (≤150 slots), so screenshots can't be replayed. | **Reverted 6007** | [3wmM…JkzH](https://explorer.solana.com/tx/3wmMJMoqVCwAM2kgjktfyZssyCCWhYDTmLzr9o9kjP9EgkTirBhX15gFQVShuKCZCJ9amTtsCbv3rQJcijYHJkzH?cluster=devnet) |
+| Whisper upsell: the agent picks the $5.90 large latte on its own | Anything pricier than the cheapest match needs the owner's signature. | **Reverted 6013** | [8PMb…yszd](https://explorer.solana.com/tx/8PMbmycaGYKJr17VPQCEkqyn7qaR7uapAWH6pT5oXEGG45wor122am1M7RR8tEkPiXdATcRdRSkbroHRrXcyszd?cluster=devnet) |
+| The owner approves that large latte | With the owner's co-signature the same purchase goes through. | **Paid** | [56gB…mMH7](https://explorer.solana.com/tx/56gBBA1r2CyJZ12f9udR8Mt9NJcrw11M84R2JBCc5qehkKo33VqSL4qRKcRV8g5LDSXpk5s6js6o3AX7C7rrmMH7?cluster=devnet) |
+| Real phone, Solflare: create the capsule with rules and $20 | The owner key stays in the wallet; the app only proposes. | **Created** | [3ZjM…4jDY](https://explorer.solana.com/tx/3ZjM6LwXft7CFAy9V7sib1MnhP1VYv9vgevLPZ6vni1piAz6KRPfUhvXAMpA8f5Wk3tNoZUsQA7LcKTnbuAL4jDY?cluster=devnet) |
+| Real phone: the Groq agent buys the $4.50 latte | The hosted agent, behind the context firewall, pays without a human. | **Paid** | [5KFt…h2so](https://explorer.solana.com/tx/5KFt148FsKyrc7CL6x6RcZjJzs8nkYNrqHxZt8xUsXo8FBQwia297PB2cH8CbYMpMidocDNjSCGmNyZ2f2p9h2so?cluster=devnet) |
+| Real phone: the large latte, approved on Second Look in Solflare | Agent signature + wallet co-signature in one transaction. | **Paid** | [58eP…EGyD](https://explorer.solana.com/tx/58ePPqG3hK7TWYzXYtsoJXn5iSaNYX2tN8R67uzRhs2TA3esUx8Nb1CQPNqoAag7bxhcTwg2fgNWKLtzBbaHEGyD?cluster=devnet) |
+| Real phone: capsule created with a Seeker Genesis Token | The program verifies the token's collection on-chain (Seeker-only features). | **Seeker verified** | [5C5p…rBax](https://explorer.solana.com/tx/5C5pkK2Q48DkbNoPLcDBQB1vLNtBMAL1HhbEqpkCR3DAaSf2eHrM838J7Hpixk2pZqxiMfPiaTX962eE67ABrBax?cluster=devnet) |
+| Real phone: claim the Seeker launch promo | One claim per token; a second claim is refused (claim record exists). | **Claimed** | [4UxE…Cznf](https://explorer.solana.com/tx/4UxEYZURtLsiXYc2DK4z9k8rc8jdxoRmaxYh7Li1yEh2Y1WJtfqBKPXDV3RKNQeEz9vy2jf1ptGQL2xp4hMpCznf?cluster=devnet) |
+
 ## Try it
 
 ### Program
