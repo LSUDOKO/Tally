@@ -12,7 +12,7 @@ data class ParsedRules(val categories: List<Int>, val perTxCap: Long, val dailyC
  */
 object RuleParser {
     val CATEGORY_WORDS = linkedMapOf(
-        0 to listOf("food", "lunch", "breakfast", "dinner", "meal"),
+        0 to listOf("food", "lunch", "breakfast", "dinner", "meal", "bakery", "bread", "croissant", "bagel"),
         1 to listOf("drink", "drinks", "juice", "smoothie", "tea"),
         2 to listOf("snack", "snacks", "pastry", "pastries"),
         3 to listOf("coffee", "latte", "espresso", "cafe", "café"),

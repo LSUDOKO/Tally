@@ -23,6 +23,14 @@ class RuleParserTest {
     }
 
     @Test
+    fun bakeryMeansTheFoodCategory() {
+        val r = RuleParser.parse("Coffee and bakery, max 6, 40 a day")
+        assertEquals(listOf(0, 3), r.categories)
+        assertEquals(6_000_000, r.perTxCap)
+        assertEquals(40_000_000, r.dailyCap)
+    }
+
+    @Test
     fun fallsBackToSafeDefaults() {
         val r = RuleParser.parse("coffee")
         assertEquals(listOf(3), r.categories)
