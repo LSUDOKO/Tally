@@ -24,7 +24,11 @@ class AgentResult(val pick: AgentPick?, val source: AgentSource, val note: Strin
  * refusal or missing API key the deterministic RuleAgent decides. Either way the chain enforces
  * membership, price, payee, freshness and the cheapest-match rule.
  */
-class ClaudeAgent(private val apiKey: () -> String = { BuildConfig.ANTHROPIC_API_KEY }) {
+class ClaudeAgent(
+    private val apiKey: () -> String = { BuildConfig.ANTHROPIC_API_KEY },
+    /** Spending guard: returns false once today's call allowance is used up. */
+    private val tryConsumeCall: () -> Boolean = { true },
+) {
     private var cached: Pair<String, AnthropicClient>? = null
 
     /** Rebuilt whenever the user changes the key in Settings. */
@@ -42,10 +46,11 @@ class ClaudeAgent(private val apiKey: () -> String = { BuildConfig.ANTHROPIC_API
         val agentRows: List<AgentRow> = rows.map(Firewall::agentRow)
         val fallback = { note: String -> AgentResult(RuleAgent.choose(request, agentRows), AgentSource.Rules, note) }
         val c = client ?: return fallback("rule-based agent (no API key configured)")
+        if (!tryConsumeCall()) return fallback("daily Claude allowance used (${MAX_CALLS_PER_DAY}); rule-based agent used")
         return runCatching {
             val params = MessageCreateParams.builder()
                 .model("claude-opus-5-5")
-                .maxTokens(4000L)
+                .maxTokens(MAX_TOKENS)
                 .outputConfig(OutputConfig.builder().effort(OutputConfig.Effort.LOW).build())
                 .system(Firewall.SYSTEM_PROMPT)
                 .addUserMessage(Firewall.agentPayload(request, categories, perTxMax, rows))
@@ -56,5 +61,11 @@ class ClaudeAgent(private val apiKey: () -> String = { BuildConfig.ANTHROPIC_API
             AgentOutput.parse(text, agentRows)?.let { AgentResult(it, AgentSource.Claude, null) }
                 ?: fallback("model reply rejected by the output schema; rule-based agent used")
         }.getOrElse { fallback("model unavailable (${it.javaClass.simpleName}); rule-based agent used") }
+    }
+
+    companion object {
+        /** The reply is a ~50-token JSON object; this only bounds a misbehaving response. */
+        const val MAX_TOKENS = 1_024L
+        const val MAX_CALLS_PER_DAY = 30
     }
 }

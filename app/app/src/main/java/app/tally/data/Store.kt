@@ -46,6 +46,14 @@ class Store(context: Context) {
         get() = prefs.getString("rpc", null)
         set(v) = prefs.edit().putString("rpc", v).apply()
 
+    /** Counts one Claude call against today's allowance; false once `max` calls were made today. */
+    fun tryConsumeClaudeCall(max: Int, today: Long = System.currentTimeMillis() / 86_400_000): Boolean {
+        val used = if (prefs.getLong("claude_day", -1) == today) prefs.getInt("claude_calls", 0) else 0
+        if (used >= max) return false
+        prefs.edit().putLong("claude_day", today).putInt("claude_calls", used + 1).apply()
+        return true
+    }
+
     /** The user's own Anthropic API key (app-private storage; never part of the APK). */
     var anthropicKey: String?
         get() = prefs.getString("anthropic_key", null)
