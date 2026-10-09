@@ -387,23 +387,30 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val allowed = p.menu.items.indices.filter { i -> capsule?.allows(p.menu.items[i].category) ?: true }.ifEmpty { error("Your rules allow nothing on this menu") }
         val floorIdx = allowed.minBy { p.menu.items[it].price + if (p.menu.items[it].price == p.menu.items[it].floor) 0 else Long.MAX_VALUE / 2 }
         // A real, initialised USDC account that is not the merchant's registered payout (the owner's own).
+        // Attacks carry a valid proof of work and Lighthouse assertion when those are on, so they fail
+        // only on the check they target.
+        val pow = withContext(Dispatchers.Default) { powFor(merchant ?: error("Scan a merchant first"), capsuleAddress!!, p.menu.menuNonce) }
+        val lighthouseOn = (capsule?.flags ?: 0) and 1 != 0
+        fun hostile(menu: SignedPayload, index: Int, payout: String? = null) = PayOffer.build(
+            params(menu, index, false, overridePayout = payout, pow = pow, lighthouseVaultAfter = if (lighthouseOn) vaultBalance - menu.menu.items[index].price else null),
+        )
         val mint = capsule?.mint ?: config.usdcMint
         val ownerAta = Pda.ata(ownerAddress!!, mint)
         // When this phone is also the merchant, the owner's account *is* the payout; aim at the agent's own
         // USDC account instead (created in the same transaction so the swap reaches the payee check).
         val (evil, setup) = if (ownerAta == merchant?.payout) Pda.ata(agentAddress, mint) to listOf(AssociatedToken.createIdempotent(agentAddress, agentAddress, mint)) else ownerAta to emptyList()
         // 1. payee swap
-        attack("Payee swap → attacker account", setup + PayOffer.build(params(p, floorIdx, false, overridePayout = evil)), p.menu.items[floorIdx])
+        attack("Payee swap → attacker account", setup + hostile(p, floorIdx, evil), p.menu.items[floorIdx])
         // 2. phantom add-on: an unsigned $2.99 fee appended to the signed menu
         val fee = Item(ByteArray(16) { 0xfe.toByte() }, p.menu.items[floorIdx].category, 2_990_000, 2_990_000)
         val tampered = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items + fee, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names + "Service fee", p.descriptions + null)
-        attack("Phantom add-on: unsigned \$2.99 fee", PayOffer.build(params(tampered, tampered.menu.items.size - 1, false)), fee)
+        attack("Phantom add-on: unsigned \$2.99 fee", hostile(tampered, tampered.menu.items.size - 1), fee)
         // 3. price tampering: same item, inflated price
         val inflated = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items.mapIndexed { i, it -> if (i == floorIdx) it.copy(price = it.price * 2, floor = it.price * 2) else it }, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names, p.descriptions)
-        attack("Price tampering: 2× the signed price", PayOffer.build(params(inflated, floorIdx, false)), inflated.menu.items[floorIdx])
+        attack("Price tampering: 2× the signed price", hostile(inflated, floorIdx), inflated.menu.items[floorIdx])
         // 4. Whisper upsell without the owner: pick the priciest same-category item
         val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= (capsule?.perTxCap ?: Long.MAX_VALUE) }.maxByOrNull { p.menu.items[it].price }
-        if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", PayOffer.build(params(p, upsell, false)), p.menu.items[upsell])
+        if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", hostile(p, upsell), p.menu.items[upsell])
         redTeam = results.toList()
     }
 
