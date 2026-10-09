@@ -88,8 +88,8 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 | Suite | Count | What it proves |
 |---|---|---|
 | `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
-| `pnpm -C sdk test` | **14** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` |
-| `./gradlew :core:test` (in `app/`) | **39** | Kotlin byte parity with Rust **and** `@solana/kit` (PDAs, instruction data, compiled message); firewall, agent, codec, APDU, Second Look |
+| `pnpm -C sdk test` | **15** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
+| `./gradlew :core:test` (in `app/`) | **72** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; spend allowance. One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
 
 The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
 
