@@ -213,6 +213,19 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         log("Dispute opened: ${entry.title}", entry.merchant, entry.amountMicro, "pending", "Reason: $reason. The merchant's bond can't be withdrawn while this is open.", sig)
     }
 
+    /**
+     * Close the capsule: the vault's USDC and both accounts' rent go back to the owner. Creating a
+     * new one afterwards picks up a Seeker Genesis Token the owner received since.
+     */
+    suspend fun closeCapsule() = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        val refund = vaultBalance
+        val sig = owner.signAndSend(listOf(AssociatedToken.createIdempotent(o, o, c.mint), TallyIx.closeCapsule(o, capsuleAddress!!, c.mint)), g.rpc)
+        log("Capsule closed", "Tally", 0, "paid", "\$${usdc(refund)} USDC and the account rent returned to your wallet.", sig)
+        refreshNow()
+    }
+
     suspend fun setFrozen(frozen: Boolean) = work(if (frozen) "Freezing" else "Unfreezing") {
         val o = ownerAddress ?: return@work
         val cap = capsuleAddress ?: return@work

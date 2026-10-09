@@ -441,6 +441,14 @@ fun SettingsScreen(s: Session) {
                 Secondary(if (s.capsule?.frozen == true) "Unfreeze capsule" else "Freeze capsule", { scope.launch { s.setFrozen(s.capsule?.frozen != true) } }, Modifier.weight(1f), enabled = s.capsule != null)
                 Secondary("Rotate agent key", { scope.launch { s.rotateAgent() } }, Modifier.weight(1f), enabled = s.capsule != null)
             }
+            if (s.capsule != null) {
+                // Two taps: closing returns the money but ends this capsule's rules and history.
+                var confirmClose by remember { mutableStateOf(false) }
+                Secondary(
+                    if (confirmClose) "Tap again: close and refund \$${usdc(s.vaultBalance)}" else "Close capsule",
+                    { if (confirmClose) { confirmClose = false; scope.launch { s.closeCapsule() } } else confirmClose = true },
+                )
+            }
             OutlinedTextField(rpc, { rpc = it }, Modifier.fillMaxWidth(), label = { Text("Custom RPC URL (blank = default)") })
             Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } })
             OutlinedTextField(
