@@ -247,6 +247,18 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         onPayload(signOwnMenu(auth, slot))
     }
 
+    /**
+     * The current menu if it is still comfortably live. In debug loopback (this phone is the merchant)
+     * an expiring menu is simply re-signed; otherwise null means "scan the counter again".
+     */
+    private suspend fun livePayload(): SignedPayload? {
+        val p = payload ?: return null
+        val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
+        if (Purchase.gate(slot, p.menu.expiresSlot) != Purchase.Gate.Rescan) return p
+        val own = ownerAddress?.takeIf { BuildConfig.DEMO_OWNER_ALLOWED && p.menu.merchant == TallyPda.merchant(it) } ?: return null
+        return signOwnMenu(own, slot).also { payload = it }
+    }
+
     private fun signOwnMenu(auth: String, slot: Long): SignedPayload {
         val terminal = MerchantTerminal(g.merchantMenuKey)
         val (p, _) = terminal.publish(terminal.merchantAddress(auth), slot, System.currentTimeMillis(), g.store.catalog)
@@ -283,21 +295,17 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
 
     /** Agent pays; if the chain will demand the owner (above floor, low bond, extended window), open Second Look first. */
     suspend fun pay(index: Int, reason: String) = work("Paying") {
-        val p = payload ?: return@work
+        payload ?: return@work
         val m = merchant ?: return@work
         val c = capsule ?: error("Create a capsule first")
-        val item = p.menu.items[index]
-        val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
-        if (Purchase.gate(slot, p.menu.expiresSlot) == Purchase.Gate.Rescan) {
+        val p = livePayload() ?: run {
             toast = "That menu is about to expire. Scan the counter again."
             screen = Screen.Scan
             return@work
         }
+        val item = p.menu.items[index]
         val needsOwner = Purchase.needsOwner(item, m.skrBonded, c.minMerchantBond, p.menu.window)
-        val pow = withContext(Dispatchers.Default) { powFor(m, capsuleAddress!!, p.menu.menuNonce) }
-        val lighthouse = if (c.flags and 1 != 0) vaultBalance - item.price else null
-        val ixs = PayOffer.build(params(p, index, needsOwner, pow = pow, lighthouseVaultAfter = lighthouse))
-        val wire = g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
+        val (ixs, wire) = agentSignedPay(p, index, needsOwner)
         if (needsOwner) {
             val post = withContext(Dispatchers.IO) { g.rpc.simulate(wire, listOf(c.vault)) }
             val after = post.postAccounts.firstOrNull()?.let(Accounts::tokenAmount) ?: (vaultBalance - item.price)
@@ -309,11 +317,27 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         submit(wire, p.names[index], item, attack = false)
     }
 
+    private suspend fun agentSignedPay(p: SignedPayload, index: Int, ownerSigns: Boolean): Pair<List<Instruction>, ByteArray> {
+        val m = merchant ?: error("Scan a merchant first")
+        val c = capsule ?: error("Create a capsule first")
+        val pow = withContext(Dispatchers.Default) { powFor(m, capsuleAddress!!, p.menu.menuNonce) }
+        val lighthouse = if (c.flags and 1 != 0) vaultBalance - p.menu.items[index].price else null
+        val ixs = PayOffer.build(params(p, index, ownerSigns, pow = pow, lighthouseVaultAfter = lighthouse))
+        return ixs to g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
+    }
+
     suspend fun approveCosign() = work("Waiting for Seed Vault") {
         val pc = pendingCosign ?: return@work
         pendingCosign = null
-        val signed = owner.cosign(pc.wire)
-        val p = payload ?: return@work
+        val before = payload
+        // A person reading Second Look can outlast the menu's short window; never co-sign a stale menu.
+        val p = livePayload() ?: run {
+            toast = "That menu expired while you were reviewing. Scan the counter again."
+            screen = Screen.Scan
+            return@work
+        }
+        val wire = if (p === before) pc.wire else agentSignedPay(p, pc.index, ownerSigns = true).second
+        val signed = owner.cosign(wire)
         submit(signed, p.names[pc.index], p.menu.items[pc.index], attack = false)
     }
 
@@ -342,15 +366,9 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     // ------------------------------------------------------------------ red team (docs/14)
 
     suspend fun runRedTeam() = work("Running attacks") {
-        var p = payload ?: error("Scan a merchant menu first")
-        val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
-        if (Purchase.gate(slot, p.menu.expiresSlot) == Purchase.Gate.Rescan) {
-            // Debug loopback: this phone is the merchant, so it can simply re-sign. Otherwise the attacks
-            // would all fail on staleness and prove nothing about the specific checks.
-            val own = ownerAddress?.takeIf { BuildConfig.DEMO_OWNER_ALLOWED && p.menu.merchant == TallyPda.merchant(it) }
-                ?: error("That menu has expired. Scan the counter again, then run the attacks.")
-            p = signOwnMenu(own, slot).also { payload = it }
-        }
+        payload ?: error("Scan a merchant menu first")
+        // Otherwise the attacks would all fail on staleness and prove nothing about the specific checks.
+        val p = livePayload() ?: error("That menu has expired. Scan the counter again, then run the attacks.")
         val results = mutableListOf<PayResult>()
         suspend fun attack(title: String, ixs: List<Instruction>, item: Item) {
             val wire = g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
