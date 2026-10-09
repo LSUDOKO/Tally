@@ -434,7 +434,7 @@ fun SettingsScreen(s: Session) {
                     Mono("agent   ${s.agentAddress}")
                     Mono("agent SOL for fees: ${"%.4f".format(s.agentSol / 1e9)}")
                     Mono("capsule ${s.capsuleAddress ?: "—"}")
-                    Mono("agent model: ${if (s.modelAvailable) "${GroqAgent.MODEL} on Groq (structured fields only)" else "rule-based (no API key)"}")
+                    Mono("agent model: ${if (s.modelAvailable) "${GroqAgent.MODEL} on Groq, ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "rule-based (no API key)"}")
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

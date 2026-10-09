@@ -5,6 +5,7 @@ import android.content.Context
 import app.tally.agent.GroqAgent
 import app.tally.chain.Http
 import app.tally.chain.Submitter
+import app.tally.core.DailyAllowance
 import app.tally.core.Rpc
 import app.tally.data.ClusterConfig
 import app.tally.data.Store
@@ -17,9 +18,10 @@ class AppGraph(context: Context) {
     val agentKey = AgentKey(context, "agent")
     val merchantMenuKey = AgentKey(context, "merchant-menu")
     val demoOwnerKey = AgentKey(context, "demo-owner")
+    val modelAllowance = DailyAllowance(GroqAgent.MAX_CALLS_PER_DAY, store.modelCalls)
     val agent = GroqAgent(
         apiKey = { store.groqKey ?: BuildConfig.GROQ_API_KEY },
-        tryConsumeCall = { store.tryConsumeModelCall(GroqAgent.MAX_CALLS_PER_DAY) },
+        tryConsumeCall = { modelAllowance.tryConsume() },
     )
 
     val rpcUrl: String

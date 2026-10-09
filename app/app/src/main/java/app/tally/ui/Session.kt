@@ -87,6 +87,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     val store get() = g.store
     val agentAddress: String get() = g.agentKey.address
     val modelAvailable get() = g.agent.available
+    val modelCallsLeft get() = g.modelAllowance.remaining()
 
     val owner: Owner
         get() = ConfirmingOwner(if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner, g.submitter)
