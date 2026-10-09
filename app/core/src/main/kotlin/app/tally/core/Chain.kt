@@ -169,6 +169,9 @@ object Accounts {
 
 object ErrorText {
     private val SENTENCES = mapOf(
+        // System program "account already in use": pay_offer's receipt PDA already exists, i.e. the
+        // duplicate-settlement nullifier caught a second payment for the same item on the same menu.
+        0 to "Already paid: this item was bought from this exact menu. Tally never charges twice.",
         6000 to "This capsule is frozen. Unfreeze it to let your agent pay.",
         6001 to "This capsule has expired. Create a new one to keep paying.",
         6002 to "This merchant is not accepting agent payments right now.",

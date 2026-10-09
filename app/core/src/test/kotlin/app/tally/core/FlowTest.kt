@@ -31,6 +31,7 @@ class FlowTest {
         assertEquals(6013, ErrorText.code(err))
         assertEquals("That's pricier than the cheapest match, so your approval is needed.", ErrorText.sentence(6013))
         assertEquals("Transaction failed (code 9999).", ErrorText.sentence(9999))
+        assertEquals("Already paid: this item was bought from this exact menu. Tally never charges twice.", ErrorText.sentence(0))
         assertEquals(null, ErrorText.code("""{"InstructionError":[0,"InvalidAccountData"]}"""))
     }
 
