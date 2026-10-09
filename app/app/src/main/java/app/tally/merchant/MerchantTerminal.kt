@@ -39,6 +39,10 @@ class MerchantTerminal(private val menuKey: AgentKey) {
     suspend fun setPow(owner: Owner, rpc: Rpc, authority: String, difficulty: Int): String =
         owner.signAndSend(listOf(TallyIx.setPowDifficulty(authority, difficulty)), rpc)
 
+    /** Register this phone's menu key in place of `registeredKey` (reinstall or replacement phone). */
+    suspend fun adoptThisDevice(owner: Owner, rpc: Rpc, authority: String, registeredKey: String): String =
+        owner.signAndSend(listOf(TallyIx.rotateSigningKey(authority, registeredKey, signingKey)), rpc)
+
     /** Sign a fresh menu valid for `window` slots and publish it to NFC. Returns the QR string. */
     fun publish(merchant: String, slot: Long, nonce: Long, entries: List<Catalog.Entry>, window: Long = 120): Pair<SignedPayload, String> {
         val rows = Catalog.rows(entries)

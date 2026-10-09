@@ -107,6 +107,18 @@ fun MerchantScreen(s: Session) {
                         Mono("menu key ${short(r.signingKey)} ${if (r.signingKey == terminal.signingKey) "(this device)" else "(other device!)"}")
                     }
                 }
+                if (r.signingKey != terminal.signingKey) {
+                    // Menus signed here would fail verification until the registry points at this phone's key.
+                    Body("This phone's menu key isn't the registered one (new phone or reinstall), so its menus won't verify.", TallyColors.NeedsYou)
+                    Primary("Use this phone's menu key", {
+                        scope.launch {
+                            s.busy = "Waiting for wallet"
+                            runCatching { terminal.adoptThisDevice(s.owner, g.rpc, s.ownerAddress!!, r.signingKey) }.onFailure { s.toast = it.message }
+                            s.busy = null
+                            reload()
+                        }
+                    })
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Broadcast menu (QR + NFC)", color = TallyColors.Text, modifier = Modifier.weight(1f))
                     Switch(live, { live = it; if (!it) terminal.stop() })
