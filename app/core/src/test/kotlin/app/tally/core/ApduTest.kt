@@ -2,6 +2,8 @@ package app.tally.core
 
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ApduTest {
@@ -59,5 +61,12 @@ class ApduTest {
     fun terminalOffOrNoSelectIsRefused() {
         assertArrayEquals(Apdu.SW_CONDITIONS, ApduSession { null }.respond(Apdu.select()))
         assertArrayEquals(Apdu.SW_CONDITIONS, ApduSession { ByteArray(5) }.respond(Apdu.getLength()))
+    }
+
+    @Test
+    fun aTerminalThatStopsSendingCannotHangTheReader() {
+        val stalled = { apdu: ByteArray -> if (apdu[1] == 0xB0.toByte()) Apdu.SW_OK else serve(ByteArray(500), apdu) }
+        val e = assertThrows(IllegalStateException::class.java) { Apdu.readAll(stalled) }
+        assertTrue("no progress" in e.message!!, e.message)
     }
 }

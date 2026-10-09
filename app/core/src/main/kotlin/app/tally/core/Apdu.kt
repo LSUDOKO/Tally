@@ -46,7 +46,9 @@ object Apdu {
         while (out.size() < total) {
             val r = transceive(getChunk(out.size(), minOf(CHUNK, total - out.size())))
             check(ok(r)) { "chunk at ${out.size()} failed" }
-            out.write(r, 0, r.size - 2)
+            // A terminal that answers OK with no data would otherwise keep the reader looping forever.
+            check(r.size > 2) { "terminal made no progress at byte ${out.size()}" }
+            out.write(r, 0, minOf(r.size - 2, total - out.size()))
         }
         return out.toByteArray()
     }
