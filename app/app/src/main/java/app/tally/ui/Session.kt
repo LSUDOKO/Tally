@@ -437,8 +437,12 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val inflated = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items.mapIndexed { i, it -> if (i == floorIdx) it.copy(price = it.price * 2, floor = it.price * 2) else it }, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names, p.descriptions)
         attack("Price tampering: 2× the signed price", hostile(inflated, floorIdx), inflated.menu.items[floorIdx])
         // 4. Whisper upsell without the owner: pick the priciest same-category item
-        val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= (capsule?.perTxCap ?: Long.MAX_VALUE) }.maxByOrNull { p.menu.items[it].price }
+        // Keep the upsell inside the per-purchase and daily limits, so it meets the cheapest-match rule
+        // rather than a budget check.
+        val budget = capsule?.let { c -> minOf(c.perTxCap, Purchase.dailyRemaining(c.dailyCap, c.spentInCycle, c.cycleStartSlot, withContext(Dispatchers.IO) { g.rpc.getSlot() })) } ?: Long.MAX_VALUE
+        val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= budget }.maxByOrNull { p.menu.items[it].price }
         if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", hostile(p, upsell), p.menu.items[upsell])
+        else log("Whisper upsell skipped", merchant?.name ?: "", 0, "pending", "No pricier item fits today's remaining budget; the daily limit already blocks it.", null, attack = true)
         redTeam = results.toList()
     }
 
