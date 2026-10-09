@@ -45,7 +45,10 @@ class Submitter(private val rpc: Rpc) {
         withContext(Dispatchers.IO) {
             val sig = runCatching { rpc.sendTransaction(wire, skipPreflight = land) }.getOrElse { e ->
                 val code = Regex("custom program error: 0x([0-9a-f]+)").find(e.message ?: "")?.groupValues?.get(1)?.toInt(16)
-                return@withContext null to Outcome.Reverted(code, code?.let(app.tally.core.ErrorText::sentence) ?: (e.message ?: "Send failed"))
+                android.util.Log.w("Tally", "send rejected: ${e.message}")
+                // Unknown codes keep the node's own words so the cause is never hidden behind a number.
+                val known = code?.let(app.tally.core.ErrorText::sentence)?.takeUnless { it.startsWith("Transaction failed") }
+                return@withContext null to Outcome.Reverted(code, known ?: (e.message ?: "Send failed").take(240))
             }
             sig to awaitOutcome(sig, timeoutMs)
         }

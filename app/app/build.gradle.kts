@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Secrets come from app/local.properties (never committed): ANTHROPIC_API_KEY, TALLY_RPC_URL.
+// Secrets come from app/local.properties (never committed): GROQ_API_KEY, TALLY_RPC_URL.
 val local = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
@@ -30,7 +30,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         buildConfigField("String", "RPC_URL", "\"${localOr("TALLY_RPC_URL", "https://api.devnet.solana.com")}\"")
-        buildConfigField("String", "ANTHROPIC_API_KEY", "\"${localOr("ANTHROPIC_API_KEY", "")}\"")
+        buildConfigField("String", "GROQ_API_KEY", "\"${localOr("GROQ_API_KEY", "")}\"")
     }
 
     signingConfigs {
@@ -93,7 +93,6 @@ dependencies {
     implementation(libs.glance.material3)
     implementation(libs.okhttp)
     implementation(libs.zxing.core)
-    implementation(libs.anthropic.java)
     implementation(libs.serialization.json)
     implementation(libs.serialization.cbor)
     implementation(libs.bouncycastle)

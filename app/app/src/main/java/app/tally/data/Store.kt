@@ -46,10 +46,18 @@ class Store(context: Context) {
         get() = prefs.getString("rpc", null)
         set(v) = prefs.edit().putString("rpc", v).apply()
 
-    /** The user's own Anthropic API key (app-private storage; never part of the APK). */
-    var anthropicKey: String?
-        get() = prefs.getString("anthropic_key", null)
-        set(v) = prefs.edit().putString("anthropic_key", v).apply()
+    /** Counts one hosted-model call against today's allowance; false once `max` calls were made today. */
+    fun tryConsumeModelCall(max: Int, today: Long = System.currentTimeMillis() / 86_400_000): Boolean {
+        val used = if (prefs.getLong("model_day", -1) == today) prefs.getInt("model_calls", 0) else 0
+        if (used >= max) return false
+        prefs.edit().putLong("model_day", today).putInt("model_calls", used + 1).apply()
+        return true
+    }
+
+    /** The user's own Groq API key (app-private storage; never part of the APK). */
+    var groqKey: String?
+        get() = prefs.getString("groq_key", null)
+        set(v) = prefs.edit().putString("groq_key", v).apply()
 
     /** The merchant terminal's editable catalog (defaults to the demo café). */
     var catalog: List<app.tally.merchant.Catalog.Entry>
