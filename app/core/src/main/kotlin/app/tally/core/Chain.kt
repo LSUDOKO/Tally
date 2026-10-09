@@ -224,6 +224,10 @@ object Purchase {
     fun needsOwner(item: Item, merchantBond: Long, minBond: Long, window: Long) =
         item.price > item.floor || merchantBond < minBond || window > Tally.MAX_AUTONOMOUS_WINDOW
 
+    /** What the capsule may still spend today, mirroring pay_offer's cycle reset. */
+    fun dailyRemaining(dailyCap: Long, spentInCycle: Long, cycleStartSlot: Long, currentSlot: Long): Long =
+        if (currentSlot - cycleStartSlot >= Tally.CYCLE_SLOTS) dailyCap else (dailyCap - spentInCycle).coerceAtLeast(0)
+
     fun gate(currentSlot: Long, expiresSlot: Long) = if (currentSlot + EXPIRY_MARGIN > expiresSlot) Gate.Rescan else Gate.Ok
 
     fun outcome(status: SigStatus?): Outcome = when {

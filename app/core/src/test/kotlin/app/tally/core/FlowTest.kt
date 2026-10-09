@@ -81,4 +81,11 @@ class FlowTest {
         val st = rpc.getSignatureStatus("sig")!!
         assertEquals(6007, ErrorText.code(st.err!!))
     }
+
+    @Test
+    fun dailyBudgetResetsWithTheProgramsCycle() {
+        assertEquals(4_600_000, Purchase.dailyRemaining(15_000_000, 10_400_000, cycleStartSlot = 1_000, currentSlot = 5_000))
+        assertEquals(0, Purchase.dailyRemaining(15_000_000, 16_000_000, 1_000, 5_000))
+        assertEquals(15_000_000, Purchase.dailyRemaining(15_000_000, 10_400_000, 1_000, 1_000 + Tally.CYCLE_SLOTS))
+    }
 }
