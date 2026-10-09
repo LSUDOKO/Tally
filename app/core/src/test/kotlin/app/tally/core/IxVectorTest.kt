@@ -34,6 +34,7 @@ class IxVectorTest {
     @Test fun updateRules() = check("update_rules", TallyIx.updateRules(owner, s("capsule"), rules))
     @Test fun registerMerchant() = check("register_merchant", TallyIx.registerMerchant(owner, Pda.ata(owner, s("usdc")), s("skr"), "Blue Door Coffee", s("signingKey"), 5_000_000_000))
     @Test fun setPow() = check("set_pow_difficulty", TallyIx.setPowDifficulty(owner, 8))
+    @Test fun rotateSigningKey() = check("rotate_signing_key", TallyIx.rotateSigningKey(owner, s("signingKey"), s("agent")))
     @Test fun openDispute() = check("open_dispute", TallyIx.openDispute(owner, s("capsule"), s("receipt"), s("merchant"), ByteArray(32) { 9 }))
     @Test fun claimPromo() = check("claim_promo", TallyIx.claimPromo(owner, s("capsule"), s("sgtMint"), 7))
 

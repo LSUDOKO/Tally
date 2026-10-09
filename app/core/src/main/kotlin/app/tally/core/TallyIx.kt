@@ -133,6 +133,7 @@ object TallyIx {
     private val UPDATE_RULES = disc(9, 156, 238, 50, 25, 101, 141, 28)
     private val REGISTER_MERCHANT = disc(238, 245, 77, 132, 161, 88, 216, 248)
     private val SET_POW_DIFFICULTY = disc(246, 197, 49, 165, 77, 79, 63, 196)
+    private val ROTATE_SIGNING_KEY = disc(229, 103, 107, 44, 84, 162, 133, 170)
     private val OPEN_DISPUTE = disc(137, 25, 99, 119, 23, 223, 161, 42)
     private val CLAIM_PROMO = disc(236, 205, 177, 4, 130, 30, 37, 238)
     private val PROVE_FLOOR_FRAUD = disc(38, 11, 22, 2, 124, 42, 99, 200)
@@ -197,6 +198,19 @@ object TallyIx {
         listOf(signerR(authority), w(TallyPda.merchant(authority))),
         Borsh().bytes(SET_POW_DIFFICULTY).u8(difficulty).toByteArray(),
     )
+
+    /**
+     * Point the merchant at a new menu-signing key (e.g. after reinstalling or replacing the
+     * terminal phone). The old key's record stays as evidence for fraud proofs.
+     */
+    fun rotateSigningKey(authority: String, oldKey: String, newKey: String): Instruction {
+        val merchant = TallyPda.merchant(authority)
+        return Instruction(
+            Tally.PROGRAM_ID,
+            listOf(signerW(authority), w(merchant), w(TallyPda.keyRecord(merchant, oldKey)), w(TallyPda.keyRecord(merchant, newKey)), r(Programs.SYSTEM)),
+            Borsh().bytes(ROTATE_SIGNING_KEY).pubkey(newKey).toByteArray(),
+        )
+    }
 
     /** Capsule owner disputes a settled receipt (wrong goods, not delivered); the arbiter resolves it. */
     fun openDispute(owner: String, capsule: String, receipt: String, merchant: String, evidenceHash: ByteArray) = Instruction(
