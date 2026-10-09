@@ -12,6 +12,7 @@ object Apdu {
     val SW_OK = byteArrayOf(0x90.toByte(), 0x00)
     val SW_INS_NOT_SUPPORTED = byteArrayOf(0x6D, 0x00)
     val SW_WRONG_P1P2 = byteArrayOf(0x6B, 0x00)
+    val SW_CONDITIONS = byteArrayOf(0x69, 0x85.toByte())
 
     fun select(): ByteArray = byteArrayOf(0x00, 0xA4.toByte(), 0x04, 0x00, AID.size.toByte()) + AID
     fun getLength(): ByteArray = byteArrayOf(0x80.toByte(), 0xCA.toByte(), 0x00, 0x00, 0x02)
@@ -51,4 +52,25 @@ object Apdu {
     }
 
     private fun ok(r: ByteArray) = r.size >= 2 && r[r.size - 2] == 0x90.toByte() && r[r.size - 1] == 0x00.toByte()
+}
+
+/**
+ * One tap, merchant side. The menu is snapshotted at SELECT and served from that snapshot until
+ * `reset` (card deactivation), so the terminal's ~20 s re-sign can never splice two menus into one
+ * read. Without a prior SELECT, or with the terminal off, every command is refused.
+ */
+class ApduSession(private val current: () -> ByteArray?) {
+    @Volatile private var snapshot: ByteArray? = null
+
+    fun respond(apdu: ByteArray): ByteArray {
+        if (apdu.size >= 2 && apdu[0] == 0x00.toByte() && apdu[1] == 0xA4.toByte()) {
+            val payload = current() ?: return Apdu.SW_CONDITIONS
+            return Apdu.respond(apdu, payload).also { if (it.contentEquals(byteArrayOf(0x01) + Apdu.SW_OK)) snapshot = payload }
+        }
+        return Apdu.respond(apdu, snapshot ?: return Apdu.SW_CONDITIONS)
+    }
+
+    fun reset() {
+        snapshot = null
+    }
 }

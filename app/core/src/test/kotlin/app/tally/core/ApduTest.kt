@@ -31,4 +31,33 @@ class ApduTest {
         val r = serve(ByteArray(300), Apdu.getLength())
         assertEquals(300, ((r[0].toInt() and 0xff) shl 8) or (r[1].toInt() and 0xff))
     }
+
+    @Test
+    fun aReSignMidTapDoesNotSpliceTwoMenus() {
+        val old = ByteArray(700) { 1 }
+        val new = ByteArray(700) { 2 }
+        var current = old
+        val session = ApduSession { current }
+        var chunks = 0
+        val out = Apdu.readAll { apdu ->
+            session.respond(apdu).also { if (apdu[1] == 0xB0.toByte() && ++chunks == 1) current = new }
+        }
+        assertArrayEquals(old, out)
+    }
+
+    @Test
+    fun nextTapSeesTheNewMenu() {
+        var current = ByteArray(10) { 1 }
+        val session = ApduSession { current }
+        Apdu.readAll(session::respond)
+        session.reset()
+        current = ByteArray(10) { 2 }
+        assertArrayEquals(current, Apdu.readAll(session::respond))
+    }
+
+    @Test
+    fun terminalOffOrNoSelectIsRefused() {
+        assertArrayEquals(Apdu.SW_CONDITIONS, ApduSession { null }.respond(Apdu.select()))
+        assertArrayEquals(Apdu.SW_CONDITIONS, ApduSession { ByteArray(5) }.respond(Apdu.getLength()))
+    }
 }
