@@ -73,9 +73,9 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     var agentSol by mutableStateOf(0L)
     var slot by mutableStateOf(0L)
 
-    /** Today's spend as the program counts it (zero once the 216,000-slot cycle has rolled over). */
+    /** Today's spend as the program counts it (zero once the 216,000-slot cycle has rolled over, or with no capsule). */
     val spentToday: Long
-        get() = capsule?.let { it.dailyCap - Purchase.dailyRemaining(it.dailyCap, it.spentInCycle, it.cycleStartSlot, slot) } ?: g.store.spentToday()
+        get() = capsule?.let { it.dailyCap - Purchase.dailyRemaining(it.dailyCap, it.spentInCycle, it.cycleStartSlot, slot) } ?: 0L
     /** The owner's Seeker Genesis Token `(token account, mint)`, when this device has one. */
     var sgt by mutableStateOf<Pair<String, String>?>(null)
 
