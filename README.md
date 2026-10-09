@@ -34,7 +34,7 @@ flowchart LR
     subgraph Seeker["Seeker phone (user)"]
       SV[Seed Vault<br/>owner key] -- MWA 2.x --> APP
       APP[Tally app] --> FW[Context firewall<br/>structured fields only]
-      FW --> AG[Agent<br/>Claude or rule-based]
+      FW --> AG[Agent<br/>Groq-hosted model or rule-based]
       AG -->|item_id| TX[pay_offer tx<br/>agent key in Keystore]
     end
     subgraph Counter["Merchant phone (same APK)"]
@@ -138,7 +138,7 @@ On a Seeker: **Connect with Seed Vault** → **Create a capsule** ("Coffee, max 
 
 **One phone or an emulator:** debug builds have a *Demo owner* switch in Settings (a local key in place of Seed Vault; release builds never include it). Fund that address with `npx tsx faucet.ts <address>`, register it in **Merchant mode**, then use **Scan or tap → Pay this phone's merchant menu (demo)**. The phone signs a fresh menu as the merchant and pays it as the customer, so the whole flow runs on real devnet transactions: purchases, the Second Look co-sign, red team, disputes, freeze, rotation, Lighthouse and proof-of-work mode.
 
-Optional: paste your own Anthropic API key in **Settings** to use Claude as the agent. The key stays in app-private storage and is never built into the APK. Without a key, a deterministic rule-based agent is used. Either way the model only ever sees item ids, categories, prices, floors and dictionary-filtered name tokens, never merchant prose.
+Optional: paste your own Groq API key in **Settings** to use a hosted model (`openai/gpt-oss-120b` on Groq) as the agent. The key stays in app-private storage and is never built into the APK, and the app makes at most 30 model calls a day. Without a key, a deterministic rule-based agent is used. Either way the model only ever sees item ids, categories, prices, floors and dictionary-filtered name tokens, never merchant prose.
 
 ## Security, honestly
 

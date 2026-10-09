@@ -85,7 +85,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     val config get() = g.config
     val store get() = g.store
     val agentAddress: String get() = g.agentKey.address
-    val claudeAvailable get() = g.claude.available
+    val modelAvailable get() = g.agent.available
 
     val owner: Owner
         get() = ConfirmingOwner(if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner, g.submitter)
@@ -279,7 +279,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val p = payload ?: return@work
         val c = capsule
         agentResult = withContext(Dispatchers.IO) {
-            g.claude.choose(request, c?.let { cap -> (0 until 256).filter(cap::allows) } ?: listOf(3), c?.perTxCap ?: 6_000_000, p.rows())
+            g.agent.choose(request, c?.let { cap -> (0 until 256).filter(cap::allows) } ?: listOf(3), c?.perTxCap ?: 6_000_000, p.rows())
         }
     }
 
@@ -433,5 +433,5 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
 
     fun itemName(p: SignedPayload, itemIdHex: String) = p.menu.items.indexOfFirst { Hex.encode(it.id) == itemIdHex }.let { if (it >= 0) it to p.names[it] else null }
 
-    val agentLabel get() = if (agentResult?.source == AgentSource.Claude) "Claude (structured fields only)" else "Rule agent"
+    val agentLabel get() = if (agentResult?.source == AgentSource.Model) "Groq model (structured fields only)" else "Rule agent"
 }

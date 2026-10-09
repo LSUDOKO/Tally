@@ -49,6 +49,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.tally.BuildConfig
+import app.tally.agent.GroqAgent
 import app.tally.core.MenuIssue
 import app.tally.core.Purchase
 import app.tally.core.RuleParser
@@ -421,7 +422,7 @@ fun RedTeamScreen(s: Session) {
 fun SettingsScreen(s: Session) {
     val scope = rememberCoroutineScope()
     var rpc by remember { mutableStateOf(s.store.rpcOverride ?: "") }
-    var apiKey by remember { mutableStateOf(s.store.anthropicKey ?: "") }
+    var apiKey by remember { mutableStateOf(s.store.groqKey ?: "") }
     var demo by remember { mutableStateOf(s.store.useDemoOwner) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar("Settings", onBack = { s.screen = Screen.Home })
@@ -433,7 +434,7 @@ fun SettingsScreen(s: Session) {
                     Mono("agent   ${s.agentAddress}")
                     Mono("agent SOL for fees: ${"%.4f".format(s.agentSol / 1e9)}")
                     Mono("capsule ${s.capsuleAddress ?: "—"}")
-                    Mono("agent model: ${if (s.claudeAvailable) "Claude (claude-opus-5-5, structured fields only)" else "rule-based (no API key)"}")
+                    Mono("agent model: ${if (s.modelAvailable) "${GroqAgent.MODEL} on Groq (structured fields only)" else "rule-based (no API key)"}")
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -445,10 +446,10 @@ fun SettingsScreen(s: Session) {
             OutlinedTextField(
                 apiKey, { apiKey = it.trim() }, Modifier.fillMaxWidth(), singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                label = { Text("Anthropic API key (blank = rule-based agent)") },
+                label = { Text("Groq API key (blank = rule-based agent)") },
             )
-            Body("Claude only ever sees item ids, categories, prices, floors and dictionary words, never merchant text. The chain still enforces every rule.", TallyColors.Muted)
-            Secondary("Save API key", { s.store.anthropicKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Claude agent enabled" })
+            Body("The model only ever sees item ids, categories, prices, floors and dictionary words, never merchant text. The chain still enforces every rule.", TallyColors.Muted)
+            Secondary("Save API key", { s.store.groqKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Groq agent enabled" })
             if (BuildConfig.DEMO_OWNER_ALLOWED) {
                 Card(accent = TallyColors.NeedsYou) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
