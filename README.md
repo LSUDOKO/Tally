@@ -15,7 +15,7 @@ An AI agent buys coffee, lunch and transit for you from a Solana Seeker phone, b
 
 Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
-[Whitepaper](docs/00-whitepaper.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md)
+[Whitepaper](docs/00-whitepaper.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md) · [Real-phone run](docs/21-real-phone-run.md)
 
 </div>
 
