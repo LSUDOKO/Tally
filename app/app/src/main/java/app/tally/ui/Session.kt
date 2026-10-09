@@ -219,6 +219,12 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     suspend fun rotateAgent() = work("Rotating agent key") {
         val o = ownerAddress ?: return@work
         val cap = capsuleAddress ?: return@work
+        // Sweep the retiring key's fee balance back to the owner first; once rotated it can never sign again.
+        val leftover = withContext(Dispatchers.IO) { runCatching { g.rpc.getBalance(agentAddress) }.getOrDefault(0) }
+        if (leftover > 10_000) {
+            val sweep = g.submitter.buildAgentSigned(agentAddress, listOf(SystemProgram.transfer(agentAddress, o, leftover - 5_000))) { g.agentKey.sign(it) }
+            g.submitter.sendAndConfirm(sweep)
+        }
         g.agentKey.rotate()
         owner.signAndSend(listOf(TallyIx.setAgent(o, cap, agentAddress)), g.rpc)
         refreshNow()
