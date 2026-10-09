@@ -1,6 +1,7 @@
 package app.tally.wallet
 
 import android.net.Uri
+import android.util.Log
 import app.tally.core.Base58
 import app.tally.core.Ed25519
 import app.tally.core.Instruction
@@ -18,6 +19,12 @@ import kotlinx.coroutines.withContext
 
 class WalletException(message: String) : Exception(message)
 
+/** The owner's co-signature: either the signed bytes for Tally to submit, or a signature the wallet already sent. */
+sealed class Cosigned {
+    class Signed(val wire: ByteArray) : Cosigned()
+    class Sent(val signature: String) : Cosigned()
+}
+
 /**
  * The capsule owner. In production this is the Seeker's Seed Vault reached through Mobile Wallet
  * Adapter: the owner key never enters this process. A debug-only demo owner exists for emulators
@@ -33,7 +40,7 @@ interface Owner {
     suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String
 
     /** Add the owner's co-signature to a transaction the agent already signed (cheapest-match exceptions). */
-    suspend fun cosign(wireTx: ByteArray): ByteArray
+    suspend fun cosign(wireTx: ByteArray): Cosigned
 }
 
 class MwaOwner(private val sender: ActivityResultSender, private val cluster: String) : Owner {
@@ -73,9 +80,23 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
         return Base58.encode(unwrap(r).first.signatures.first())
     }
 
-    override suspend fun cosign(wireTx: ByteArray): ByteArray {
-        val r = adapter.transact(sender) { signTransactions(arrayOf(wireTx)) }
-        return unwrap(r).first.signedPayloads.first()
+    /**
+     * Mobile Wallet Adapter 2.0 made sign-only optional. Wallets that offer it return the signed
+     * bytes; wallets that only sign-and-send (e.g. Solflare) add their signature to the
+     * agent-signed transaction and submit it themselves.
+     */
+    override suspend fun cosign(wireTx: ByteArray): Cosigned {
+        val r = adapter.transact(sender) {
+            val caps = getCapabilities()
+            Log.i("Tally", "wallet capabilities: signAndSend=${caps.supportsSignAndSendTransactions} optional=${caps.supportedOptionalFeatures.joinToString()}")
+            if (SIGN_ONLY in caps.supportedOptionalFeatures) Cosigned.Signed(signTransactions(arrayOf(wireTx)).signedPayloads.first())
+            else Cosigned.Sent(Base58.encode(signAndSendTransactions(arrayOf(wireTx)).signatures.first()))
+        }
+        return unwrap(r).first
+    }
+
+    private companion object {
+        const val SIGN_ONLY = "solana:signTransactions"
     }
 }
 
@@ -92,5 +113,5 @@ class DemoOwner(private val seed: ByteArray) : Owner {
         return withContext(Dispatchers.IO) { rpc.sendTransaction(Message.serialize(message, listOf(sig))) }
     }
 
-    override suspend fun cosign(wireTx: ByteArray): ByteArray = Signing.addSignature(wireTx, address) { Ed25519.sign(seed, it) }
+    override suspend fun cosign(wireTx: ByteArray): Cosigned = Cosigned.Signed(Signing.addSignature(wireTx, address) { Ed25519.sign(seed, it) })
 }

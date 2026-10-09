@@ -41,6 +41,7 @@ import app.tally.core.TallyPda
 import app.tally.core.usdc
 import app.tally.data.LogEntry
 import app.tally.graph
+import app.tally.wallet.Cosigned
 import app.tally.wallet.DemoOwner
 import app.tally.wallet.Owner
 import kotlinx.coroutines.Dispatchers
@@ -346,8 +347,11 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
             return@work
         }
         val wire = if (p === before) pc.wire else agentSignedPay(p, pc.index, ownerSigns = true).second
-        val signed = owner.cosign(wire)
-        submit(signed, p.names[pc.index], p.menu.items[pc.index], attack = false)
+        android.util.Log.i("Tally", "co-signing item ${pc.index} (${p.names[pc.index]}), menu ${if (p === before) "unchanged" else "re-signed"}")
+        when (val c = owner.cosign(wire)) {
+            is Cosigned.Signed -> submit(c.wire, p.names[pc.index], p.menu.items[pc.index], attack = false)
+            is Cosigned.Sent -> submit(null, p.names[pc.index], p.menu.items[pc.index], attack = false, sentBy = c.signature)
+        }
     }
 
     fun declineCosign() {
@@ -358,8 +362,9 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         payResult = PayResult(false, "You said no", "Nothing was paid.", null)
     }
 
-    private suspend fun submit(wire: ByteArray, name: String, item: Item, attack: Boolean, land: Boolean = false): PayResult {
-        val (sig, outcome) = g.submitter.sendAndConfirm(wire, land = land)
+    /** Send `wire` and wait, or (when the wallet already sent it) just wait on `sentBy`. */
+    private suspend fun submit(wire: ByteArray?, name: String, item: Item, attack: Boolean, land: Boolean = false, sentBy: String? = null): PayResult {
+        val (sig, outcome) = if (sentBy != null) sentBy to g.submitter.awaitOutcome(sentBy) else g.submitter.sendAndConfirm(wire!!, land = land)
         val r = when (outcome) {
             is Outcome.Confirmed -> PayResult(true, "Paid ${usdc(item.price)} USDC", "$name — straight to ${merchant?.name ?: "the merchant"}'s registered account.", sig)
             is Outcome.Reverted -> PayResult(false, "Blocked on-chain", outcome.sentence, sig)
