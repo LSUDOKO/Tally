@@ -19,10 +19,15 @@ The full user flow, run on a stock Android phone with a real wallet instead of t
 | Red team: 2× the signed price | Agent | **Reverted 6009** (not on the signed menu) | [23j9…Eq7b5](https://explorer.solana.com/tx/23j9cSLK3PxqbLRqJHesUQ8yJYWdUgD7v3cZndfr1CTvvG7TzCnikPE7CVTDKw9ktrwhxejN48Br999gNW8Eq7b5?cluster=devnet) |
 | Red team: Whisper upsell after $10.40 of $15 spent | Agent | **Reverted 6012** (daily limit) | [5xM6…DfBvYZ](https://explorer.solana.com/tx/5xM6mmJYvcSbCW7c36Wx1KT6d26f5jdVVwdp3864ppEUddFVZh9km4spupQ1QAJB5aLUsjVJ5LSBzUXYS7DfBvYZ?cluster=devnet) |
 | Issue a mock Seeker Genesis Token to the wallet (`faucet.ts --sgt`) | Faucet | Minted | [4HFL…vXnegJ](https://explorer.solana.com/tx/4HFL7PcHxxZdpZHqjpvRMBXTdCbqvpwk6iPUwvnK25LAsmLDytG3XxufM8ncN2wzzzBALBrriJ3VAdpYDvPXnegJ?cluster=devnet) |
+| Close the old capsule (Settings → Close capsule): \$9.60 and the rent return to the wallet | Owner in Solflare | Closed | [2trt…QU8q](https://explorer.solana.com/tx/2trt41cND8VtAJTvQWSMsd7YVzU2XKQXyfdYodvUT16B1v5kkAPsHB998rPX6xNWS484fPdKUenRCn61iz4MQU8q?cluster=devnet) |
+| Create a new capsule: the program checks the Seeker Genesis Token on-chain | Owner in Solflare | **Seeker verified** | [5C5p…ABrBax](https://explorer.solana.com/tx/5C5pkK2Q48DkbNoPLcDBQB1vLNtBMAL1HhbEqpkCR3DAaSf2eHrM838J7Hpixk2pZqxiMfPiaTX962eE67ABrBax?cluster=devnet) |
+| Claim the Seeker launch promo | Owner in Solflare | **Claimed** | [4UxE…Cznf](https://explorer.solana.com/tx/4UxEYZURtLsiXYc2DK4z9k8rc8jdxoRmaxYh7Li1yEh2Y1WJtfqBKPXDV3RKNQeEz9vy2jf1ptGQL2xp4hMpCznf?cluster=devnet) |
+| Claim it a second time (simulated against devnet, unsigned) | — | **Refused**: the claim record already exists | simulation: `{"InstructionError":[0,{"Custom":0}]}`, "account … already in use" |
 
 ## What the run found, and what changed
 
 - **Every owner action failed at first** with "RPC unreachable": both owner implementations fetched the blockhash on Android's main thread. Fixed before this run; it would have broken on a Seeker too.
 - **A duplicate payment showed as "code 0".** A retried co-sign targeted an item already bought from the same menu, and the receipt PDA (the double-charge nullifier) already existed. The program did the right thing; the app now says "Already paid… Tally never charges twice."
 - **The upsell attack hit the daily limit** (6012) because $10.40 of $15 was already spent. Still blocked, but not by the cheapest-match rule it is meant to show; the red team now picks an upsell that fits the remaining budget.
+- **The promo button stayed after a successful claim.** The app now reads the claim record and shows "Seeker launch promo claimed".
 - **Wallet choice:** with Phantom and Solflare both installed, Android asks which wallet to open. Co-signing now checks the wallet's capabilities and uses sign-only or sign-and-send, whichever it offers (Solflare reports sign-only).
