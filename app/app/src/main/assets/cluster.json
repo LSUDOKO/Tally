@@ -1,1 +1,7 @@
-{ "cluster": "devnet", "rpcUrl": "https://api.devnet.solana.com", "usdcMint": "", "skrMint": "", "sgtGroup": "" }
+{
+  "cluster": "devnet",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "usdcMint": "3GEU4u1stvyvBo2834pgt1vMVsBiDWiZJHsmiWSE8Da5",
+  "skrMint": "FbMPLRWDgSCVYAMzFZhKxwtsmixpbhszjS9YCxBkgSF2",
+  "sgtGroup": "3trSufZ4QHhHioTqosoK6cNaz1amDgGP1ku4ZCMwj4A2"
+}

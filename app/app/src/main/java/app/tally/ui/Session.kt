@@ -7,7 +7,14 @@ import androidx.compose.runtime.setValue
 import app.tally.BuildConfig
 import app.tally.agent.AgentResult
 import app.tally.agent.AgentSource
+import app.tally.chain.ConfirmingOwner
+import app.tally.merchant.MerchantTerminal
 import app.tally.core.Accounts
+import app.tally.core.AssociatedToken
+import app.tally.core.Lighthouse
+import app.tally.core.Sgt
+import app.tally.core.SystemProgram
+import app.tally.core.sha256
 import app.tally.core.Base58
 import app.tally.core.Ed25519
 import app.tally.core.Hex
@@ -37,6 +44,7 @@ import app.tally.graph
 import app.tally.wallet.DemoOwner
 import app.tally.wallet.Owner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
 enum class Screen { Home, NewCapsule, Scan, Checkout, Receipts, RedTeam, Merchant, Settings }
@@ -62,6 +70,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     var capsule by mutableStateOf<Accounts.Capsule?>(null)
     var vaultBalance by mutableStateOf(0L)
     var agentSol by mutableStateOf(0L)
+    /** The owner's Seeker Genesis Token `(token account, mint)`, when this device has one. */
+    var sgt by mutableStateOf<Pair<String, String>?>(null)
 
     var payload by mutableStateOf<SignedPayload?>(null)
     var merchant by mutableStateOf<Accounts.Merchant?>(null)
@@ -78,14 +88,16 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     val claudeAvailable get() = g.claude.available
 
     val owner: Owner
-        get() = if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner
+        get() = ConfirmingOwner(if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner, g.submitter)
 
     val capsuleAddress: String? get() = ownerAddress?.let { TallyPda.capsule(it, g.store.capsuleId) }
 
     private suspend fun <T> work(label: String, block: suspend () -> T): T? {
         busy = label
         return try {
-            block()
+            // Actions are started from screen-scoped coroutines; leaving the screen must not abandon a
+            // transaction half-way (sent but never confirmed or logged), so they run to completion.
+            withContext(NonCancellable) { block() }
         } catch (e: Exception) {
             toast = e.message ?: e.javaClass.simpleName
             null
@@ -111,19 +123,93 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val c = capsuleAddress?.let { rpc.getAccountData(it) }?.let(Accounts::capsule)
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
+        sgt = ownerAddress?.let { findSgt(it) }
     }
 
-    suspend fun createCapsule(rules: ParsedRules, fundMicro: Long) = work("Waiting for Seed Vault") {
+    /** Look for a Seeker Genesis Token of the configured collection in the owner's Token-2022 accounts. */
+    private fun findSgt(owner: String): Pair<String, String>? = runCatching {
+        if (config.sgtGroup.isBlank()) return null
+        val ownerKey = Base58.decode(owner)
+        g.rpc.getTokenAccountsByOwner(owner, Programs.TOKEN_2022).firstNotNullOfOrNull { (acct, data) ->
+            val (mint, _) = Sgt.holding(data, ownerKey) ?: return@firstNotNullOfOrNull null
+            val mintData = g.rpc.getAccountData(mint) ?: return@firstNotNullOfOrNull null
+            if (Sgt.groupOf(mintData, Base58.decode(mint)) == config.sgtGroup) acct to mint else null
+        }
+    }.getOrNull()
+
+    suspend fun createCapsule(rules: ParsedRules, fundMicro: Long, requireLighthouse: Boolean = false) = work("Waiting for Seed Vault") {
         val ownerAddr = ownerAddress ?: owner.connect().also { ownerAddress = it; g.store.ownerAddress = it }
         val usdcMint = config.usdcMint.ifBlank { error("Cluster config missing: run scripts/export-app-config.ts") }
         val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
         val expiry = slot + 30L * 216_000 // ~30 days
-        val ixs = mutableListOf<Instruction>(TallyIx.createCapsule(ownerAddr, g.store.capsuleId, rules.toRules(expiry), agentAddress, usdcMint))
+        val r = rules.toRules(expiry, flags = if (requireLighthouse) 1 else 0)
+        val seeker = withContext(Dispatchers.IO) { findSgt(ownerAddr) }
+        val ixs = mutableListOf<Instruction>(TallyIx.createCapsule(ownerAddr, g.store.capsuleId, r, agentAddress, usdcMint, sgt = seeker))
         if (fundMicro > 0) ixs += TallyIx.fund(ownerAddr, TallyPda.capsule(ownerAddr, g.store.capsuleId), usdcMint, fundMicro)
         val sig = owner.signAndSend(ixs, g.rpc)
         log("Capsule created", "Tally", fundMicro, "paid", "Rules signed in ${owner.label}", sig)
         refreshNow()
         screen = Screen.Home
+    }
+
+    suspend fun updateRules(rules: ParsedRules, requireLighthouse: Boolean) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val cap = capsuleAddress ?: return@work
+        val expiry = capsule?.expirySlot ?: (withContext(Dispatchers.IO) { g.rpc.getSlot() } + 30L * 216_000)
+        // The program keeps FLAG_SGT_VERIFIED itself; owner rules may not set it.
+        val r = rules.toRules(expiry, flags = if (requireLighthouse) 1 else 0)
+        owner.signAndSend(listOf(TallyIx.updateRules(o, cap, r)), g.rpc)
+        refreshNow()
+        screen = Screen.Home
+    }
+
+    suspend fun fund(amountMicro: Long) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        owner.signAndSend(listOf(TallyIx.fund(o, capsuleAddress!!, c.mint, amountMicro)), g.rpc)
+        refreshNow()
+    }
+
+    suspend fun withdraw(amountMicro: Long) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        owner.signAndSend(listOf(AssociatedToken.createIdempotent(o, o, c.mint), TallyIx.withdraw(o, capsuleAddress!!, c.mint, amountMicro)), g.rpc)
+        refreshNow()
+    }
+
+    /** The agent pays network fees and receipt rent; the owner tops it up with SOL. */
+    suspend fun topUpAgent(lamports: Long = 50_000_000) = work("Waiting for Seed Vault") {
+        val o = ownerAddress ?: return@work
+        owner.signAndSend(listOf(SystemProgram.transfer(o, agentAddress, lamports)), g.rpc)
+        refreshNow()
+    }
+
+    /** Seeker-only promo: one on-chain claim per Seeker Genesis Token per promo id. */
+    suspend fun claimPromo(promoId: Long = 1) = work("Claiming Seeker promo") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        val sig = owner.signAndSend(listOf(TallyIx.claimPromo(o, capsuleAddress!!, c.sgtMint, promoId)), g.rpc)
+        log("Seeker promo #$promoId claimed", "Tally", 0, "paid", "One claim per Seeker Genesis Token", sig)
+    }
+
+    /** Anyone can slash a merchant whose own signed menu contradicts its certified cheapest price. */
+    suspend fun reportFraud() = work("Reporting merchant") {
+        val o = ownerAddress ?: owner.connect()
+        val p = payload ?: return@work
+        val ixs = TallyIx.fraudReport(o, p.menu, config.skrMint) ?: error("This menu has no provable contradiction")
+        val sig = owner.signAndSend(listOf(AssociatedToken.createIdempotent(o, o, config.skrMint)) + ixs, g.rpc)
+        log("Reported ${merchant?.name}: contradictory floor", merchant?.name ?: "", 0, "blocked", "Fraud proof accepted: part of the merchant's SKR bond was slashed (10% to you, 90% to the compensation pool).", sig, attack = true)
+        toast = "Fraud proven on-chain. The merchant's bond was slashed."
+    }
+
+    /** Dispute a settled purchase (wrong goods, not delivered); the configured arbiter resolves it. */
+    suspend fun dispute(entry: LogEntry, reason: String) = work("Opening dispute") {
+        val o = ownerAddress ?: return@work
+        val receipt = entry.receipt ?: error("This entry has no on-chain receipt")
+        val merchantPda = entry.merchantPda ?: error("Unknown merchant")
+        val sig = owner.signAndSend(listOf(TallyIx.openDispute(o, capsuleAddress!!, receipt, merchantPda, sha256(reason.toByteArray()))), g.rpc)
+        g.store.markDisputed(receipt)
+        log("Dispute opened: ${entry.title}", entry.merchant, entry.amountMicro, "pending", "Reason: $reason. The merchant's bond can't be withdrawn while this is open.", sig)
     }
 
     suspend fun setFrozen(frozen: Boolean) = work(if (frozen) "Freezing" else "Unfreezing") {
@@ -136,6 +222,12 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     suspend fun rotateAgent() = work("Rotating agent key") {
         val o = ownerAddress ?: return@work
         val cap = capsuleAddress ?: return@work
+        // Sweep the retiring key's fee balance back to the owner first; once rotated it can never sign again.
+        val leftover = withContext(Dispatchers.IO) { runCatching { g.rpc.getBalance(agentAddress) }.getOrDefault(0) }
+        if (leftover > 10_000) {
+            val sweep = g.submitter.buildAgentSigned(agentAddress, listOf(SystemProgram.transfer(agentAddress, o, leftover - 5_000))) { g.agentKey.sign(it) }
+            g.submitter.sendAndConfirm(sweep)
+        }
         g.agentKey.rotate()
         owner.signAndSend(listOf(TallyIx.setAgent(o, cap, agentAddress)), g.rpc)
         refreshNow()
@@ -157,6 +249,32 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         screen = Screen.Checkout
     }
 
+    /** Debug builds: sign a fresh menu with this phone's own merchant key and check out against it. */
+    suspend fun payOwnMerchant() {
+        val auth = ownerAddress ?: return
+        val slot = work("Signing a fresh menu") { withContext(Dispatchers.IO) { g.rpc.getSlot() } } ?: return
+        onPayload(signOwnMenu(auth, slot))
+    }
+
+    /**
+     * The current menu if it is still comfortably live. In debug loopback (this phone is the merchant)
+     * an expiring menu is simply re-signed; otherwise null means "scan the counter again".
+     */
+    private suspend fun livePayload(): SignedPayload? {
+        val p = payload ?: return null
+        val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
+        if (Purchase.gate(slot, p.menu.expiresSlot) != Purchase.Gate.Rescan) return p
+        val own = ownerAddress?.takeIf { BuildConfig.DEMO_OWNER_ALLOWED && p.menu.merchant == TallyPda.merchant(it) } ?: return null
+        return signOwnMenu(own, slot).also { payload = it }
+    }
+
+    private fun signOwnMenu(auth: String, slot: Long): SignedPayload {
+        val terminal = MerchantTerminal(g.merchantMenuKey)
+        val (p, _) = terminal.publish(terminal.merchantAddress(auth), slot, System.currentTimeMillis(), g.store.catalog)
+        terminal.stop()
+        return p
+    }
+
     suspend fun askAgent(request: String) = work("Agent is choosing") {
         val p = payload ?: return@work
         val c = capsule
@@ -174,32 +292,29 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         return PowSolution(nonceBytes, slot)
     }
 
-    private fun params(p: SignedPayload, index: Int, ownerSigns: Boolean, overridePayout: String? = null, pow: PowSolution? = null): PayOfferParams {
+    private fun params(p: SignedPayload, index: Int, ownerSigns: Boolean, overridePayout: String? = null, pow: PowSolution? = null, lighthouseVaultAfter: Long? = null): PayOfferParams {
         val c = capsule ?: error("Create a capsule first")
         val m = merchant ?: error("Scan a merchant first")
         return PayOfferParams(
             menu = p.menu, index = index, capsule = capsuleAddress!!, owner = c.owner, vault = c.vault, mint = c.mint,
-            agent = agentAddress, payout = overridePayout ?: m.payout, ownerSigns = ownerSigns, pow = pow,
+            agent = agentAddress, payout = overridePayout ?: m.payout, ownerSigns = ownerSigns, pow = pow, lighthouseVaultAfter = lighthouseVaultAfter,
             computeUnitLimit = 80_000, priorityMicroLamports = 10_000,
         )
     }
 
     /** Agent pays; if the chain will demand the owner (above floor, low bond, extended window), open Second Look first. */
     suspend fun pay(index: Int, reason: String) = work("Paying") {
-        val p = payload ?: return@work
+        payload ?: return@work
         val m = merchant ?: return@work
         val c = capsule ?: error("Create a capsule first")
-        val item = p.menu.items[index]
-        val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
-        if (Purchase.gate(slot, p.menu.expiresSlot) == Purchase.Gate.Rescan) {
+        val p = livePayload() ?: run {
             toast = "That menu is about to expire. Scan the counter again."
             screen = Screen.Scan
             return@work
         }
+        val item = p.menu.items[index]
         val needsOwner = Purchase.needsOwner(item, m.skrBonded, c.minMerchantBond, p.menu.window)
-        val pow = withContext(Dispatchers.Default) { powFor(m, capsuleAddress!!, p.menu.menuNonce) }
-        val ixs = PayOffer.build(params(p, index, needsOwner, pow = pow))
-        val wire = g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
+        val (ixs, wire) = agentSignedPay(p, index, needsOwner)
         if (needsOwner) {
             val post = withContext(Dispatchers.IO) { g.rpc.simulate(wire, listOf(c.vault)) }
             val after = post.postAccounts.firstOrNull()?.let(Accounts::tokenAmount) ?: (vaultBalance - item.price)
@@ -211,11 +326,27 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         submit(wire, p.names[index], item, attack = false)
     }
 
+    private suspend fun agentSignedPay(p: SignedPayload, index: Int, ownerSigns: Boolean): Pair<List<Instruction>, ByteArray> {
+        val m = merchant ?: error("Scan a merchant first")
+        val c = capsule ?: error("Create a capsule first")
+        val pow = withContext(Dispatchers.Default) { powFor(m, capsuleAddress!!, p.menu.menuNonce) }
+        val lighthouse = if (c.flags and 1 != 0) vaultBalance - p.menu.items[index].price else null
+        val ixs = PayOffer.build(params(p, index, ownerSigns, pow = pow, lighthouseVaultAfter = lighthouse))
+        return ixs to g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
+    }
+
     suspend fun approveCosign() = work("Waiting for Seed Vault") {
         val pc = pendingCosign ?: return@work
         pendingCosign = null
-        val signed = owner.cosign(pc.wire)
-        val p = payload ?: return@work
+        val before = payload
+        // A person reading Second Look can outlast the menu's short window; never co-sign a stale menu.
+        val p = livePayload() ?: run {
+            toast = "That menu expired while you were reviewing. Scan the counter again."
+            screen = Screen.Scan
+            return@work
+        }
+        val wire = if (p === before) pc.wire else agentSignedPay(p, pc.index, ownerSigns = true).second
+        val signed = owner.cosign(wire)
         submit(signed, p.names[pc.index], p.menu.items[pc.index], attack = false)
     }
 
@@ -234,7 +365,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
             is Outcome.Reverted -> PayResult(false, "Blocked on-chain", outcome.sentence, sig)
             is Outcome.Pending -> PayResult(false, "Still confirming", "The network is slow; check Receipts in a moment.", sig)
         }
-        log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack)
+        val receipt = payload?.let { pl -> capsuleAddress?.let { TallyPda.receipt(it, pl.menu.merchant, pl.menu.menuNonce, item.id) } }
+        log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack, receipt.takeIf { r.ok }, payload?.menu?.merchant)
         payResult = r
         refreshNow()
         return r
@@ -243,7 +375,9 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     // ------------------------------------------------------------------ red team (docs/14)
 
     suspend fun runRedTeam() = work("Running attacks") {
-        val p = payload ?: error("Scan a merchant menu first")
+        payload ?: error("Scan a merchant menu first")
+        // Otherwise the attacks would all fail on staleness and prove nothing about the specific checks.
+        val p = livePayload() ?: error("That menu has expired. Scan the counter again, then run the attacks.")
         val results = mutableListOf<PayResult>()
         suspend fun attack(title: String, ixs: List<Instruction>, item: Item) {
             val wire = g.submitter.buildAgentSigned(agentAddress, ixs) { g.agentKey.sign(it) }
@@ -257,27 +391,42 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
             results += r
             redTeam = results.toList()
         }
-        val floorIdx = p.menu.items.indices.minBy { p.menu.items[it].price + if (p.menu.items[it].price == p.menu.items[it].floor) 0 else Long.MAX_VALUE / 2 }
-        val evil = Pda.ata(Base58.encode(Ed25519.publicKey(ByteArray(32) { 66 })), capsule?.mint ?: config.usdcMint)
+        // Target the cheapest at-floor item the capsule's rules actually allow, so each attack is stopped
+        // by the check it is aimed at rather than by the category rule.
+        val allowed = p.menu.items.indices.filter { i -> capsule?.allows(p.menu.items[i].category) ?: true }.ifEmpty { error("Your rules allow nothing on this menu") }
+        val floorIdx = allowed.minBy { p.menu.items[it].price + if (p.menu.items[it].price == p.menu.items[it].floor) 0 else Long.MAX_VALUE / 2 }
+        // A real, initialised USDC account that is not the merchant's registered payout (the owner's own).
+        // Attacks carry a valid proof of work and Lighthouse assertion when those are on, so they fail
+        // only on the check they target.
+        val pow = withContext(Dispatchers.Default) { powFor(merchant ?: error("Scan a merchant first"), capsuleAddress!!, p.menu.menuNonce) }
+        val lighthouseOn = (capsule?.flags ?: 0) and 1 != 0
+        fun hostile(menu: SignedPayload, index: Int, payout: String? = null) = PayOffer.build(
+            params(menu, index, false, overridePayout = payout, pow = pow, lighthouseVaultAfter = if (lighthouseOn) vaultBalance - menu.menu.items[index].price else null),
+        )
+        val mint = capsule?.mint ?: config.usdcMint
+        val ownerAta = Pda.ata(ownerAddress!!, mint)
+        // When this phone is also the merchant, the owner's account *is* the payout; aim at the agent's own
+        // USDC account instead (created in the same transaction so the swap reaches the payee check).
+        val (evil, setup) = if (ownerAta == merchant?.payout) Pda.ata(agentAddress, mint) to listOf(AssociatedToken.createIdempotent(agentAddress, agentAddress, mint)) else ownerAta to emptyList()
         // 1. payee swap
-        attack("Payee swap → attacker account", PayOffer.build(params(p, floorIdx, false, overridePayout = evil)), p.menu.items[floorIdx])
+        attack("Payee swap → attacker account", setup + hostile(p, floorIdx, evil), p.menu.items[floorIdx])
         // 2. phantom add-on: an unsigned $2.99 fee appended to the signed menu
         val fee = Item(ByteArray(16) { 0xfe.toByte() }, p.menu.items[floorIdx].category, 2_990_000, 2_990_000)
         val tampered = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items + fee, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names + "Service fee", p.descriptions + null)
-        attack("Phantom add-on: unsigned \$2.99 fee", PayOffer.build(params(tampered, tampered.menu.items.size - 1, false)), fee)
+        attack("Phantom add-on: unsigned \$2.99 fee", hostile(tampered, tampered.menu.items.size - 1), fee)
         // 3. price tampering: same item, inflated price
         val inflated = SignedPayload(SignedMenu(p.menu.merchant, p.menu.issuedSlot, p.menu.expiresSlot, p.menu.menuNonce, p.menu.items.mapIndexed { i, it -> if (i == floorIdx) it.copy(price = it.price * 2, floor = it.price * 2) else it }, p.menu.header, p.menu.signerPubkey, p.menu.signature), p.names, p.descriptions)
-        attack("Price tampering: 2× the signed price", PayOffer.build(params(inflated, floorIdx, false)), inflated.menu.items[floorIdx])
+        attack("Price tampering: 2× the signed price", hostile(inflated, floorIdx), inflated.menu.items[floorIdx])
         // 4. Whisper upsell without the owner: pick the priciest same-category item
-        val upsell = p.menu.items.indices.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx }.maxByOrNull { p.menu.items[it].price }
-        if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", PayOffer.build(params(p, upsell, false)), p.menu.items[upsell])
+        val upsell = allowed.filter { p.menu.items[it].category == p.menu.items[floorIdx].category && it != floorIdx && p.menu.items[it].price <= (capsule?.perTxCap ?: Long.MAX_VALUE) }.maxByOrNull { p.menu.items[it].price }
+        if (upsell != null) attack("Whisper upsell: \"regular is discontinued\"", hostile(p, upsell), p.menu.items[upsell])
         redTeam = results.toList()
     }
 
     // ------------------------------------------------------------------ log
 
-    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false) {
-        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack))
+    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false, receipt: String? = null, merchantPda: String? = null) {
+        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack, receipt, merchantPda))
         logVersion++
         app.tally.widget.TallyWidget.refresh(context)
     }

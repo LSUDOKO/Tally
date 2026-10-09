@@ -7,6 +7,7 @@ import app.tally.core.sha256
 
 /** The demo café catalog (matches fixtures/menu-v1.json). Merchants edit prices in the terminal. */
 object Catalog {
+    @kotlinx.serialization.Serializable
     data class Entry(val name: String, val category: Int, val priceMicro: Long, val description: String? = null)
 
     val DEFAULT = listOf(

@@ -48,6 +48,8 @@ object TallyPda {
     fun receipt(capsule: String, merchant: String, menuNonce: Long, itemId: ByteArray) =
         find(s("receipt"), k(capsule), k(merchant), Le.u64(menuNonce), itemId)
     fun dispute(receipt: String) = find(s("dispute"), k(receipt))
+    fun sgtClaim(sgtMint: String, promoId: Long) = find(s("sgt"), k(sgtMint), Le.u64(promoId))
+    fun fraudRecord(merchant: String, menuRoot: ByteArray) = find(s("fraud"), k(merchant), menuRoot)
 }
 
 /** Minimal Borsh writer for instruction arguments. */
@@ -157,6 +159,24 @@ object Message {
         out.write(message)
         return out.toByteArray()
     }
+}
+
+object AssociatedToken {
+    /** `CreateIdempotent` (instruction 1): make sure `owner` has an ATA for `mint`. */
+    fun createIdempotent(payer: String, owner: String, mint: String) = Instruction(
+        Programs.ASSOCIATED_TOKEN,
+        listOf(
+            AccountMeta(payer, true, true), AccountMeta(Pda.ata(owner, mint), false, true), AccountMeta(owner, false, false),
+            AccountMeta(mint, false, false), AccountMeta(Programs.SYSTEM, false, false), AccountMeta(Programs.TOKEN, false, false),
+        ),
+        byteArrayOf(1),
+    )
+}
+
+object SystemProgram {
+    /** System `Transfer` (instruction 2): move lamports, e.g. the owner topping up the agent's fee balance. */
+    fun transfer(from: String, to: String, lamports: Long) =
+        Instruction(Programs.SYSTEM, listOf(AccountMeta(from, true, true), AccountMeta(to, false, true)), Le.u32(2) + Le.u64(lamports))
 }
 
 object ComputeBudget {

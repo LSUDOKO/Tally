@@ -5,6 +5,7 @@ import app.tally.core.Message
 import app.tally.core.Outcome
 import app.tally.core.Purchase
 import app.tally.core.Rpc
+import app.tally.wallet.Owner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -46,12 +47,29 @@ class Submitter(private val rpc: Rpc) {
                 val code = Regex("custom program error: 0x([0-9a-f]+)").find(e.message ?: "")?.groupValues?.get(1)?.toInt(16)
                 return@withContext null to Outcome.Reverted(code, code?.let(app.tally.core.ErrorText::sentence) ?: (e.message ?: "Send failed"))
             }
-            val start = System.currentTimeMillis()
-            while (System.currentTimeMillis() - start < timeoutMs) {
-                val o = Purchase.outcome(runCatching { rpc.getSignatureStatus(sig) }.getOrNull())
-                if (o !is Outcome.Pending) return@withContext sig to o
-                delay(800)
-            }
-            sig to Outcome.Pending
+            sig to awaitOutcome(sig, timeoutMs)
         }
+
+    /** Poll a sent signature until it confirms or reverts (or the timeout passes). */
+    suspend fun awaitOutcome(sig: String, timeoutMs: Long = 45_000): Outcome = withContext(Dispatchers.IO) {
+        val start = System.currentTimeMillis()
+        while (System.currentTimeMillis() - start < timeoutMs) {
+            val o = Purchase.outcome(runCatching { rpc.getSignatureStatus(sig) }.getOrNull())
+            if (o !is Outcome.Pending) return@withContext o
+            delay(800)
+        }
+        Outcome.Pending
+    }
+}
+
+/** Owner whose sends return only once the chain has confirmed them, so screens refresh to real state. */
+class ConfirmingOwner(private val inner: Owner, private val submitter: Submitter) : Owner by inner {
+    override suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String {
+        val sig = inner.signAndSend(instructions, rpc)
+        when (val o = submitter.awaitOutcome(sig)) {
+            is Outcome.Reverted -> throw IllegalStateException(o.sentence)
+            else -> Unit
+        }
+        return sig
+    }
 }

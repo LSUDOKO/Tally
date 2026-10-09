@@ -1,13 +1,11 @@
 package app.tally.merchant
 
-import app.tally.core.AccountMeta
+import app.tally.core.AssociatedToken
 import app.tally.core.Accounts
 import app.tally.core.Base58
 import app.tally.core.Ed25519
-import app.tally.core.Instruction
 import app.tally.core.Payload
 import app.tally.core.Pda
-import app.tally.core.Programs
 import app.tally.core.Rpc
 import app.tally.core.SignedMenu
 import app.tally.core.SignedPayload
@@ -29,20 +27,10 @@ class MerchantTerminal(private val menuKey: AgentKey) {
 
     fun load(rpc: Rpc, authority: String): Accounts.Merchant? = rpc.getAccountData(merchantAddress(authority))?.let(Accounts::merchant)
 
-    /** Idempotent ATA creation (associated-token-account program, instruction 1). */
-    private fun createAta(payer: String, owner: String, mint: String) = Instruction(
-        Programs.ASSOCIATED_TOKEN,
-        listOf(
-            AccountMeta(payer, true, true), AccountMeta(Pda.ata(owner, mint), false, true), AccountMeta(owner, false, false),
-            AccountMeta(mint, false, false), AccountMeta(Programs.SYSTEM, false, false), AccountMeta(Programs.TOKEN, false, false),
-        ),
-        byteArrayOf(1),
-    )
-
     suspend fun register(owner: Owner, rpc: Rpc, authority: String, usdcMint: String, skrMint: String, name: String, bondMicro: Long): String =
         owner.signAndSend(
             listOf(
-                createAta(authority, authority, usdcMint),
+                AssociatedToken.createIdempotent(authority, authority, usdcMint),
                 TallyIx.registerMerchant(authority, Pda.ata(authority, usdcMint), skrMint, name, signingKey, bondMicro),
             ),
             rpc,

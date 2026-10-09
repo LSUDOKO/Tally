@@ -17,7 +17,7 @@ class AppGraph(context: Context) {
     val agentKey = AgentKey(context, "agent")
     val merchantMenuKey = AgentKey(context, "merchant-menu")
     val demoOwnerKey = AgentKey(context, "demo-owner")
-    val claude = ClaudeAgent()
+    val claude = ClaudeAgent { store.anthropicKey ?: BuildConfig.ANTHROPIC_API_KEY }
 
     val rpcUrl: String
         get() = store.rpcOverride?.takeIf { it.isNotBlank() }
