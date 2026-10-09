@@ -138,7 +138,8 @@ fun HomeScreen(s: Session) {
                     }
                 }
                 if (s.capsule != null && (s.capsule!!.flags and 2) != 0) {
-                    Secondary("Claim Seeker launch promo (one per device)", { scope.launch { s.claimPromo(1) } })
+                    if (s.promoClaimed) Chip("Seeker launch promo claimed", TallyColors.Paid)
+                    else Secondary("Claim Seeker launch promo (one per device)", { scope.launch { s.claimPromo(LAUNCH_PROMO) } })
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Card(Modifier.weight(1f)) { Stat("Attacks blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked) }

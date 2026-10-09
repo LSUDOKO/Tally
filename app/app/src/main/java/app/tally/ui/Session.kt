@@ -54,6 +54,9 @@ enum class Screen { Home, NewCapsule, Scan, Checkout, Receipts, RedTeam, Merchan
 data class PayResult(val ok: Boolean, val title: String, val detail: String, val signature: String?)
 
 /** A purchase waiting on the Second Look sheet. */
+/** The one promo id the app offers today. */
+const val LAUNCH_PROMO = 1L
+
 class PendingCosign(val index: Int, val wire: ByteArray, val review: Review, val cheaper: Pair<String, Long>?, val reason: String)
 
 /**
@@ -73,11 +76,14 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     var agentSol by mutableStateOf(0L)
     var slot by mutableStateOf(0L)
 
-    /** Today's spend as the program counts it (zero once the 216,000-slot cycle has rolled over). */
+    /** Today's spend as the program counts it (zero once the 216,000-slot cycle has rolled over, or with no capsule). */
     val spentToday: Long
-        get() = capsule?.let { it.dailyCap - Purchase.dailyRemaining(it.dailyCap, it.spentInCycle, it.cycleStartSlot, slot) } ?: g.store.spentToday()
+        get() = capsule?.let { it.dailyCap - Purchase.dailyRemaining(it.dailyCap, it.spentInCycle, it.cycleStartSlot, slot) } ?: 0L
     /** The owner's Seeker Genesis Token `(token account, mint)`, when this device has one. */
     var sgt by mutableStateOf<Pair<String, String>?>(null)
+
+    /** Whether this capsule's Seeker Genesis Token already claimed the launch promo (its claim PDA exists). */
+    var promoClaimed by mutableStateOf(false)
 
     var payload by mutableStateOf<SignedPayload?>(null)
     var merchant by mutableStateOf<Accounts.Merchant?>(null)
@@ -132,6 +138,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
         sgt = ownerAddress?.let { findSgt(it) }
+        promoClaimed = c?.takeIf { it.flags and 2 != 0 }?.let { rpc.getAccountData(TallyPda.sgtClaim(it.sgtMint, LAUNCH_PROMO)) != null } ?: false
     }
 
     /** Look for a Seeker Genesis Token of the configured collection in the owner's Token-2022 accounts. */
@@ -196,7 +203,10 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     suspend fun claimPromo(promoId: Long = 1) = work("Claiming Seeker promo") {
         val o = ownerAddress ?: return@work
         val c = capsule ?: return@work
-        val sig = owner.signAndSend(listOf(TallyIx.claimPromo(o, capsuleAddress!!, c.sgtMint, promoId)), g.rpc)
+        // The claim PDA is the one-per-token nullifier: a second claim fails creating it (system error 0).
+        val sig = runCatching { owner.signAndSend(listOf(TallyIx.claimPromo(o, capsuleAddress!!, c.sgtMint, promoId)), g.rpc) }
+            .getOrElse { e -> if (e.message?.startsWith("Already paid") == true || e.message?.contains("0x0") == true) error("This Seeker Genesis Token already claimed promo #$promoId. One claim per device.") else throw e }
+        promoClaimed = true
         log("Seeker promo #$promoId claimed", "Tally", 0, "paid", "One claim per Seeker Genesis Token", sig)
     }
 
