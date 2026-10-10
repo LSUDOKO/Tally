@@ -10,7 +10,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start:cloud": "tsx src/http.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.1",
@@ -18,12 +19,12 @@
     "@solana/kit": "^8.4.0",
     "@tally/sdk": "workspace:*",
     "qrcode": "1.5.4",
+    "tsx": "^4.23.15",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
     "@types/qrcode": "1.5.5",
-    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.3"
   }

@@ -1,0 +1,23 @@
+# Tally cloud on Render: the hosted demo café, the MCP server (Streamable HTTP) and the Telegram bot.
+# Secrets are entered in the Render dashboard (sync: false), never committed.
+services:
+  - type: web
+    name: tally-cloud
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm -C mcp start:cloud
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TALLY_RPC_URL
+        value: https://api.devnet.solana.com
+      - key: TALLY_MERCHANT
+        value: zNLg5ncNoNWdUHjeMXo1JkTmcQ6biZRPFyFJR7CTBJH
+      - key: TALLY_MENU_SECRET # the demo café's devnet menu-signing key (JSON array of 32 bytes)
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
