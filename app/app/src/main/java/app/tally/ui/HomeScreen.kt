@@ -247,11 +247,7 @@ private fun BalanceStack(s: Session) {
     val c = s.capsule ?: return
     val pct = if (c.dailyCap > 0) (s.spentToday.toFloat() / c.dailyCap).coerceIn(0f, 1f) else 0f
     val bar by animateFloatAsState(pct, tween(900), label = "spent")
-    Box(Modifier.fillMaxWidth().padding(top = 26.dp)) {
-        // Back layers.
-        Box(Modifier.matchParentWidth(0.84f).align(Alignment.TopCenter).offset(y = (-22).dp).height(70.dp).glass(RoundedCornerShape(26.dp)).background(TallyColors.Brand.copy(alpha = 0.10f)))
-        Box(Modifier.matchParentWidth(0.92f).align(Alignment.TopCenter).offset(y = (-11).dp).height(70.dp).glass(RoundedCornerShape(26.dp)).background(TallyColors.Brand.copy(alpha = 0.16f)))
-        // Front card.
+    Box(Modifier.fillMaxWidth().padding(top = 8.dp)) {
         Box(
             Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp)).background(TallyColors.GlassStrong.copy(alpha = 0.35f)).padding(20.dp),
         ) {
