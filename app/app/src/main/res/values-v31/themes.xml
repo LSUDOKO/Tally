@@ -4,9 +4,10 @@
         <item name="android:navigationBarColor">#040A1E</item>
         <item name="android:windowBackground">#040A1E</item>
         <item name="android:windowLightStatusBar">false</item>
-        <!-- Splash: the logo on brand cobalt, then straight into the night-blue app. -->
-        <item name="android:windowSplashScreenBackground">#1365FE</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <!-- Keep the Android 12 system splash crisp: a dedicated vector mark, not the detailed
+             mascot launcher artwork, which becomes muddy at the system icon's display size. -->
+        <item name="android:windowSplashScreenBackground">#071329</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
         <item name="android:windowSplashScreenIconBackgroundColor">#1365FE</item>
     </style>
 </resources>
