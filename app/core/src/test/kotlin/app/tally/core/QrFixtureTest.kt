@@ -28,4 +28,11 @@ class QrFixtureTest {
         assertTrue(again.menu.signature.contentEquals(p.menu.signature))
         assertEquals(p.names, again.names)
     }
+
+    @Test
+    fun sdkMadeProposalPicksTheLargeLatte() {
+        val pr = Proposal.fromQr(v["proposal"]!!.jsonPrimitive.content)
+        assertEquals(1, pr.index)
+        assertEquals("Oat latte (large)", pr.payload.names[pr.index])
+    }
 }
