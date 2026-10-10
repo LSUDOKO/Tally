@@ -29,6 +29,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
+        manifestPlaceholders["appLabel"] = "Tally"
         buildConfigField("String", "RPC_URL", "\"${localOr("TALLY_RPC_URL", "https://api.devnet.solana.com")}\"")
         buildConfigField("String", "GROQ_API_KEY", "\"${localOr("GROQ_API_KEY", "")}\"")
     }
@@ -47,6 +48,11 @@ android {
     buildTypes {
         debug {
             buildConfigField("Boolean", "DEMO_OWNER_ALLOWED", "true")
+            // Allows a QA build alongside an existing app signed with a different key.
+            if (providers.gradleProperty("tallyQaInstall").isPresent) {
+                applicationIdSuffix = ".qa"
+                manifestPlaceholders["appLabel"] = "Tally QA"
+            }
         }
         release {
             isMinifyEnabled = true
