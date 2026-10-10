@@ -58,6 +58,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import app.tally.BuildConfig
 import app.tally.core.Payload
+import app.tally.core.Proposal
 import app.tally.core.SignedPayload
 import app.tally.ui.theme.TallyColors
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -90,7 +91,13 @@ fun ScanScreen(s: Session, nfcStatus: String) {
         TopBar("Scan or tap", onBack = { s.screen = Screen.Home })
         Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f).glass(RoundedCornerShape(32.dp)).padding(6.dp).clip(RoundedCornerShape(28.dp)).background(TallyColors.Ink)) {
-                if (granted) CameraQr { text -> runCatching { Payload.fromQr(text) }.onSuccess(onPayload) }
+                if (granted) CameraQr { text ->
+                    if (Proposal.isProposal(text)) {
+                        runCatching { Proposal.fromQr(text) }.onSuccess { pr -> if (!handled) { handled = true; haptics.performHapticFeedback(HapticFeedbackType.Confirm); scope.launch { s.onProposal(pr) } } }
+                    } else {
+                        runCatching { Payload.fromQr(text) }.onSuccess(onPayload)
+                    }
+                }
                 else Body("Camera permission is needed to scan. You can still tap the merchant phone.", TallyColors.Muted)
                 ScanFrame()
             }
@@ -155,7 +162,7 @@ private fun CameraQr(onText: (String) -> Unit) {
                         proxy.close()
                     } else {
                         scanner.process(InputImage.fromMediaImage(media, proxy.imageInfo.rotationDegrees))
-                            .addOnSuccessListener { codes -> codes.firstNotNullOfOrNull { it.rawValue }?.takeIf { it.startsWith(Payload.QR_PREFIX) }?.let(onText) }
+                            .addOnSuccessListener { codes -> codes.firstNotNullOfOrNull { it.rawValue }?.takeIf { it.startsWith(Payload.QR_PREFIX) || Proposal.isProposal(it) }?.let(onText) }
                             .addOnCompleteListener { proxy.close() }
                     }
                 }

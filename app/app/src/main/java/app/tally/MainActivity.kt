@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.RepeatMode
@@ -98,6 +99,13 @@ class MainActivity : ComponentActivity() {
     /** Notification and widget Freeze buttons open the freeze confirmation. */
     private fun handle(intent: android.content.Intent?) {
         if (intent?.action == app.tally.notify.Notifier.ACTION_FREEZE) session.askFreeze = true
+        // tally://checkout?p=... from an outside agent: pre-fill checkout; the owner still decides.
+        val link = intent?.data?.takeIf { intent.action == android.content.Intent.ACTION_VIEW && it.scheme == "tally" }
+        if (link != null) {
+            val pr = runCatching { app.tally.core.Proposal.fromLink(link.toString()) }
+            pr.onSuccess { p -> lifecycleScope.launch { session.onProposal(p) } }
+                .onFailure { session.toast = "That Tally link isn't a valid proposal: ${it.message}" }
+        }
     }
 }
 

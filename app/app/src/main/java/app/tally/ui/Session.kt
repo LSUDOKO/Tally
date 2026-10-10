@@ -42,6 +42,7 @@ import app.tally.core.SpendRecord
 import app.tally.core.Summary
 import app.tally.core.Usual
 import app.tally.data.CapsuleSnapshot
+import app.tally.core.Proposal
 import app.tally.core.Purchase
 import app.tally.core.Review
 import app.tally.core.SecondLook
@@ -296,7 +297,16 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     // ------------------------------------------------------------------ scan → checkout
 
+    /** A purchase proposed by an outside agent (MCP, chat): it only pre-fills checkout. */
+    var proposal by mutableStateOf<Proposal?>(null)
+
+    suspend fun onProposal(pr: Proposal) {
+        onPayload(pr.payload)
+        if (payload === pr.payload) proposal = pr
+    }
+
     suspend fun onPayload(p: SignedPayload) = work("Verifying signed menu") {
+        proposal = null
         val (m, slot) = withContext(Dispatchers.IO) {
             val data = g.rpc.getAccountData(p.menu.merchant) ?: error("Unknown merchant: not in the Tally registry")
             Accounts.merchant(data) to g.rpc.getSlot()

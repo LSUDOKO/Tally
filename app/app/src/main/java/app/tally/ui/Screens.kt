@@ -242,6 +242,30 @@ fun CheckoutScreen(s: Session) {
                 if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Outlined.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Outlined.Schedule)
                 if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Outlined.Memory)
             }
+            s.proposal?.takeIf { it.index >= 0 }?.let { pr ->
+                val item = p.menu.items[pr.index]
+                val owner = s.capsule != null && m != null && Purchase.needsOwner(item, m.skrBonded, s.capsule!!.minMerchantBond, p.menu.window)
+                Card(accent = TallyColors.BrandBright) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(Icons.Outlined.SmartToy, TallyColors.Accent, 40.dp)
+                            Column(Modifier.padding(start = 12.dp)) {
+                                Label("Proposed by an outside agent")
+                                Text("${p.names[pr.index]} · \$${usdc(item.price)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                            }
+                        }
+                        Gap(8)
+                        Body("An agent outside Tally suggested this. Nothing is paid until you tap; the signed menu and your rules are checked on-chain.", TallyColors.Muted)
+                        Gap(10)
+                        Primary(
+                            if (owner) "Review and pay \$${usdc(item.price)}" else "Pay \$${usdc(item.price)}",
+                            { scope.launch { s.pay(pr.index, "Proposed by an outside agent") } },
+                            color = if (owner) TallyColors.NeedsYou else TallyColors.Brand,
+                            icon = if (owner) Icons.Outlined.Visibility else Icons.Outlined.Bolt,
+                        )
+                    }
+                }
+            }
             val usual = s.reorder
             val check = s.reorderCheck
             if (usual != null && check != null) {
