@@ -72,7 +72,7 @@ class PendingCosign(val index: Int, val wire: ByteArray, val review: Review, val
  * App state and actions. Pure decisions (verification, policy, transaction bytes) live in
  * `app.tally.core` and are unit-tested; this class wires them to the wallet, RPC and UI.
  */
-class Session(private val context: Context, private val mwaOwner: Owner) {
+class Session(val context: Context, private val mwaOwner: Owner) {
     private val g = context.graph
 
     var screen by mutableStateOf(Screen.Home)
@@ -437,9 +437,13 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val receipt = payload?.let { pl -> capsuleAddress?.let { TallyPda.receipt(it, pl.menu.merchant, pl.menu.menuNonce, item.id) } }
         log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack, receipt.takeIf { r.ok }, payload?.menu?.merchant)
         payResult = r
+        if (r.ok && !attack) app.tally.notify.Notifier.paid(context, name, merchant?.name ?: "the merchant", usdc(item.price))
         refreshNow()
         return r
     }
+
+    /** Raised by the notification or widget Freeze button; the owner still confirms in the wallet. */
+    var askFreeze by mutableStateOf(false)
 
     // ------------------------------------------------------------------ red team (docs/14)
 

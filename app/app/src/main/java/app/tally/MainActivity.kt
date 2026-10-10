@@ -36,6 +36,7 @@ import app.tally.ui.Gap
 import app.tally.ui.Mascot
 import app.tally.ui.Mood
 import app.tally.ui.Primary
+import app.tally.ui.Secondary
 import app.tally.ui.TabScreens
 import app.tally.ui.glass
 import androidx.compose.foundation.layout.Box
@@ -85,7 +86,18 @@ class MainActivity : ComponentActivity() {
         val sender = ActivityResultSender(this)
         session = Session(this, MwaOwner(sender, graph.config.cluster))
         nfc = NfcReader(this)
+        handle(intent)
         setContent { TallyTheme { Root(session, nfc) } }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handle(intent)
+    }
+
+    /** Notification and widget Freeze buttons open the freeze confirmation. */
+    private fun handle(intent: android.content.Intent?) {
+        if (intent?.action == app.tally.notify.Notifier.ACTION_FREEZE) session.askFreeze = true
     }
 }
 
@@ -94,6 +106,13 @@ private fun Root(s: Session, nfc: NfcReader) {
     val scope = rememberCoroutineScope()
     var nfcStatus by remember { mutableStateOf(if (!nfc.available) "No NFC on this device" else if (!nfc.enabled) "NFC is off" else "NFC ready: tap the merchant phone") }
     BackHandler(enabled = s.screen != Screen.Home) { s.screen = Screen.Home }
+    // Ask once for notifications after connecting, so every agent payment can be checked ("Was this you?").
+    val notifyPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { }
+    androidx.compose.runtime.LaunchedEffect(s.ownerAddress) {
+        if (s.ownerAddress != null && android.os.Build.VERSION.SDK_INT >= 33 && !app.tally.notify.Notifier.canPost(s.context)) {
+            notifyPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     if (s.screen == Screen.Scan) {
         DisposableEffect(Unit) {
             nfc.start(onPayload = { p -> scope.launch { s.onPayload(p) } }, onError = { nfcStatus = it })
@@ -132,6 +151,7 @@ private fun Root(s: Session, nfc: NfcReader) {
         }
         s.busy?.let { BusyOverlay(it) }
         s.levelUp?.let { lvl -> LevelUpDialog(lvl) { s.levelUp = null } }
+        if (s.askFreeze) FreezeDialog(s) { s.askFreeze = false }
         s.toast?.let { msg -> Notice(msg) { s.toast = null } }
     }
 }
@@ -186,6 +206,30 @@ private fun Notice(message: String, onDismiss: () -> Unit) {
             Text(message, style = MaterialTheme.typography.bodyLarge, color = TallyColors.Text, textAlign = TextAlign.Center)
             Gap(18)
             Primary("Got it", onDismiss)
+        }
+    }
+}
+
+/** "Wasn't you?": freezing stops every agent payment until the owner unfreezes. */
+@Composable
+private fun FreezeDialog(s: Session, onDismiss: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    Dialog(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().glass().background(TallyColors.Surface.copy(alpha = 0.94f)).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Mascot(Mood.WithShield, Modifier.fillMaxWidth(), height = 170.dp, shakeKey = Unit)
+            Text("Freeze your capsule?", style = MaterialTheme.typography.displaySmall, color = TallyColors.Text, textAlign = TextAlign.Center)
+            Gap(8)
+            Text(
+                if (s.capsule?.frozen == true) "It's already frozen. Nothing can be spent until you unfreeze it in Settings."
+                else "Your agent won't be able to pay anywhere until you unfreeze it. Your wallet signs the freeze.",
+                style = MaterialTheme.typography.bodyMedium, color = TallyColors.Muted, textAlign = TextAlign.Center,
+            )
+            Gap(18)
+            if (s.capsule?.frozen != true) {
+                Primary("Freeze in wallet", { onDismiss(); scope.launch { s.setFrozen(true) } }, color = TallyColors.Blocked)
+                Gap(8)
+            }
+            Secondary(if (s.capsule?.frozen == true) "OK" else "It was me", onDismiss)
         }
     }
 }
