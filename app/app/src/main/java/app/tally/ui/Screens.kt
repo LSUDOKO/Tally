@@ -6,6 +6,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Draw
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import android.net.Uri
@@ -58,7 +71,7 @@ import app.tally.core.usdc
 import app.tally.ui.theme.TallyColors
 import kotlinx.coroutines.launch
 
-private val Pad = Modifier.padding(horizontal = 16.dp)
+private val Pad = Modifier.padding(horizontal = 20.dp)
 
 @Composable
 fun ExplorerLink(session: Session, sig: String?, label: String = "View on Solana Explorer") {
@@ -85,42 +98,44 @@ fun NewCapsuleScreen(s: Session) {
     val parsed = RuleParser.parse(text)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar(if (existing) "Capsule rules" else "New capsule", onBack = { s.screen = Screen.Home })
-        Column(Pad, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Body("Say what your agent may buy. You'll confirm the exact rules before Seed Vault signs.", TallyColors.Muted)
-            OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth(), label = { Text("Your rules") }, minLines = 2)
+        Column(Pad, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Mascot(Mood.Pointing, Modifier.size(width = 120.dp, height = 170.dp), height = 170.dp)
+                Column(Modifier.weight(1f).padding(start = 6.dp)) {
+                    HeroTitle(if (existing) "Change the" else "Set the rules", if (existing) "rules." else "once.", align = TextAlign.Start)
+                    Gap(6)
+                    Body("Say what your agent may buy. You confirm the exact rules before your wallet signs.", TallyColors.Muted)
+                }
+            }
+            GlassField(text, { text = it }, "Your rules", minLines = 2, leading = Icons.Rounded.EditNote)
             Card {
                 Column {
-                    Label("What will be signed")
-                    Gap(10)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        parsed.categories.forEach { Chip(RuleParser.CATEGORY_NAMES[it] ?: "Category $it") }
-                        Chip("≤ \$${usdc(parsed.perTxCap)} per purchase")
-                        Chip("≤ \$${usdc(parsed.dailyCap)} per day")
-                        Chip("Cheapest by default", TallyColors.NeedsYou)
-                        Chip("Bonded merchants only", TallyColors.NeedsYou)
-                        Chip("Expires in ~30 days", TallyColors.Muted)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconTile(Icons.Rounded.Draw, TallyColors.Accent, 36.dp)
+                        Label("  What your wallet will sign")
                     }
-                    Gap(10)
+                    Gap(12)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        parsed.categories.forEach { Chip(RuleParser.CATEGORY_NAMES[it] ?: "Category $it", TallyColors.Accent, Icons.Rounded.Category) }
+                        Chip("≤ \$${usdc(parsed.perTxCap)} per purchase", TallyColors.Accent, Icons.Rounded.Payments)
+                        Chip("≤ \$${usdc(parsed.dailyCap)} per day", TallyColors.Accent, Icons.Rounded.CalendarToday)
+                        Chip("Cheapest by default", TallyColors.Paid, Icons.Rounded.Verified)
+                        Chip("Bonded merchants only", TallyColors.Paid, Icons.Rounded.VerifiedUser)
+                        Chip("Expires in ~30 days", TallyColors.Muted, Icons.Rounded.Schedule)
+                    }
+                    Gap(12)
                     Body("Anything pricier than the cheapest match, from an unbonded merchant, or on a long-lived menu will need your tap.", TallyColors.Muted)
                 }
             }
-            Card {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Require a Lighthouse assertion", color = TallyColors.Text, fontWeight = FontWeight.SemiBold)
-                        Text("Every payment must end with an exact vault-balance check (defence in depth).", color = TallyColors.Muted, fontSize = 13.sp)
-                    }
-                    Switch(lighthouse, { lighthouse = it })
-                }
-            }
+            ToggleRow(Icons.Rounded.Lightbulb, "Lighthouse assertion", "Every payment must end with an exact vault-balance check (defence in depth).", lighthouse) { lighthouse = it }
             if (!existing) {
-                if (s.sgt != null) Chip("Seeker Genesis Token found: this capsule will be Seeker-verified", TallyColors.Paid)
-                OutlinedTextField(fund, { fund = it.filter { c -> c.isDigit() || c == '.' } }, Modifier.fillMaxWidth(), label = { Text("Fund with (USDC)") })
-                Primary("Approve with Seed Vault", {
+                if (s.sgt != null) Chip("Seeker Genesis Token found: this capsule will be Seeker-verified", TallyColors.Paid, Icons.Rounded.VerifiedUser)
+                GlassField(fund, { fund = it.filter { c -> c.isDigit() || c == '.' } }, "Fund with (USDC)", singleLine = true, leading = Icons.Rounded.AttachMoney)
+                Primary("Approve in wallet", {
                     scope.launch { s.createCapsule(parsed, ((fund.toDoubleOrNull() ?: 0.0) * 1_000_000).toLong(), lighthouse) }
-                })
+                }, icon = Icons.Rounded.AccountBalanceWallet)
             } else {
-                Primary("Update rules with Seed Vault", { scope.launch { s.updateRules(parsed, lighthouse) } })
+                Primary("Update rules in wallet", { scope.launch { s.updateRules(parsed, lighthouse) } }, icon = Icons.Rounded.AccountBalanceWallet)
             }
             Gap(24)
         }
