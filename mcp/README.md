@@ -12,7 +12,18 @@ Lets any MCP client (Claude Code, Claude Desktop, other agents) shop **within th
 
 **What it cannot do, by design:** pay, withdraw, change rules, or see any key. A proposal only pre-fills the app's checkout; the owner taps to pay, pricier picks still go through Second Look, and the chain re-checks the item, price, payee and limits.
 
-## Run
+## Hosted
+
+`https://tally-cloud-b792.onrender.com/mcp` (Streamable HTTP; `counter_url` is optional and defaults to the hosted café):
+
+```bash
+claude mcp add --transport http tally https://tally-cloud-b792.onrender.com/mcp
+```
+
+The same service runs the café counter (`/counter`, `/menu.json`) and the Telegram bot [@Tally_Sol_Bot](https://t.me/Tally_Sol_Bot). See `src/http.ts` and `render.yaml`.
+
+## Run locally
+
 
 ```bash
 pnpm install

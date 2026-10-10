@@ -93,6 +93,14 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 - **Share a receipt.** Item, amount, counter and an explorer link anyone can check.
 - **Offline.** Rules, receipts and the last known balance stay readable; payments always need a fresh signed menu and the network.
 
+## Live demo (Tally cloud)
+
+- **Café counter:** https://tally-cloud-b792.onrender.com/counter (scan with Tally)
+- **MCP server:** `claude mcp add --transport http tally https://tally-cloud-b792.onrender.com/mcp`
+- **Telegram:** [@Tally_Sol_Bot](https://t.me/Tally_Sol_Bot): `/wallet <your address>`, then "oat latte"
+
+Free-tier hosting: the first request after ~15 idle minutes takes about 30–50 s while the service wakes.
+
 ## Agents outside Tally (MCP)
 
 The [Tally MCP server](mcp/README.md) lets Claude or any MCP client read a counter's menu (signature verified on-chain), check it against your capsule's rules, and **propose** a purchase as a QR code or `tally://` link. Proposals only pre-fill checkout: you tap to pay, pricier picks still go through Second Look, and the chain re-checks everything. The server has no way to pay, withdraw, change rules or see keys.
