@@ -1,7 +1,8 @@
 <resources>
     <style name="Theme.Tally" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#0B0F0E</item>
-        <item name="android:navigationBarColor">#0B0F0E</item>
-        <item name="android:windowBackground">#0B0F0E</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#040A1E</item>
+        <item name="android:windowBackground">#040A1E</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
