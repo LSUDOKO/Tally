@@ -7,19 +7,27 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import app.tally.ui.BottomBar
@@ -59,6 +67,7 @@ import app.tally.ui.Session
 import app.tally.ui.SettingsScreen
 import app.tally.ui.theme.TallyColors
 import app.tally.ui.theme.TallyTheme
+import app.tally.ui.theme.TallyFonts
 import app.tally.wallet.MwaOwner
 import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import kotlinx.coroutines.launch
@@ -115,7 +124,7 @@ private fun Root(s: Session, nfc: NfcReader) {
                 }
             }
             if (s.screen in TabScreens && s.ownerAddress != null) {
-                BottomBar(s.screen, scanEnabled = s.capsule != null) { s.screen = it }
+                BottomBar(s.screen, scanEnabled = s.capsule != null || BuildConfig.APPLICATION_ID.endsWith(".qa")) { s.screen = it }
             }
         }
         s.busy?.let { BusyOverlay(it) }
@@ -123,16 +132,41 @@ private fun Root(s: Session, nfc: NfcReader) {
     }
 }
 
-/** Work in flight: the mascot thinks on a frosted panel while the wallet or the chain answers. */
+/** An opaque, dedicated work state: the previous route is fully masked. */
 @Composable
 private fun BusyOverlay(label: String) {
-    Box(Modifier.fillMaxSize().background(TallyColors.Ink.copy(alpha = 0.55f)).pointerInput(Unit) {}, contentAlignment = Alignment.Center) {
-        Column(Modifier.padding(32.dp).glass().padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Mascot(Mood.Thinking, Modifier.size(width = 150.dp, height = 150.dp), height = 150.dp)
+    val progress by rememberInfiniteTransition(label = "work progress").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(1450), RepeatMode.Restart), label = "progress"
+    )
+    Box(Modifier.fillMaxSize().background(TallyColors.Ink).pointerInput(Unit) {
+        awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } }
+    }, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawCircle(
+                Brush.radialGradient(listOf(TallyColors.Brand.copy(alpha = 0.34f), Color.Transparent), center = Offset(size.width * 0.5f, size.height * 0.43f), radius = size.width * 0.72f),
+                radius = size.width * 0.72f,
+                center = Offset(size.width * 0.5f, size.height * 0.43f),
+            )
+        }
+        Column(Modifier.fillMaxWidth().padding(horizontal = 36.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Mascot(Mood.Thinking, Modifier.size(width = 184.dp, height = 200.dp), height = 200.dp, glow = false)
+            Gap(18)
+            Text("Tally is on it.", fontFamily = TallyFonts.Display, style = MaterialTheme.typography.displayMedium, color = TallyColors.Text, textAlign = TextAlign.Center)
             Gap(8)
-            Text(label, style = MaterialTheme.typography.titleMedium, color = TallyColors.Text, textAlign = TextAlign.Center)
-            Gap(12)
-            LinearProgressIndicator(Modifier.width(140.dp).clip(RoundedCornerShape(50)), color = TallyColors.BrandBright, trackColor = TallyColors.GlassHigh)
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = TallyColors.Muted, textAlign = TextAlign.Center)
+            Gap(26)
+            Canvas(Modifier.width(216.dp).height(5.dp)) {
+                drawRoundRect(TallyColors.GlassHigh, cornerRadius = CornerRadius(size.height / 2))
+                val segment = size.width * 0.34f
+                drawRoundRect(
+                    Brush.horizontalGradient(listOf(TallyColors.BrandBright, Color.White.copy(alpha = 0.92f))),
+                    topLeft = Offset(progress * (size.width - segment), 0f),
+                    size = Size(segment, size.height),
+                    cornerRadius = CornerRadius(size.height / 2),
+                )
+            }
+            Gap(14)
+            Text("Verifying the details", style = MaterialTheme.typography.labelMedium, color = TallyColors.Faint)
         }
     }
 }
