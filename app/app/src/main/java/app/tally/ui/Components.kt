@@ -1,8 +1,10 @@
 package app.tally.ui
 
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,12 +27,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,28 +55,44 @@ import androidx.compose.ui.unit.sp
 import app.tally.ui.theme.TallyBrushes
 import app.tally.ui.theme.TallyColors
 import app.tally.ui.theme.TallyFonts
+import app.tally.ui.theme.TallyShadows
+import kotlinx.coroutines.delay
 
 // ---------------------------------------------------------------------------------- surfaces
 
-/** The app canvas: night blue with a cobalt glow rising from the top, like the reference's red bloom. */
+/** The same deep blue canvas and controlled ambient light on every route. */
 @Composable
 fun BrandBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.fillMaxSize().background(TallyColors.Ink)) {
         Canvas(Modifier.fillMaxSize()) {
-            drawRect(Brush.verticalGradient(listOf(TallyColors.Night, TallyColors.Ink), endY = size.height * 0.9f))
+            drawRect(Brush.verticalGradient(listOf(TallyColors.Night, TallyColors.Ink, TallyColors.Ink), endY = size.height))
             drawCircle(
-                Brush.radialGradient(listOf(TallyColors.Brand.copy(alpha = 0.55f), TallyColors.Brand.copy(alpha = 0.12f), Color.Transparent), center = Offset(size.width * 0.5f, -size.width * 0.1f), radius = size.width * 1.05f),
-                radius = size.width * 1.05f,
-                center = Offset(size.width * 0.5f, -size.width * 0.1f),
+                Brush.radialGradient(listOf(TallyColors.Brand.copy(alpha = 0.43f), TallyColors.Brand.copy(alpha = 0.10f), Color.Transparent), center = Offset(size.width * 0.52f, -size.width * 0.22f), radius = size.width * 1.3f),
+                radius = size.width * 1.3f,
+                center = Offset(size.width * 0.52f, -size.width * 0.22f),
             )
             drawCircle(
-                Brush.radialGradient(listOf(TallyColors.BrandBright.copy(alpha = 0.16f), Color.Transparent), center = Offset(size.width * 1.0f, size.height * 0.62f), radius = size.width * 0.8f),
+                Brush.radialGradient(listOf(TallyColors.BrandBright.copy(alpha = 0.11f), Color.Transparent), center = Offset(size.width * 1.0f, size.height * 0.62f), radius = size.width * 0.8f),
                 radius = size.width * 0.8f,
                 center = Offset(size.width * 1.0f, size.height * 0.62f),
             )
         }
         content()
     }
+}
+
+/** A short, staggerable route reveal using only opacity and translation. */
+@Composable
+fun Reveal(delayMillis: Long = 0, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(delayMillis)
+        progress.animateTo(1f, tween(520, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    }
+    Box(modifier.graphicsLayer {
+        alpha = progress.value
+        translationY = (1f - progress.value) * 16.dp.toPx()
+    }, content = content)
 }
 
 /** Frosted glass: translucent fill, lit 1 dp rim. */
@@ -87,7 +106,7 @@ fun Modifier.glass(shape: Shape = RoundedCornerShape(24.dp), tint: Color? = null
 fun Modifier.pressable(onClick: () -> Unit, enabled: Boolean = true, role: Role = Role.Button): Modifier {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium), label = "press")
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMedium), label = "press")
     return this.graphicsLayer { scaleX = scale; scaleY = scale }.clickable(source, indication = null, enabled = enabled, role = role, onClick = onClick)
 }
 
@@ -97,7 +116,7 @@ fun Modifier.pressable(onClick: () -> Unit, enabled: Boolean = true, role: Role 
 fun TopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) {
-            GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
+            GlassIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back", onBack)
             Spacer(Modifier.width(12.dp))
         }
         Text(title, style = MaterialTheme.typography.titleLarge, color = TallyColors.Text, modifier = Modifier.weight(1f))
@@ -128,7 +147,7 @@ fun IconTile(icon: ImageVector, tint: Color = TallyColors.Accent, size: Dp = 44.
 fun HeroTitle(first: String, second: String, modifier: Modifier = Modifier, align: TextAlign = TextAlign.Center) {
     Column(modifier, horizontalAlignment = if (align == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
         Text(first, style = MaterialTheme.typography.displayMedium, color = TallyColors.Text, textAlign = align)
-        Text(second, style = MaterialTheme.typography.displayMedium, color = TallyColors.Muted.copy(alpha = 0.75f), textAlign = align)
+        Text(second, style = MaterialTheme.typography.displayMedium, color = TallyColors.Muted, textAlign = align)
     }
 }
 
@@ -177,7 +196,7 @@ fun Primary(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, en
     Box(
         modifier.fillMaxWidth().height(56.dp)
             .alpha(if (enabled) 1f else 0.45f)
-            .shadow(if (enabled) 18.dp else 0.dp, RoundedCornerShape(50), ambientColor = color, spotColor = color)
+            .shadow(if (enabled) TallyShadows.Action else 0.dp, RoundedCornerShape(50), ambientColor = color.copy(alpha = 0.35f), spotColor = color.copy(alpha = 0.35f))
             .clip(RoundedCornerShape(50))
             .background(fill)
             .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0.05f))), RoundedCornerShape(50))
