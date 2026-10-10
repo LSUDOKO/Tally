@@ -21,6 +21,14 @@ import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.LocalDrink
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.rounded.AddCard
+import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.GppGood
+import androidx.compose.material.icons.rounded.PriceChange
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.ShoppingBag
@@ -435,22 +443,37 @@ fun ReceiptsScreen(s: Session) {
 
 // ---------------------------------------------------------------------------- Red team
 
+/** Icon for each scripted attack, by its title. */
+private fun attackIcon(title: String): ImageVector = when {
+    title.startsWith("Payee") -> Icons.Rounded.SwapHoriz
+    title.startsWith("Phantom") -> Icons.Rounded.AddCard
+    title.startsWith("Price") -> Icons.Rounded.PriceChange
+    title.startsWith("Whisper") -> Icons.Rounded.RecordVoiceOver
+    else -> Icons.Rounded.BugReport
+}
+
 @Composable
 fun RedTeamScreen(s: Session) {
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("Red team", onBack = { s.screen = Screen.Home })
-        Column(Pad, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Body("Let an attacker drive your agent against the last scanned menu. Every attempt is a real devnet transaction; reverts show on the explorer. No money moves unless an attack succeeds.", TallyColors.Muted)
-            Primary("Run 4 attacks", { scope.launch { s.runRedTeam() } }, enabled = s.payload != null, color = TallyColors.Blocked)
-            if (s.payload == null) Body("Scan a merchant first.", TallyColors.NeedsYou)
+        Column(Pad.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            HeroTitle("Attack your", "own agent.")
+            Mascot(Mood.WithShield, Modifier.fillMaxWidth(), height = 230.dp, shakeKey = s.redTeam.size.takeIf { it > 0 })
+            Body("An attacker drives your agent against the last scanned menu. Every attempt is a real devnet transaction; reverts show on the explorer. No money moves unless an attack succeeds.", TallyColors.Muted)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Payee swap", "Phantom fee", "Price ×2", "Upsell").forEach { Chip(it, TallyColors.Blocked, attackIcon(it)) }
+            }
+            Primary("Run 4 attacks", { scope.launch { s.runRedTeam() } }, enabled = s.payload != null, color = TallyColors.Blocked, icon = Icons.Rounded.BugReport)
+            if (s.payload == null) Chip("Scan a merchant first", TallyColors.NeedsYou, Icons.Rounded.QrCodeScanner)
             s.redTeam.forEach { r ->
                 Card(accent = if (r.ok) TallyColors.Blocked else TallyColors.Paid) {
                     Column {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(if (r.ok) "✗" else "✓", color = if (r.ok) TallyColors.Blocked else TallyColors.Paid, fontSize = 20.sp)
-                            Text(r.title, color = TallyColors.Text, fontWeight = FontWeight.SemiBold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(attackIcon(r.title), TallyColors.Blocked, 40.dp)
+                            Text(r.title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text, modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
+                            Icon(if (r.ok) Icons.Rounded.Cancel else Icons.Rounded.GppGood, contentDescription = if (r.ok) "Not blocked" else "Blocked", tint = if (r.ok) TallyColors.Blocked else TallyColors.Paid, modifier = Modifier.size(28.dp))
                         }
+                        Gap(8)
                         Body(if (r.ok) r.detail else "Reverted on-chain: ${r.detail}", TallyColors.Muted)
                         ExplorerLink(s, r.signature)
                     }
