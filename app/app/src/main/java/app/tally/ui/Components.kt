@@ -218,3 +218,72 @@ fun Stat(label: String, value: String, color: Color = TallyColors.Text, modifier
 }
 
 fun short(a: String?) = a?.let { if (it.length > 10) it.take(4) + "…" + it.takeLast(4) else it } ?: "—"
+
+// ---------------------------------------------------------------------------------- inputs
+
+/** A glass text field with a cobalt focus ring. */
+@Composable
+fun GlassField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = false,
+    minLines: Int = 1,
+    leading: ImageVector? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+) {
+    androidx.compose.material3.OutlinedTextField(
+        value, onValueChange, modifier.fillMaxWidth(),
+        label = { Text(label) },
+        singleLine = singleLine,
+        minLines = minLines,
+        textStyle = MaterialTheme.typography.bodyLarge,
+        shape = RoundedCornerShape(20.dp),
+        leadingIcon = leading?.let { { Icon(it, contentDescription = null, tint = TallyColors.Muted) } },
+        trailingIcon = trailing,
+        visualTransformation = visualTransformation,
+        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = TallyColors.Glass,
+            unfocusedContainerColor = TallyColors.Glass,
+            focusedBorderColor = TallyColors.BrandBright,
+            unfocusedBorderColor = TallyColors.GlassStroke,
+            focusedLabelColor = TallyColors.Accent,
+            unfocusedLabelColor = TallyColors.Muted,
+            cursorColor = TallyColors.BrandBright,
+            focusedTextColor = TallyColors.Text,
+            unfocusedTextColor = TallyColors.Text,
+        ),
+    )
+}
+
+/** Brand switch: cobalt track when on. */
+@Composable
+fun TallySwitch(checked: Boolean, onChange: (Boolean) -> Unit, enabled: Boolean = true) =
+    androidx.compose.material3.Switch(
+        checked, onChange, enabled = enabled,
+        colors = androidx.compose.material3.SwitchDefaults.colors(
+            checkedThumbColor = Color.White,
+            checkedTrackColor = TallyColors.Brand,
+            checkedBorderColor = TallyColors.BrandBright,
+            uncheckedThumbColor = TallyColors.Muted,
+            uncheckedTrackColor = TallyColors.Glass,
+            uncheckedBorderColor = TallyColors.GlassStroke,
+        ),
+    )
+
+/** A setting: icon tile, title and explanation, and a switch. */
+@Composable
+fun ToggleRow(icon: ImageVector, title: String, detail: String, checked: Boolean, tint: Color = TallyColors.Accent, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+    Card {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconTile(icon, tint, 40.dp)
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+            }
+            TallySwitch(checked, onChange, enabled)
+        }
+    }
+}
