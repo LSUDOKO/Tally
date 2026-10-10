@@ -9,15 +9,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.Memory
-import androidx.compose.material.icons.rounded.Podcasts
-import androidx.compose.material.icons.rounded.Savings
-import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Podcasts
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -62,6 +62,7 @@ import app.tally.merchant.Catalog
 import app.tally.merchant.MerchantTerminal
 import app.tally.merchant.QrCode
 import app.tally.ui.theme.TallyColors
+import app.tally.ui.theme.TallyBrushes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -103,7 +104,16 @@ fun MerchantScreen(s: Session) {
         TopBar("Merchant terminal", onBack = { live = false; s.screen = Screen.Home })
         Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             if (s.ownerAddress == null) {
-                Card(accent = TallyColors.NeedsYou) { Body("Connect the merchant's wallet first (Home → Connect wallet).", TallyColors.NeedsYou) }
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    HeroTitle("Your counter,", "ready when you are.")
+                    Mascot(Mood.Laptop, Modifier.fillMaxWidth(), height = 240.dp)
+                    Card {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Body("Connect the merchant wallet to register your counter and publish signed menus.", TallyColors.Muted)
+                            Primary("Connect wallet", { scope.launch { s.connect() } }, icon = Icons.Outlined.AccountBalanceWallet)
+                        }
+                    }
+                }
                 return@Column
             }
             val r = reg
@@ -116,8 +126,8 @@ fun MerchantScreen(s: Session) {
                     }
                     Mascot(Mood.Laptop, Modifier.size(width = 130.dp, height = 140.dp), height = 140.dp)
                 }
-                GlassField(name, { name = it.take(32) }, "Shop name", singleLine = true, leading = Icons.Rounded.Storefront)
-                GlassField(bond, { bond = it.filter(Char::isDigit) }, "SKR bond", singleLine = true, leading = Icons.Rounded.Savings)
+                GlassField(name, { name = it.take(32) }, "Shop name", singleLine = true, leading = Icons.Outlined.Storefront)
+                GlassField(bond, { bond = it.filter(Char::isDigit) }, "SKR bond", singleLine = true, leading = Icons.Outlined.Savings)
                 Primary("Register and bond SKR", {
                     scope.launch {
                         s.busy = "Waiting for wallet"
@@ -127,12 +137,12 @@ fun MerchantScreen(s: Session) {
                         s.busy = null
                         reload()
                     }
-                }, icon = Icons.Rounded.AccountBalanceWallet)
+                }, icon = Icons.Outlined.AccountBalanceWallet)
             } else {
                 Box(Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-                            .background(Brush.linearGradient(listOf(Color(0xFF1C4FD8), TallyColors.Brand.copy(alpha = 0.85f), Color(0xFF0B1F5C))))
+                            .background(TallyBrushes.HeroPanel)
                             .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.05f))), RoundedCornerShape(28.dp))
                             .padding(20.dp),
                     ) {
@@ -162,12 +172,12 @@ fun MerchantScreen(s: Session) {
                                     s.busy = null
                                     reload()
                                 }
-                            }, color = TallyColors.NeedsYou, icon = Icons.Rounded.Key)
+                            }, color = TallyColors.NeedsYou, icon = Icons.Outlined.Key)
                         }
                     }
                 }
-                ToggleRow(Icons.Rounded.Podcasts, "Broadcast menu", "Show a live QR and answer NFC taps; re-signed every ~20 s.", live) { live = it; if (!it) terminal.stop() }
-                ToggleRow(Icons.Rounded.Memory, "Congestion mode", "Agents solve a small hash puzzle per payment (proof of work).", r.powDifficulty > 0, TallyColors.NeedsYou, enabled = !busyPow) { on ->
+                ToggleRow(Icons.Outlined.Podcasts, "Broadcast menu", "Show a live QR and answer NFC taps; re-signed every ~20 s.", live) { live = it; if (!it) terminal.stop() }
+                ToggleRow(Icons.Outlined.Memory, "Congestion mode", "Agents solve a small hash puzzle per payment (proof of work).", r.powDifficulty > 0, TallyColors.NeedsYou, enabled = !busyPow) { on ->
                     scope.launch {
                         busyPow = true
                         runCatching { terminal.setPow(s.owner, g.rpc, s.ownerAddress!!, if (on) 8 else 0) }.onFailure { s.toast = it.message }
@@ -184,9 +194,9 @@ fun MerchantScreen(s: Session) {
                     ) {
                         Image(bmp.asImageBitmap(), contentDescription = "Signed menu QR", modifier = Modifier.fillMaxSize())
                     }
-                    Chip("Live · re-signs every ~20 s · ${catalog.size} items", TallyColors.Paid, Icons.Rounded.Podcasts)
+                    Chip("Live · re-signs every ~20 s · ${catalog.size} items", TallyColors.Paid, Icons.Outlined.Podcasts)
                 }
-                Secondary(if (editing) "Done editing menu" else "Edit menu (${catalog.size} items)", { editing = !editing; if (!editing) g.store.catalog = catalog }, icon = Icons.Rounded.EditNote)
+                Secondary(if (editing) "Done editing menu" else "Edit menu (${catalog.size} items)", { editing = !editing; if (!editing) g.store.catalog = catalog }, icon = Icons.Outlined.EditNote)
                 if (editing) {
                     catalog.forEachIndexed { i, e ->
                         Card {
@@ -199,11 +209,11 @@ fun MerchantScreen(s: Session) {
                                     GlassField(usdc(e.priceMicro), { v -> v.toDoubleOrNull()?.let { d -> catalog = catalog.toMutableList().also { it[i] = e.copy(priceMicro = (d * 1_000_000).toLong()) } } }, "Price (USDC)", Modifier.weight(1f), singleLine = true)
                                     GlassField("${e.category}", { v -> v.toIntOrNull()?.takeIf { it in 0..255 }?.let { c -> catalog = catalog.toMutableList().also { it[i] = e.copy(category = c) } } }, "Category", Modifier.weight(1f), singleLine = true)
                                 }
-                                Box(Modifier.clip(RoundedCornerShape(50)).clickable { catalog = catalog.filterIndexed { k, _ -> k != i } }) { Chip("Remove", TallyColors.Blocked, Icons.Rounded.Delete) }
+                                Box(Modifier.clip(RoundedCornerShape(50)).clickable { catalog = catalog.filterIndexed { k, _ -> k != i } }) { Chip("Remove", TallyColors.Blocked, Icons.Outlined.Delete) }
                             }
                         }
                     }
-                    Secondary("Add item", { catalog = catalog + Catalog.Entry("New item", 3, 4_000_000) }, icon = Icons.Rounded.Add)
+                    Secondary("Add item", { catalog = catalog + Catalog.Entry("New item", 3, 4_000_000) }, icon = Icons.Outlined.Add)
                     Body("Category floors (cheapest per category) are computed and signed for you. Codes: 0 food · 1 drinks · 2 snacks · 3 coffee · 4 transit · 5 groceries.", TallyColors.Muted)
                 }
             }

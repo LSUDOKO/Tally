@@ -5,63 +5,63 @@ import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.BakeryDining
-import androidx.compose.material.icons.rounded.Block
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Cookie
-import androidx.compose.material.icons.rounded.Fingerprint
-import androidx.compose.material.icons.rounded.Gavel
-import androidx.compose.material.icons.rounded.GppBad
-import androidx.compose.material.icons.rounded.LocalCafe
-import androidx.compose.material.icons.rounded.LocalDrink
-import androidx.compose.material.icons.rounded.Memory
-import androidx.compose.material.icons.rounded.Psychology
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.AcUnit
-import androidx.compose.material.icons.rounded.Autorenew
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.DeleteForever
-import androidx.compose.material.icons.rounded.Dns
-import androidx.compose.material.icons.rounded.Hub
-import androidx.compose.material.icons.rounded.Inventory2
-import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.LocalGasStation
-import androidx.compose.material.icons.rounded.Save
-import androidx.compose.material.icons.rounded.Science
-import androidx.compose.material.icons.rounded.SmartToy
-import androidx.compose.material.icons.rounded.AddCard
-import androidx.compose.material.icons.rounded.BugReport
-import androidx.compose.material.icons.rounded.Cancel
-import androidx.compose.material.icons.rounded.GppGood
-import androidx.compose.material.icons.rounded.PriceChange
-import androidx.compose.material.icons.rounded.QrCodeScanner
-import androidx.compose.material.icons.rounded.RecordVoiceOver
-import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.Savings
-import androidx.compose.material.icons.rounded.Security
-import androidx.compose.material.icons.rounded.ShoppingBag
-import androidx.compose.material.icons.rounded.ShoppingBasket
-import androidx.compose.material.icons.rounded.Storefront
-import androidx.compose.material.icons.rounded.Train
-import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.BakeryDining
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Cookie
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Gavel
+import androidx.compose.material.icons.outlined.GppBad
+import androidx.compose.material.icons.outlined.LocalCafe
+import androidx.compose.material.icons.outlined.LocalDrink
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.AcUnit
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.LocalGasStation
+import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.SmartToy
+import androidx.compose.material.icons.outlined.AddCard
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.GppGood
+import androidx.compose.material.icons.outlined.PriceChange
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.RecordVoiceOver
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.ShoppingBasket
+import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.outlined.Train
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.AttachMoney
-import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.Draw
-import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material.icons.rounded.Verified
-import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AttachMoney
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Draw
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Verified
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -128,7 +128,7 @@ fun ExplorerLink(session: Session, sig: String?, label: String = "View on Solana
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, tint = TallyColors.Accent, modifier = Modifier.size(15.dp))
+        Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null, tint = TallyColors.Accent, modifier = Modifier.size(15.dp))
         Text(label, color = TallyColors.Accent, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
     }
 }
@@ -155,35 +155,35 @@ fun NewCapsuleScreen(s: Session) {
                     Body("Say what your agent may buy. You confirm the exact rules before your wallet signs.", TallyColors.Muted)
                 }
             }
-            GlassField(text, { text = it }, "Your rules", minLines = 2, leading = Icons.Rounded.EditNote)
+            GlassField(text, { text = it }, "Your rules", minLines = 2, leading = Icons.Outlined.EditNote)
             Card {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconTile(Icons.Rounded.Draw, TallyColors.Accent, 36.dp)
+                        IconTile(Icons.Outlined.Draw, TallyColors.Accent, 36.dp)
                         Label("  What your wallet will sign")
                     }
                     Gap(12)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        parsed.categories.forEach { Chip(RuleParser.CATEGORY_NAMES[it] ?: "Category $it", TallyColors.Accent, Icons.Rounded.Category) }
-                        Chip("≤ \$${usdc(parsed.perTxCap)} per purchase", TallyColors.Accent, Icons.Rounded.Payments)
-                        Chip("≤ \$${usdc(parsed.dailyCap)} per day", TallyColors.Accent, Icons.Rounded.CalendarToday)
-                        Chip("Cheapest by default", TallyColors.Paid, Icons.Rounded.Verified)
-                        Chip("Bonded merchants only", TallyColors.Paid, Icons.Rounded.VerifiedUser)
-                        Chip("Expires in ~30 days", TallyColors.Muted, Icons.Rounded.Schedule)
+                        parsed.categories.forEach { Chip(RuleParser.CATEGORY_NAMES[it] ?: "Category $it", TallyColors.Accent, Icons.Outlined.Category) }
+                        Chip("≤ \$${usdc(parsed.perTxCap)} per purchase", TallyColors.Accent, Icons.Outlined.Payments)
+                        Chip("≤ \$${usdc(parsed.dailyCap)} per day", TallyColors.Accent, Icons.Outlined.CalendarToday)
+                        Chip("Cheapest by default", TallyColors.Paid, Icons.Outlined.Verified)
+                        Chip("Bonded merchants only", TallyColors.Paid, Icons.Outlined.VerifiedUser)
+                        Chip("Expires in ~30 days", TallyColors.Muted, Icons.Outlined.Schedule)
                     }
                     Gap(12)
                     Body("Anything pricier than the cheapest match, from an unbonded merchant, or on a long-lived menu will need your tap.", TallyColors.Muted)
                 }
             }
-            ToggleRow(Icons.Rounded.Lightbulb, "Lighthouse assertion", "Every payment must end with an exact vault-balance check (defence in depth).", lighthouse) { lighthouse = it }
+            ToggleRow(Icons.Outlined.Lightbulb, "Lighthouse assertion", "Every payment must end with an exact vault-balance check (defence in depth).", lighthouse) { lighthouse = it }
             if (!existing) {
-                if (s.sgt != null) Chip("Seeker Genesis Token found: this capsule will be Seeker-verified", TallyColors.Paid, Icons.Rounded.VerifiedUser)
-                GlassField(fund, { fund = it.filter { c -> c.isDigit() || c == '.' } }, "Fund with (USDC)", singleLine = true, leading = Icons.Rounded.AttachMoney)
+                if (s.sgt != null) Chip("Seeker Genesis Token found: this capsule will be Seeker-verified", TallyColors.Paid, Icons.Outlined.VerifiedUser)
+                GlassField(fund, { fund = it.filter { c -> c.isDigit() || c == '.' } }, "Fund with (USDC)", singleLine = true, leading = Icons.Outlined.AttachMoney)
                 Primary("Approve in wallet", {
                     scope.launch { s.createCapsule(parsed, ((fund.toDoubleOrNull() ?: 0.0) * 1_000_000).toLong(), lighthouse) }
-                }, icon = Icons.Rounded.AccountBalanceWallet)
+                }, icon = Icons.Outlined.AccountBalanceWallet)
             } else {
-                Primary("Update rules in wallet", { scope.launch { s.updateRules(parsed, lighthouse) } }, icon = Icons.Rounded.AccountBalanceWallet)
+                Primary("Update rules in wallet", { scope.launch { s.updateRules(parsed, lighthouse) } }, icon = Icons.Outlined.AccountBalanceWallet)
             }
             Gap(24)
         }
@@ -194,13 +194,13 @@ fun NewCapsuleScreen(s: Session) {
 
 /** Category glyphs for menu rows (docs/07 category codes). */
 fun categoryIcon(code: Int): ImageVector = when (code) {
-    0 -> Icons.Rounded.BakeryDining
-    1 -> Icons.Rounded.LocalDrink
-    2 -> Icons.Rounded.Cookie
-    3 -> Icons.Rounded.LocalCafe
-    4 -> Icons.Rounded.Train
-    5 -> Icons.Rounded.ShoppingBasket
-    else -> Icons.Rounded.ShoppingBag
+    0 -> Icons.Outlined.BakeryDining
+    1 -> Icons.Outlined.LocalDrink
+    2 -> Icons.Outlined.Cookie
+    3 -> Icons.Outlined.LocalCafe
+    4 -> Icons.Outlined.Train
+    5 -> Icons.Outlined.ShoppingBasket
+    else -> Icons.Outlined.ShoppingBag
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,15 +230,15 @@ fun CheckoutScreen(s: Session) {
         TopBar(m?.name ?: "Merchant", onBack = { s.screen = Screen.Home })
         Column(Pad, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Chip("${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded", if ((m?.skrBonded ?: 0) >= (s.capsule?.minMerchantBond ?: 0)) TallyColors.Paid else TallyColors.NeedsYou, Icons.Rounded.VerifiedUser)
-                if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Rounded.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Rounded.Schedule)
-                if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Rounded.Memory)
+                Chip("${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded", if ((m?.skrBonded ?: 0) >= (s.capsule?.minMerchantBond ?: 0)) TallyColors.Paid else TallyColors.NeedsYou, Icons.Outlined.VerifiedUser)
+                if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Outlined.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Outlined.Schedule)
+                if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Outlined.Memory)
             }
             if (s.issues.isNotEmpty()) {
                 Card(accent = TallyColors.Blocked) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconTile(Icons.Rounded.GppBad, TallyColors.Blocked, 36.dp)
+                            IconTile(Icons.Outlined.GppBad, TallyColors.Blocked, 36.dp)
                             Label("  Menu check failed", TallyColors.Blocked)
                         }
                         Gap(8)
@@ -256,7 +256,7 @@ fun CheckoutScreen(s: Session) {
                         }
                         if (MenuIssue.FloorContradiction in s.issues) {
                             Gap(10)
-                            Primary("Report merchant (slash its bond)", { scope.launch { s.reportFraud() } }, color = TallyColors.Blocked, icon = Icons.Rounded.Gavel)
+                            Primary("Report merchant (slash its bond)", { scope.launch { s.reportFraud() } }, color = TallyColors.Blocked, icon = Icons.Outlined.Gavel)
                         }
                     }
                 }
@@ -283,16 +283,16 @@ fun CheckoutScreen(s: Session) {
                 res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { request = it }
             }
             GlassField(
-                request, { request = it }, "What do you want?", singleLine = true, leading = Icons.Rounded.AutoAwesome,
+                request, { request = it }, "What do you want?", singleLine = true, leading = Icons.Outlined.AutoAwesome,
                 trailing = {
                     IconButton({
                         runCatching {
                             speech.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_PROMPT, "What should your agent buy?"))
                         }
-                    }) { Icon(Icons.Filled.Mic, contentDescription = "Speak your request", tint = TallyColors.Accent) }
+                    }) { Icon(Icons.Outlined.Mic, contentDescription = "Speak your request", tint = TallyColors.Accent) }
                 },
             )
-            Primary("Ask the agent", { scope.launch { s.askAgent(request) } }, icon = Icons.Rounded.AutoAwesome)
+            Primary("Ask the agent", { scope.launch { s.askAgent(request) } }, icon = Icons.Outlined.AutoAwesome)
             if (s.agentResult != null || s.payResult != null) {
                 Mascot(mood, Modifier.fillMaxWidth(), height = 190.dp, shakeKey = s.payResult?.takeIf { !it.ok })
             }
@@ -300,7 +300,7 @@ fun CheckoutScreen(s: Session) {
                 Card(accent = TallyColors.BrandBright) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconTile(Icons.Rounded.Psychology, TallyColors.Accent, 36.dp)
+                            IconTile(Icons.Outlined.Psychology, TallyColors.Accent, 36.dp)
                             Label("  Agent trace · ${s.agentLabel}")
                         }
                         Gap(4)
@@ -320,7 +320,7 @@ fun CheckoutScreen(s: Session) {
                                 if (needsOwner) "Review and pay \$${usdc(item.price)}" else "Pay \$${usdc(item.price)}",
                                 { scope.launch { s.pay(idx, ar.pick.reason) } },
                                 color = if (needsOwner) TallyColors.NeedsYou else TallyColors.Brand,
-                                icon = if (needsOwner) Icons.Rounded.Visibility else Icons.Rounded.Bolt,
+                                icon = if (needsOwner) Icons.Outlined.Visibility else Icons.Outlined.Bolt,
                             )
                         }
                     }
@@ -330,7 +330,7 @@ fun CheckoutScreen(s: Session) {
                 Card(accent = if (r.ok) TallyColors.Paid else TallyColors.Blocked) {
                     Column(Modifier.semantics { contentDescription = r.title }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconTile(if (r.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Block, if (r.ok) TallyColors.Paid else TallyColors.Blocked, 44.dp)
+                            IconTile(if (r.ok) Icons.Outlined.CheckCircle else Icons.Outlined.Block, if (r.ok) TallyColors.Paid else TallyColors.Blocked, 44.dp)
                             Big("  ${r.title}", if (r.ok) TallyColors.Paid else TallyColors.Blocked, 22)
                         }
                         Gap(8)
@@ -355,16 +355,16 @@ fun CheckoutScreen(s: Session) {
                     }
                 }
                 pc.review.decreases.forEach { (acct, amt) -> Mono("$acct  −\$${usdc(amt)}") }
-                SheetRow(Icons.Rounded.Storefront, "To ${m?.name}", "${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded · payout ${short(m?.payout)} from the registry")
+                SheetRow(Icons.Outlined.Storefront, "To ${m?.name}", "${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded · payout ${short(m?.payout)} from the registry")
                 SheetRow(categoryIcon(p.menu.items[pc.index].category), p.names[pc.index], "Agent's reason: ${pc.reason}")
-                pc.cheaper?.let { (name, price) -> Card(accent = TallyColors.Paid) { Row(verticalAlignment = Alignment.CenterVertically) { IconTile(Icons.Rounded.Savings, TallyColors.Paid, 36.dp); Body("  Cheaper match: $name · \$${usdc(price)}", TallyColors.Paid) } } }
+                pc.cheaper?.let { (name, price) -> Card(accent = TallyColors.Paid) { Row(verticalAlignment = Alignment.CenterVertically) { IconTile(Icons.Outlined.Savings, TallyColors.Paid, 36.dp); Body("  Cheaper match: $name · \$${usdc(price)}", TallyColors.Paid) } } }
                 if (pc.review.approveEnabled) {
-                    Chip("Only: Ed25519 verify · Tally pay_offer · compute budget", TallyColors.Paid, Icons.Rounded.VerifiedUser)
+                    Chip("Only: Ed25519 verify · Tally pay_offer · compute budget", TallyColors.Paid, Icons.Outlined.VerifiedUser)
                 } else {
                     Card(accent = TallyColors.Blocked) { Body("Unexpected instructions: ${pc.review.unexpectedPrograms.joinToString()}. Approval disabled.", TallyColors.Blocked) }
                 }
                 Gap(4)
-                Primary("Approve in wallet", { scope.launch { s.approveCosign() } }, enabled = pc.review.approveEnabled, color = TallyColors.NeedsYou, icon = Icons.Rounded.Fingerprint)
+                Primary("Approve in wallet", { scope.launch { s.approveCosign() } }, enabled = pc.review.approveEnabled, color = TallyColors.NeedsYou, icon = Icons.Outlined.Fingerprint)
                 Secondary("No, cancel", { s.declineCosign() })
             }
         }
@@ -405,14 +405,18 @@ fun ReceiptsScreen(s: Session) {
                 Card {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                         Mascot(Mood.Sleepy, Modifier.fillMaxWidth(), height = 160.dp)
-                        Body("Nothing yet. Scan a counter and your receipts land here.", TallyColors.Muted)
+                        Body(if (s.capsule == null) "Create a capsule to start making protected payments. Your receipts will appear here." else "Nothing yet. Scan a counter and your receipts will appear here.", TallyColors.Muted)
+                        if (s.capsule == null) {
+                            Gap(16)
+                            Primary("Create a capsule", { s.screen = Screen.NewCapsule })
+                        }
                     }
                 }
             }
         }
         items(log) { e ->
             val color = when (e.outcome) { "paid" -> TallyColors.Paid; "blocked" -> TallyColors.Blocked; else -> TallyColors.NeedsYou }
-            val icon = when (e.outcome) { "paid" -> Icons.Rounded.CheckCircle; "blocked" -> Icons.Rounded.Block; else -> Icons.Rounded.Schedule }
+            val icon = when (e.outcome) { "paid" -> Icons.Outlined.CheckCircle; "blocked" -> Icons.Outlined.Block; else -> Icons.Outlined.Schedule }
             Card {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -431,8 +435,8 @@ fun ReceiptsScreen(s: Session) {
                     if (e.attack || e.disputed) {
                         Gap(8)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (e.attack) Chip("Red team", TallyColors.Blocked, Icons.Rounded.Security)
-                            if (e.disputed) Chip("Disputed", TallyColors.NeedsYou, Icons.Rounded.Gavel)
+                            if (e.attack) Chip("Red team", TallyColors.Blocked, Icons.Outlined.Security)
+                            if (e.disputed) Chip("Disputed", TallyColors.NeedsYou, Icons.Outlined.Gavel)
                         }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -443,7 +447,7 @@ fun ReceiptsScreen(s: Session) {
                                     .clickable { scope.launch { s.dispute(e, "Not received as described") } }.padding(horizontal = 12.dp, vertical = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
-                                Icon(Icons.Rounded.Gavel, contentDescription = null, tint = TallyColors.NeedsYou, modifier = Modifier.size(15.dp))
+                                Icon(Icons.Outlined.Gavel, contentDescription = null, tint = TallyColors.NeedsYou, modifier = Modifier.size(15.dp))
                                 Text("Dispute", color = TallyColors.NeedsYou, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                             }
                         }
@@ -458,33 +462,34 @@ fun ReceiptsScreen(s: Session) {
 
 /** Icon for each scripted attack, by its title. */
 private fun attackIcon(title: String): ImageVector = when {
-    title.startsWith("Payee") -> Icons.Rounded.SwapHoriz
-    title.startsWith("Phantom") -> Icons.Rounded.AddCard
-    title.startsWith("Price") -> Icons.Rounded.PriceChange
-    title.startsWith("Whisper") -> Icons.Rounded.RecordVoiceOver
-    else -> Icons.Rounded.BugReport
+    title.startsWith("Payee") -> Icons.Outlined.SwapHoriz
+    title.startsWith("Phantom") -> Icons.Outlined.AddCard
+    title.startsWith("Price") -> Icons.Outlined.PriceChange
+    title.startsWith("Whisper") -> Icons.Outlined.RecordVoiceOver
+    else -> Icons.Outlined.BugReport
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RedTeamScreen(s: Session) {
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Column(Pad.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             HeroTitle("Attack your", "own agent.")
-            Mascot(Mood.WithShield, Modifier.fillMaxWidth(), height = 230.dp, shakeKey = s.redTeam.size.takeIf { it > 0 })
-            Body("An attacker drives your agent against the last scanned menu. Every attempt is a real devnet transaction; reverts show on the explorer. No money moves unless an attack succeeds.", TallyColors.Muted)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Mascot(Mood.WithShield, Modifier.fillMaxWidth(), height = 196.dp, shakeKey = s.redTeam.size.takeIf { it > 0 })
+            Body("Run four attacks against the last scanned menu. Every attempt reaches devnet, and blocked transactions appear on the explorer.", TallyColors.Muted)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Payee swap", "Phantom fee", "Price ×2", "Upsell").forEach { Chip(it, TallyColors.Blocked, attackIcon(it)) }
             }
-            Primary("Run 4 attacks", { scope.launch { s.runRedTeam() } }, enabled = s.payload != null, color = TallyColors.Blocked, icon = Icons.Rounded.BugReport)
-            if (s.payload == null) Chip("Scan a merchant first", TallyColors.NeedsYou, Icons.Rounded.QrCodeScanner)
+            if (s.payload == null) Chip(if (s.capsule == null) "Create a capsule first" else "Scan a merchant first", TallyColors.NeedsYou, Icons.Outlined.QrCodeScanner)
+            Primary("Run 4 attacks", { scope.launch { s.runRedTeam() } }, enabled = s.payload != null, color = TallyColors.Blocked, icon = Icons.Outlined.BugReport)
             s.redTeam.forEach { r ->
                 Card(accent = if (r.ok) TallyColors.Blocked else TallyColors.Paid) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconTile(attackIcon(r.title), TallyColors.Blocked, 40.dp)
                             Text(r.title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text, modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
-                            Icon(if (r.ok) Icons.Rounded.Cancel else Icons.Rounded.GppGood, contentDescription = if (r.ok) "Not blocked" else "Blocked", tint = if (r.ok) TallyColors.Blocked else TallyColors.Paid, modifier = Modifier.size(28.dp))
+                            Icon(if (r.ok) Icons.Outlined.Cancel else Icons.Outlined.GppGood, contentDescription = if (r.ok) "Not blocked" else "Blocked", tint = if (r.ok) TallyColors.Blocked else TallyColors.Paid, modifier = Modifier.size(28.dp))
                         }
                         Gap(8)
                         Body(if (r.ok) r.detail else "Reverted on-chain: ${r.detail}", TallyColors.Muted)
@@ -521,28 +526,28 @@ fun SettingsScreen(s: Session) {
                         Text(s.ownerAddress?.let { short(it) } ?: "Not connected", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
                         Text(s.owner.label, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
                     }
-                    Chip(s.config.cluster, TallyColors.Accent, Icons.Rounded.Hub)
+                    Chip(s.config.cluster, TallyColors.Accent, Icons.Outlined.Hub)
                 }
             }
 
             SectionLabel("Agent")
             Card {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    InfoRow(Icons.Rounded.SmartToy, "Agent key", s.agentAddress)
-                    InfoRow(Icons.Rounded.LocalGasStation, "Fee balance", "${"%.4f".format(s.agentSol / 1e9)} SOL")
-                    InfoRow(Icons.Rounded.Psychology, "Model", if (s.modelAvailable) "${GroqAgent.MODEL} · ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "Rule-based (no API key)")
-                    s.capsuleAddress?.let { InfoRow(Icons.Rounded.Inventory2, "Capsule", it) }
+                    InfoRow(Icons.Outlined.SmartToy, "Agent key", s.agentAddress)
+                    InfoRow(Icons.Outlined.LocalGasStation, "Fee balance", "${"%.4f".format(s.agentSol / 1e9)} SOL")
+                    InfoRow(Icons.Outlined.Psychology, "Model", if (s.modelAvailable) "${GroqAgent.MODEL} · ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "Rule-based (no API key)")
+                    s.capsuleAddress?.let { InfoRow(Icons.Outlined.Inventory2, "Capsule", it) }
                 }
             }
 
             if (s.capsule != null) {
                 SectionLabel("Capsule")
-                ToggleRow(Icons.Rounded.AcUnit, "Freeze capsule", "Stops every agent payment until you unfreeze.", s.capsule?.frozen == true, TallyColors.Accent) { scope.launch { s.setFrozen(it) } }
-                ActionRow(Icons.Rounded.Autorenew, "Rotate agent key", "Retire this phone's agent key; its leftover SOL returns to you.") { scope.launch { s.rotateAgent() } }
+                ToggleRow(Icons.Outlined.AcUnit, "Freeze capsule", "Stops every agent payment until you unfreeze.", s.capsule?.frozen == true, TallyColors.Accent) { scope.launch { s.setFrozen(it) } }
+                ActionRow(Icons.Outlined.Autorenew, "Rotate agent key", "Retire this phone's agent key; its leftover SOL returns to you.") { scope.launch { s.rotateAgent() } }
                 // Two taps: closing returns the money but ends this capsule's rules and history.
                 var confirmClose by remember { mutableStateOf(false) }
                 ActionRow(
-                    Icons.Rounded.DeleteForever,
+                    Icons.Outlined.DeleteForever,
                     if (confirmClose) "Tap again to close" else "Close capsule",
                     if (confirmClose) "Refunds \$${usdc(s.vaultBalance)} and the account rent to your wallet." else "Return the vault's USDC and end this capsule.",
                     TallyColors.Blocked,
@@ -550,17 +555,17 @@ fun SettingsScreen(s: Session) {
             }
 
             SectionLabel("Network")
-            GlassField(rpc, { rpc = it }, "Custom RPC URL (blank = default)", singleLine = true, leading = Icons.Rounded.Dns)
-            Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } }, icon = Icons.Rounded.Save)
+            GlassField(rpc, { rpc = it }, "Custom RPC URL (blank = default)", singleLine = true, leading = Icons.Outlined.Dns)
+            Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } }, icon = Icons.Outlined.Save)
 
             SectionLabel("AI agent")
-            GlassField(apiKey, { apiKey = it.trim() }, "Groq API key (blank = rule-based agent)", singleLine = true, leading = Icons.Rounded.Key, visualTransformation = PasswordVisualTransformation())
+            GlassField(apiKey, { apiKey = it.trim() }, "Groq API key (blank = rule-based agent)", singleLine = true, leading = Icons.Outlined.Key, visualTransformation = PasswordVisualTransformation())
             Body("The model only ever sees item ids, categories, prices, floors and dictionary words, never merchant text. The chain still enforces every rule.", TallyColors.Muted)
-            Secondary("Save API key", { s.store.groqKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Groq agent enabled" }, icon = Icons.Rounded.Save)
+            Secondary("Save API key", { s.store.groqKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Groq agent enabled" }, icon = Icons.Outlined.Save)
 
             if (BuildConfig.DEMO_OWNER_ALLOWED) {
                 SectionLabel("Debug")
-                ToggleRow(Icons.Rounded.Science, "Demo owner", "For emulators without a wallet. Release builds always use the wallet.", demo, TallyColors.NeedsYou) {
+                ToggleRow(Icons.Outlined.Science, "Demo owner", "For emulators without a wallet. Release builds always use the wallet.", demo, TallyColors.NeedsYou) {
                     demo = it; s.store.useDemoOwner = it; s.ownerAddress = null; s.store.ownerAddress = null
                 }
             }
@@ -584,7 +589,7 @@ private fun InfoRow(icon: ImageVector, label: String, value: String) {
             Text(label, style = androidx.compose.material3.MaterialTheme.typography.labelMedium, color = TallyColors.Muted)
             Text(if (value.length > 24) short(value) else value, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = TallyColors.Text)
         }
-        if (value.length > 24) Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy $label", tint = TallyColors.Faint, modifier = Modifier.size(18.dp))
+        if (value.length > 24) Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy $label", tint = TallyColors.Faint, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -597,6 +602,6 @@ private fun ActionRow(icon: ImageVector, title: String, detail: String, tint: an
             Text(title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = if (tint == TallyColors.Blocked) TallyColors.Blocked else TallyColors.Text)
             Text(detail, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
         }
-        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = TallyColors.Faint)
+        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = TallyColors.Faint)
     }
 }
