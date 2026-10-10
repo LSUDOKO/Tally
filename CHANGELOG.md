@@ -2,7 +2,17 @@
 
 All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; nothing here is audited or meant for mainnet funds.
 
-## 1.0.0 · 2026-10-09
+## Unreleased
+
+### Added
+- **Tally Points, streaks and levels**: points only from settled on-chain receipts (no self-dealing, disputes or red-team runs), a streak multiplier up to 1.5×, 2× for Seeker capsules; levels give the mascot auras, a crown and a halo, with a level-up celebration.
+- **My usual**: one-tap reorder that stops on any change (price, item, counter) and explains it.
+- **Multi-item cart**: reviewed as a whole against per-purchase, daily and vault limits; each item settles as its own checked transaction.
+- **"Was this you?" notifications** after every agent payment, with a Freeze action; a Freeze button on the home-screen widget.
+- **Weekly summary**, **shareable verifiable receipts**, a **low-balance warning** and a **read-only offline view**.
+- **Tally MCP server** (`mcp/`): verified menus, rules, offers, purchase proposals (QR and `tally://` link) and payment lookups for any MCP client; it cannot pay or change anything. The app accepts proposals by QR or link.
+- **Brand redesign**: cobalt glass UI, Playfair Display and Plus Jakarta Sans, the animated Tally mascot, launcher icon, splash and widget.
+
 
 ### Added
 - **Groq-hosted agent** (`openai/gpt-oss-120b`) in place of the Anthropic SDK. The key is entered in Settings and kept in app-private storage, never built into the APK. Calls are capped at 30 a day and 1,024 tokens each; past the allowance the deterministic rule agent decides.

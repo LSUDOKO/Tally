@@ -102,7 +102,7 @@ The [Tally MCP server](mcp/README.md) lets Claude or any MCP client read a count
 | Suite | Count | What it proves |
 |---|---|---|
 | `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
-| `pnpm -C sdk test` | **18** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
+| `pnpm -C sdk test` | **19** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
 | `./gradlew :core:test` (in `app/`) | **91** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; points, streaks and levels; weekly summary; the usual-order guard; cart limits; agent proposals (including one made by the SDK). One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
 | `pnpm -C mcp test` | **6** | The MCP server's policy: category mask, per-purchase and daily limits with the cycle reset, frozen and expired capsules, approval cases, best match |
 
