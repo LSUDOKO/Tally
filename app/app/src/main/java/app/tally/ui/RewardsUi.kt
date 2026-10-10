@@ -59,7 +59,7 @@ import app.tally.ui.theme.TallyColors
 fun PointsCard(t: Rewards.Tally, onOpen: () -> Unit) {
     val bar by animateFloatAsState(t.progress, tween(900), label = "level")
     Row(
-        Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), t.level.auraColor).pressable(onOpen).padding(16.dp),
+        Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), t.level.auraColor).pressable(onOpen).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Mascot(Mood.ThumbsUp, Modifier.size(width = 84.dp, height = 96.dp), height = 96.dp, level = t.level)
@@ -100,7 +100,7 @@ private fun ProgressBar(fraction: Float, color: androidx.compose.ui.graphics.Col
 /** One-tap reorder of the saved usual (it still checks today's signed menu first). */
 @Composable
 fun UsualCard(u: Usual, onReorder: () -> Unit) {
-    Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         IconTile(categoryIcon(u.category), TallyColors.Accent, 44.dp)
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Label("Your usual")
@@ -192,7 +192,7 @@ fun RewardsScreen(s: Session) {
             Level.entries.forEach { lvl ->
                 val unlocked = t.points >= lvl.minPoints
                 Row(
-                    Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), if (lvl == t.level) lvl.auraColor else null).padding(14.dp),
+                    Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), if (lvl == t.level) lvl.auraColor else null).padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(64.dp).clip(CircleShape).background(TallyColors.Glass).border(2.dp, lvl.auraColor.copy(alpha = if (unlocked) 0.9f else 0.25f), CircleShape), contentAlignment = Alignment.Center) {

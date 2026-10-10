@@ -81,6 +81,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -131,7 +132,7 @@ fun ExplorerLink(session: Session, sig: String?, label: String = "View on Solana
     if (sig == null) return
     val ctx = LocalContext.current
     Row(
-        Modifier.padding(top = 8.dp).clip(RoundedCornerShape(50)).background(TallyColors.Brand.copy(alpha = 0.16f))
+        Modifier.padding(top = 8.dp).glass(CircleShape, TallyColors.BrandBright)
             .clickable { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.config.explorerTx(sig)))) }
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
