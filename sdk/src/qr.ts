@@ -210,3 +210,20 @@ export function fromQr(text: string): MenuPayload {
   if (!text.startsWith(QR_PREFIX)) throw new Error('not a Tally menu');
   return decodePayload(base45Decode(text.slice(QR_PREFIX.length)));
 }
+
+// ------------------------------------------------------------------------------------ proposals
+
+/** Agent proposals: a signed menu plus the picked item; they only pre-fill the app's checkout. */
+export const PROPOSAL_PREFIX = 'TALLY:PROPOSE:';
+export const PROPOSAL_LINK = 'tally://checkout?p=';
+
+const hexUpper = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+/** QR form (QR alphanumeric charset): `TALLY:PROPOSE:<ITEM-ID-HEX>:TALLY:V1:...`. */
+export function toProposalQr(p: MenuPayload, itemId: Uint8Array): string {
+  if (!p.menu.items.some((it) => hexUpper(it.id) === hexUpper(itemId))) throw new Error('the proposed item is not on the signed menu');
+  return PROPOSAL_PREFIX + hexUpper(itemId) + ':' + toQr(p);
+}
+
+/** Link form for agents running on the phone (chat apps, browsers). */
+export const toProposalLink = (p: MenuPayload, itemId: Uint8Array): string => PROPOSAL_LINK + encodeURIComponent(toProposalQr(p, itemId));
