@@ -7,6 +7,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BakeryDining
+import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Cookie
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Gavel
+import androidx.compose.material.icons.rounded.GppBad
+import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.LocalDrink
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.material.icons.rounded.ShoppingBag
+import androidx.compose.material.icons.rounded.ShoppingBasket
+import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.material.icons.rounded.Train
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AttachMoney
 import androidx.compose.material.icons.rounded.CalendarToday
@@ -77,12 +99,16 @@ private val Pad = Modifier.padding(horizontal = 20.dp)
 fun ExplorerLink(session: Session, sig: String?, label: String = "View on Solana Explorer") {
     if (sig == null) return
     val ctx = LocalContext.current
-    Text(
-        label,
-        color = TallyColors.Accent,
-        fontSize = 14.sp,
-        modifier = Modifier.padding(top = 6.dp).clickable { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.config.explorerTx(sig)))) },
-    )
+    Row(
+        Modifier.padding(top = 8.dp).clip(RoundedCornerShape(50)).background(TallyColors.Brand.copy(alpha = 0.16f))
+            .clickable { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(session.config.explorerTx(sig)))) }
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Icons.AutoMirrored.Rounded.OpenInNew, contentDescription = null, tint = TallyColors.Accent, modifier = Modifier.size(15.dp))
+        Text(label, color = TallyColors.Accent, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+    }
 }
 
 // ---------------------------------------------------------------------------- New capsule
@@ -144,6 +170,17 @@ fun NewCapsuleScreen(s: Session) {
 
 // ---------------------------------------------------------------------------- Checkout
 
+/** Category glyphs for menu rows (docs/07 category codes). */
+fun categoryIcon(code: Int): ImageVector = when (code) {
+    0 -> Icons.Rounded.BakeryDining
+    1 -> Icons.Rounded.LocalDrink
+    2 -> Icons.Rounded.Cookie
+    3 -> Icons.Rounded.LocalCafe
+    4 -> Icons.Rounded.Train
+    5 -> Icons.Rounded.ShoppingBasket
+    else -> Icons.Rounded.ShoppingBag
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(s: Session) {
@@ -155,18 +192,34 @@ fun CheckoutScreen(s: Session) {
     LaunchedEffect(s.payResult) {
         s.payResult?.let { haptics.performHapticFeedback(if (it.ok) HapticFeedbackType.Confirm else HapticFeedbackType.Reject) }
     }
+    val pick = s.agentResult?.pick
+    val pickIndex = pick?.let { s.itemName(p, it.itemId)?.first }
+    val needsOwner = pickIndex != null && s.capsule != null && m != null &&
+        Purchase.needsOwner(p.menu.items[pickIndex], m.skrBonded, s.capsule!!.minMerchantBond, p.menu.window)
+    val mood = when {
+        s.payResult?.ok == true -> Mood.Victory
+        s.payResult != null -> Mood.WithShield
+        s.agentResult != null && pick == null -> Mood.Confused
+        pick != null && needsOwner -> Mood.Pointing
+        pick != null -> Mood.ThumbsUp
+        else -> Mood.HoldingPhone
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         TopBar(m?.name ?: "Merchant", onBack = { s.screen = Screen.Home })
-        Column(Pad, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Pad, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Chip("${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded", if ((m?.skrBonded ?: 0) >= (s.capsule?.minMerchantBond ?: 0)) TallyColors.Paid else TallyColors.NeedsYou)
-                if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu") else Chip("Extended menu", TallyColors.NeedsYou)
-                if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: proof of work", TallyColors.NeedsYou)
+                Chip("${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded", if ((m?.skrBonded ?: 0) >= (s.capsule?.minMerchantBond ?: 0)) TallyColors.Paid else TallyColors.NeedsYou, Icons.Rounded.VerifiedUser)
+                if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Rounded.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Rounded.Schedule)
+                if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Rounded.Memory)
             }
             if (s.issues.isNotEmpty()) {
                 Card(accent = TallyColors.Blocked) {
                     Column {
-                        Label("Menu check failed", TallyColors.Blocked)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(Icons.Rounded.GppBad, TallyColors.Blocked, 36.dp)
+                            Label("  Menu check failed", TallyColors.Blocked)
+                        }
+                        Gap(8)
                         s.issues.forEach {
                             Body(
                                 when (it) {
@@ -181,21 +234,25 @@ fun CheckoutScreen(s: Session) {
                         }
                         if (MenuIssue.FloorContradiction in s.issues) {
                             Gap(10)
-                            Primary("Report merchant (slash its bond)", { scope.launch { s.reportFraud() } }, color = TallyColors.Blocked)
+                            Primary("Report merchant (slash its bond)", { scope.launch { s.reportFraud() } }, color = TallyColors.Blocked, icon = Icons.Rounded.Gavel)
                         }
                     }
                 }
             }
             Card {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Label("Signed menu (shown to you, not the agent)")
-                    p.rows().forEachIndexed { i, r ->
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(r.name, color = TallyColors.Text, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                                Text("\$${usdc(r.item.price)}", color = if (r.item.price == r.item.floor) TallyColors.Paid else TallyColors.Text, fontWeight = FontWeight.SemiBold)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Label("Signed menu · shown to you, not the agent")
+                    p.rows().forEach { r ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(categoryIcon(r.item.category), TallyColors.Accent, 40.dp)
+                            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                                Text(r.name, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                                r.description?.let { Text(it, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted) }
                             }
-                            r.description?.let { Text(it, color = TallyColors.Muted, fontSize = 12.sp) }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("\$${usdc(r.item.price)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                                if (r.item.price == r.item.floor) Text("cheapest", style = androidx.compose.material3.MaterialTheme.typography.labelSmall, color = TallyColors.Paid)
+                            }
                         }
                     }
                 }
@@ -203,9 +260,9 @@ fun CheckoutScreen(s: Session) {
             val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
                 res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { request = it }
             }
-            OutlinedTextField(
-                request, { request = it }, Modifier.fillMaxWidth(), label = { Text("What do you want?") },
-                trailingIcon = {
+            GlassField(
+                request, { request = it }, "What do you want?", singleLine = true, leading = Icons.Rounded.AutoAwesome,
+                trailing = {
                     IconButton({
                         runCatching {
                             speech.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_PROMPT, "What should your agent buy?"))
@@ -213,27 +270,36 @@ fun CheckoutScreen(s: Session) {
                     }) { Icon(Icons.Filled.Mic, contentDescription = "Speak your request", tint = TallyColors.Accent) }
                 },
             )
-            Primary("Ask the agent", { scope.launch { s.askAgent(request) } })
+            Primary("Ask the agent", { scope.launch { s.askAgent(request) } }, icon = Icons.Rounded.AutoAwesome)
+            if (s.agentResult != null || s.payResult != null) {
+                Mascot(mood, Modifier.fillMaxWidth(), height = 190.dp, shakeKey = s.payResult?.takeIf { !it.ok })
+            }
             s.agentResult?.let { ar ->
-                val pick = ar.pick
-                Card(accent = TallyColors.Accent) {
+                Card(accent = TallyColors.BrandBright) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Label("Agent trace · ${s.agentLabel}")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(Icons.Rounded.Psychology, TallyColors.Accent, 36.dp)
+                            Label("  Agent trace · ${s.agentLabel}")
+                        }
+                        Gap(4)
                         Mono("request  → \"$request\"")
                         Mono("sees     → item ids, categories, prices, floors, name tokens")
-                        if (pick == null) {
+                        if (ar.pick == null) {
                             Body("No item matches. Nothing to pay.", TallyColors.NeedsYou)
                         } else {
-                            val (idx, name) = s.itemName(p, pick.itemId) ?: (-1 to "?")
+                            val (idx, name) = s.itemName(p, ar.pick.itemId) ?: (-1 to "?")
                             val item = p.menu.items[idx]
                             Mono("chosen   → $name \$${usdc(item.price)} (floor \$${usdc(item.floor)})")
-                            Mono("reason   → ${pick.reason}")
-                            val c = s.capsule
-                            val needs = c != null && m != null && Purchase.needsOwner(item, m.skrBonded, c.minMerchantBond, p.menu.window)
-                            Mono("checks   → ${if (needs) "needs your co-sign" else "autonomous: cheapest match, bonded, live menu"}", if (needs) TallyColors.NeedsYou else TallyColors.Paid)
+                            Mono("reason   → ${ar.pick.reason}")
+                            Mono("checks   → ${if (needsOwner) "needs your co-sign" else "autonomous: cheapest match, bonded, live menu"}", if (needsOwner) TallyColors.NeedsYou else TallyColors.Paid)
                             ar.note?.let { Mono("note     → $it") }
-                            Gap(8)
-                            Primary(if (needs) "Review and pay \$${usdc(item.price)}" else "Pay \$${usdc(item.price)}", { scope.launch { s.pay(idx, pick.reason) } })
+                            Gap(10)
+                            Primary(
+                                if (needsOwner) "Review and pay \$${usdc(item.price)}" else "Pay \$${usdc(item.price)}",
+                                { scope.launch { s.pay(idx, ar.pick.reason) } },
+                                color = if (needsOwner) TallyColors.NeedsYou else TallyColors.Brand,
+                                icon = if (needsOwner) Icons.Rounded.Visibility else Icons.Rounded.Bolt,
+                            )
                         }
                     }
                 }
@@ -241,8 +307,11 @@ fun CheckoutScreen(s: Session) {
             s.payResult?.let { r ->
                 Card(accent = if (r.ok) TallyColors.Paid else TallyColors.Blocked) {
                     Column(Modifier.semantics { contentDescription = r.title }) {
-                        Big(r.title, if (r.ok) TallyColors.Paid else TallyColors.Blocked, 22)
-                        Gap(4)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(if (r.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Block, if (r.ok) TallyColors.Paid else TallyColors.Blocked, 44.dp)
+                            Big("  ${r.title}", if (r.ok) TallyColors.Paid else TallyColors.Blocked, 22)
+                        }
+                        Gap(8)
                         Body(r.detail)
                         ExplorerLink(s, r.signature)
                     }
@@ -253,26 +322,40 @@ fun CheckoutScreen(s: Session) {
     }
 
     s.pendingCosign?.let { pc ->
-        ModalBottomSheet(onDismissRequest = { s.declineCosign() }, containerColor = TallyColors.Surface) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Label("Second look", TallyColors.NeedsYou)
-                Text("You pay (gross)", color = TallyColors.Muted)
-                Big("\$${usdc(pc.review.grossOutflow)} USDC", TallyColors.NeedsYou, 38)
+        ModalBottomSheet(onDismissRequest = { s.declineCosign() }, containerColor = TallyColors.Surface, scrimColor = TallyColors.Ink.copy(alpha = 0.7f)) {
+            Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Mascot(Mood.Pointing, Modifier.size(width = 90.dp, height = 120.dp), height = 120.dp, glow = false)
+                    Column(Modifier.padding(start = 8.dp)) {
+                        Label("Second look", TallyColors.NeedsYou)
+                        Text("You pay (gross)", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = TallyColors.Muted)
+                        Big("\$${usdc(pc.review.grossOutflow)}", TallyColors.NeedsYou, 40)
+                    }
+                }
                 pc.review.decreases.forEach { (acct, amt) -> Mono("$acct  −\$${usdc(amt)}") }
-                Body("To: ${m?.name} · ${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded · payout ${short(m?.payout)} (from registry)")
-                Body("Item: ${p.names[pc.index]}")
-                Body("Agent's reason: ${pc.reason}", TallyColors.Muted)
-                pc.cheaper?.let { (name, price) -> Card(accent = TallyColors.Paid) { Body("Cheaper match: $name · \$${usdc(price)}", TallyColors.Paid) } }
+                SheetRow(Icons.Rounded.Storefront, "To ${m?.name}", "${usdc(m?.skrBonded ?: 0).substringBefore('.')} SKR bonded · payout ${short(m?.payout)} from the registry")
+                SheetRow(categoryIcon(p.menu.items[pc.index].category), p.names[pc.index], "Agent's reason: ${pc.reason}")
+                pc.cheaper?.let { (name, price) -> Card(accent = TallyColors.Paid) { Row(verticalAlignment = Alignment.CenterVertically) { IconTile(Icons.Rounded.Savings, TallyColors.Paid, 36.dp); Body("  Cheaper match: $name · \$${usdc(price)}", TallyColors.Paid) } } }
                 if (pc.review.approveEnabled) {
-                    Mono("Transaction contains: Ed25519 verify · Tally pay_offer · compute budget — nothing else", TallyColors.Paid)
+                    Chip("Only: Ed25519 verify · Tally pay_offer · compute budget", TallyColors.Paid, Icons.Rounded.VerifiedUser)
                 } else {
                     Card(accent = TallyColors.Blocked) { Body("Unexpected instructions: ${pc.review.unexpectedPrograms.joinToString()}. Approval disabled.", TallyColors.Blocked) }
                 }
                 Gap(4)
-                Primary("Approve with Seed Vault", { scope.launch { s.approveCosign() } }, enabled = pc.review.approveEnabled, color = TallyColors.NeedsYou)
+                Primary("Approve in wallet", { scope.launch { s.approveCosign() } }, enabled = pc.review.approveEnabled, color = TallyColors.NeedsYou, icon = Icons.Rounded.Fingerprint)
                 Secondary("No, cancel", { s.declineCosign() })
-                Gap(12)
             }
+        }
+    }
+}
+
+@Composable
+private fun SheetRow(icon: ImageVector, title: String, detail: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconTile(icon, TallyColors.Accent, 40.dp)
+        Column(Modifier.padding(start = 12.dp)) {
+            Text(title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+            Text(detail, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
         }
     }
 }
