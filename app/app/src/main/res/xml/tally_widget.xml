@@ -8,4 +8,5 @@
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewImage="@drawable/mascot_avatar"
     android:description="@string/widget_description" />
