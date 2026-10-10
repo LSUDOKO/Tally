@@ -19,9 +19,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Nfc
-import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Nfc
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
@@ -100,15 +100,15 @@ fun ScanScreen(s: Session, nfcStatus: String) {
                     Text("Point at the counter's QR", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
                     Text("or hold your phone against the merchant's phone.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
                     Gap(8)
-                    Chip(nfcStatus, TallyColors.Accent, Icons.Rounded.Nfc)
+                    Chip(nfcStatus, TallyColors.Accent, Icons.Outlined.Nfc)
                 }
             }
             s.store.lastPayloadQr?.let { last ->
-                Secondary("Use last scanned menu (demo)", { runCatching { Payload.fromQr(last) }.onSuccess(onPayload) }, icon = Icons.Rounded.History)
+                Secondary("Use last scanned menu (demo)", { runCatching { Payload.fromQr(last) }.onSuccess(onPayload) }, icon = Icons.Outlined.History)
             }
             // Debug builds: one phone can be both counter and customer (Merchant mode broadcasts here).
             if (BuildConfig.DEMO_OWNER_ALLOWED && s.ownerAddress != null) {
-                Secondary("Pay this phone's merchant menu (demo)", { scope.launch { s.payOwnMerchant() } }, icon = Icons.Rounded.Storefront)
+                Secondary("Pay this phone's merchant menu (demo)", { scope.launch { s.payOwnMerchant() } }, icon = Icons.Outlined.Storefront)
             }
         }
     }

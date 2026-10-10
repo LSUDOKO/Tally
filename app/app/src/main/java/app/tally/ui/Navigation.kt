@@ -20,11 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.QrCodeScanner
-import androidx.compose.material.icons.rounded.Security
-import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,8 +46,8 @@ val TabScreens = setOf(Screen.Home, Screen.Receipts, Screen.RedTeam, Screen.Sett
 
 private class Tab(val screen: Screen, val icon: ImageVector, val label: String)
 
-private val left = listOf(Tab(Screen.Home, Icons.Rounded.Home, "Home"), Tab(Screen.Receipts, Icons.AutoMirrored.Rounded.ReceiptLong, "Receipts"))
-private val right = listOf(Tab(Screen.RedTeam, Icons.Rounded.Security, "Red team"), Tab(Screen.Settings, Icons.Rounded.Tune, "Settings"))
+private val left = listOf(Tab(Screen.Home, Icons.Outlined.Home, "Home"), Tab(Screen.Receipts, Icons.AutoMirrored.Outlined.ReceiptLong, "Receipts"))
+private val right = listOf(Tab(Screen.RedTeam, Icons.Outlined.Security, "Red team"), Tab(Screen.Settings, Icons.Outlined.Tune, "Settings"))
 
 /** Floating glass bar with a raised cobalt Scan button in the middle, like the reference's "+". */
 @Composable
@@ -89,5 +89,5 @@ private fun ScanButton(enabled: Boolean, onClick: () -> Unit) {
             .border(2.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.1f))), CircleShape)
             .pressable(onClick, enabled),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Rounded.QrCodeScanner, contentDescription = "Scan or tap to pay", tint = Color.White, modifier = Modifier.size(32.dp)) }
+    ) { Icon(Icons.Outlined.QrCodeScanner, contentDescription = "Scan or tap to pay", tint = Color.White, modifier = Modifier.size(32.dp)) }
 }
