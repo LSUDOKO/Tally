@@ -1,6 +1,9 @@
 package app.tally.core
 
+import kotlinx.serialization.Serializable
+
 /** A saved "my usual": the item, where, and the price it was last paid at. */
+@Serializable
 data class Usual(val merchant: String, val merchantName: String, val itemIdHex: String, val name: String, val priceMicro: Long, val category: Int)
 
 /**

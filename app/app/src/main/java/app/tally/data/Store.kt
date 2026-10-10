@@ -2,6 +2,8 @@ package app.tally.data
 
 import android.content.Context
 import app.tally.core.DailyAllowance
+import app.tally.core.SpendRecord
+import app.tally.core.Usual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -20,7 +22,13 @@ data class LogEntry(
     val receipt: String? = null,
     val merchantPda: String? = null,
     val disputed: Boolean = false,
+    /** Kept by declining a pricier pick on Second Look (price difference to the cheaper match). */
+    val savedMicro: Long = 0,
 )
+
+/** The capsule as last seen online (read-only offline view). */
+@Serializable
+data class CapsuleSnapshot(val at: Long, val vaultMicro: Long, val spentTodayMicro: Long, val dailyCapMicro: Long, val perTxCapMicro: Long, val frozen: Boolean, val seeker: Boolean)
 
 /** Small persisted app state (SharedPreferences + JSON). */
 class Store(context: Context) {
@@ -72,6 +80,36 @@ class Store(context: Context) {
 
     fun markDisputed(receipt: String) {
         prefs.edit().putString("log", json.encodeToString(log().map { if (it.receipt == receipt) it.copy(disputed = true) else it })).apply()
+    }
+
+    /** The owner's saved repeat order, if any. */
+    var usual: Usual?
+        get() = prefs.getString("usual", null)?.let { runCatching { json.decodeFromString<Usual>(it) }.getOrNull() }
+        set(v) = prefs.edit().putString("usual", v?.let { json.encodeToString(it) }).apply()
+
+    /** Highest level the owner has already been congratulated on. */
+    var celebratedLevel: String
+        get() = prefs.getString("celebrated_level", "Starter")!!
+        set(v) = prefs.edit().putString("celebrated_level", v).apply()
+
+    /** Last capsule state seen online, shown read-only when the network is down. */
+    var snapshot: CapsuleSnapshot?
+        get() = prefs.getString("snapshot", null)?.let { runCatching { json.decodeFromString<CapsuleSnapshot>(it) }.getOrNull() }
+        set(v) = prefs.edit().putString("snapshot", v?.let { json.encodeToString(it) }).apply()
+
+    /** History as the rewards engine sees it; [ownMerchantPda] marks payments to the owner's own counter. */
+    fun records(ownMerchantPda: String?): List<SpendRecord> = log().map {
+        SpendRecord(
+            at = it.at,
+            amountMicro = it.amountMicro,
+            verified = it.outcome == "paid" && it.receipt != null,
+            selfDealt = ownMerchantPda != null && it.merchantPda == ownMerchantPda,
+            disputed = it.disputed,
+            attack = it.attack,
+            blocked = it.outcome == "blocked",
+            savedMicro = it.savedMicro,
+            merchant = it.merchant,
+        )
     }
 
     fun attacksBlockedThisWeek(now: Long = System.currentTimeMillis()): Int =
