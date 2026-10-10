@@ -1,12 +1,21 @@
 // Live smoke test of the MCP server over stdio, as an MCP client would use it.
 // Needs a running counter (scripts/counter.ts) and devnet. Usage: npx tsx test/smoke.ts <owner> [counter_url]
+// Hosted server: npx tsx test/smoke.ts <owner> --mcp https://host/mcp (the server's own counter is used).
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const [owner, counter = 'http://localhost:8787'] = process.argv.slice(2);
-if (!owner) throw new Error('usage: smoke.ts <owner> [counter_url]');
+const args = process.argv.slice(2);
+const owner = args[0];
+const hosted = args[1] === '--mcp' ? args[2] : undefined;
+const counter = hosted ? undefined : (args[1] ?? 'http://localhost:8787');
+if (!owner) throw new Error('usage: smoke.ts <owner> [counter_url | --mcp <url>]');
 const client = new Client({ name: 'tally-smoke', version: '1.0.0' });
-await client.connect(new StdioClientTransport({ command: 'npx', args: ['tsx', 'src/index.ts'], env: { ...process.env } as Record<string, string> }));
+await client.connect(
+  hosted
+    ? new StreamableHTTPClientTransport(new URL(hosted))
+    : new StdioClientTransport({ command: 'npx', args: ['tsx', 'src/index.ts'], env: { ...process.env } as Record<string, string> }),
+);
 const tools = await client.listTools();
 console.log('tools:', tools.tools.map((t) => t.name).join(', '));
 const text = (r: Awaited<ReturnType<typeof client.callTool>>) => (r.content as { type: string; text?: string }[]).filter((c) => c.type === 'text').map((c) => c.text).join('\n');
