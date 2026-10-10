@@ -31,6 +31,15 @@ import app.tally.core.Payload
 import app.tally.core.Pda
 import app.tally.core.PowSolution
 import app.tally.core.Programs
+import app.tally.core.Insights
+import app.tally.core.Level
+import app.tally.core.Reorder
+import app.tally.core.ReorderCheck
+import app.tally.core.Rewards
+import app.tally.core.SpendRecord
+import app.tally.core.Summary
+import app.tally.core.Usual
+import app.tally.data.CapsuleSnapshot
 import app.tally.core.Purchase
 import app.tally.core.Review
 import app.tally.core.SecondLook
@@ -130,15 +139,26 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
 
     suspend fun refresh() = work("Refreshing") { refreshNow() }
 
+    /** True while the chain can't be reached; Home then shows the last snapshot read-only. */
+    var offline by mutableStateOf(false)
+
     private suspend fun refreshNow() = withContext(Dispatchers.IO) {
         val rpc = g.rpc
+        val online = runCatching { rpc.getSlot() }
+        if (online.isFailure) {
+            offline = true
+            return@withContext
+        }
+        offline = false
+        slot = online.getOrThrow()
         agentSol = runCatching { rpc.getBalance(agentAddress) }.getOrDefault(0)
-        slot = runCatching { rpc.getSlot() }.getOrDefault(slot)
         val c = capsuleAddress?.let { rpc.getAccountData(it) }?.let(Accounts::capsule)
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
         sgt = ownerAddress?.let { findSgt(it) }
         promoClaimed = c?.takeIf { it.flags and 2 != 0 }?.let { rpc.getAccountData(TallyPda.sgtClaim(it.sgtMint, LAUNCH_PROMO)) != null } ?: false
+        g.store.snapshot = c?.let { CapsuleSnapshot(System.currentTimeMillis(), vaultBalance, spentToday, it.dailyCap, it.perTxCap, it.frozen, it.flags and 2 != 0) }
+        checkLevelUp()
     }
 
     /** Look for a Seeker Genesis Token of the configured collection in the owner's Token-2022 accounts. */
@@ -283,6 +303,7 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         payload = p
         issues = Payload.verifyLocally(p, Base58.decode(m.signingKey), slot) + (if (!m.active) listOf(MenuIssue.BadSignature) else emptyList())
         g.store.lastPayloadQr = Payload.toQr(p)
+        reorderCheck = reorder?.let { Reorder.check(it, p.menu) }
         agentResult = null
         payResult = null
         screen = Screen.Checkout
@@ -396,7 +417,8 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
         val pc = pendingCosign ?: return
         pendingCosign = null
         val p = payload ?: return
-        log("Declined: ${p.names[pc.index]}", merchant?.name ?: "", p.menu.items[pc.index].price, "blocked", "You declined a pricier-than-cheapest pick on the Second Look sheet.", null, attack = true)
+        val kept = pc.cheaper?.let { (_, cheaper) -> (p.menu.items[pc.index].price - cheaper).coerceAtLeast(0) } ?: 0
+        log("Declined: ${p.names[pc.index]}", merchant?.name ?: "", p.menu.items[pc.index].price, "blocked", "You declined a pricier-than-cheapest pick on the Second Look sheet.", null, attack = true, savedMicro = kept)
         payResult = PayResult(false, "You said no", "Nothing was paid.", null)
     }
 
@@ -472,10 +494,76 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
 
     // ------------------------------------------------------------------ log
 
-    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false, receipt: String? = null, merchantPda: String? = null) {
-        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack, receipt, merchantPda))
+    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false, receipt: String? = null, merchantPda: String? = null, savedMicro: Long = 0) {
+        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack, receipt, merchantPda, savedMicro = savedMicro))
         logVersion++
         app.tally.widget.TallyWidget.refresh(context)
+        checkLevelUp()
+    }
+
+    // ------------------------------------------------------------------ rewards, summary, usual
+
+    /** The owner's own counter (if registered): payments to it never earn points. */
+    private val ownMerchantPda get() = ownerAddress?.let { TallyPda.merchant(it) }
+
+    private fun records(): List<SpendRecord> {
+        @Suppress("UNUSED_VARIABLE") val v = logVersion
+        return g.store.records(ownMerchantPda)
+    }
+
+    val rewards: Rewards.Tally get() = Rewards.tally(records(), seeker = (capsule?.flags ?: 0) and 2 != 0)
+    val weekly: Summary get() = Insights.summary(records())
+
+    /** Set when the owner reaches a level they haven't been congratulated on yet. */
+    var levelUp by mutableStateOf<Level?>(null)
+
+    private fun checkLevelUp() {
+        val now = rewards.level
+        val seen = runCatching { Level.valueOf(g.store.celebratedLevel) }.getOrDefault(Level.Starter)
+        if (now.ordinal > seen.ordinal) {
+            g.store.celebratedLevel = now.name
+            levelUp = now
+        }
+    }
+
+    /** The usual being reordered, and how today's signed menu compares with it. */
+    var reorder by mutableStateOf<Usual?>(null)
+    var reorderCheck by mutableStateOf<ReorderCheck?>(null)
+
+    fun startReorder() {
+        reorder = g.store.usual ?: return
+        reorderCheck = null
+        screen = Screen.Scan
+    }
+
+    fun cancelReorder() {
+        reorder = null
+        reorderCheck = null
+    }
+
+    /** Remember the item just bought here as the owner's usual. */
+    fun saveUsual(index: Int) {
+        val p = payload ?: return
+        val m = merchant ?: return
+        val item = p.menu.items[index]
+        g.store.usual = Usual(p.menu.merchant, m.name, Hex.encode(item.id), p.names[index], item.price, item.category)
+        logVersion++
+        toast = "Saved: ${p.names[index]} at ${m.name} is your usual. Next time it's one tap, as long as nothing changes."
+    }
+
+    /** Pay the usual. Same item and price: straight to payment; any change was shown and this tap confirms it. */
+    suspend fun payUsual() {
+        val u = reorder ?: return
+        val idx = when (val c = reorderCheck) {
+            is ReorderCheck.Same -> c.index
+            is ReorderCheck.PriceChanged -> c.index
+            else -> return
+        }
+        pay(idx, "Your usual: ${u.name}")
+        if (payResult?.ok == true) {
+            payload?.let { p -> if (reorderCheck is ReorderCheck.PriceChanged) g.store.usual = u.copy(priceMicro = p.menu.items[idx].price) }
+            cancelReorder()
+        }
     }
 
     fun itemName(p: SignedPayload, itemIdHex: String) = p.menu.items.indexOfFirst { Hex.encode(it.id) == itemIdHex }.let { if (it >= 0) it to p.names[it] else null }
