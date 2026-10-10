@@ -9,6 +9,27 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Nfc
+import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,21 +88,48 @@ fun ScanScreen(s: Session, nfcStatus: String) {
 
     Column(Modifier.fillMaxSize()) {
         TopBar("Scan or tap", onBack = { s.screen = Screen.Home })
-        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(24.dp)).background(TallyColors.Surface)) {
+        Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.fillMaxWidth().aspectRatio(1f).glass(RoundedCornerShape(32.dp)).padding(6.dp).clip(RoundedCornerShape(28.dp)).background(TallyColors.Ink)) {
                 if (granted) CameraQr { text -> runCatching { Payload.fromQr(text) }.onSuccess(onPayload) }
                 else Body("Camera permission is needed to scan. You can still tap the merchant phone.", TallyColors.Muted)
+                ScanFrame()
             }
-            Body("Point at the counter's Tally QR, or hold your Seeker against the merchant phone.", TallyColors.Muted)
-            Chip(nfcStatus, TallyColors.Accent)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Mascot(Mood.HoldingPhone, Modifier.size(width = 90.dp, height = 130.dp), height = 130.dp, glow = false)
+                Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                    Text("Point at the counter's QR", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                    Text("or hold your phone against the merchant's phone.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+                    Gap(8)
+                    Chip(nfcStatus, TallyColors.Accent, Icons.Rounded.Nfc)
+                }
+            }
             s.store.lastPayloadQr?.let { last ->
-                Secondary("Use last scanned menu (demo)", { runCatching { Payload.fromQr(last) }.onSuccess(onPayload) })
+                Secondary("Use last scanned menu (demo)", { runCatching { Payload.fromQr(last) }.onSuccess(onPayload) }, icon = Icons.Rounded.History)
             }
             // Debug builds: one phone can be both counter and customer (Merchant mode broadcasts here).
             if (BuildConfig.DEMO_OWNER_ALLOWED && s.ownerAddress != null) {
-                Secondary("Pay this phone's merchant menu (demo)", { scope.launch { s.payOwnMerchant() } })
+                Secondary("Pay this phone's merchant menu (demo)", { scope.launch { s.payOwnMerchant() } }, icon = Icons.Rounded.Storefront)
             }
         }
+    }
+}
+
+/** Cobalt corner brackets and a scan line sweeping the viewfinder. */
+@Composable
+private fun ScanFrame() {
+    val sweep by rememberInfiniteTransition(label = "scan").animateFloat(0.12f, 0.88f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "line")
+    Canvas(Modifier.fillMaxSize()) {
+        val inset = size.minDimension * 0.14f
+        val len = size.minDimension * 0.14f
+        val stroke = 5.dp.toPx()
+        val c = TallyColors.BrandBright
+        listOf(Offset(inset, inset) to Offset(1f, 1f), Offset(size.width - inset, inset) to Offset(-1f, 1f), Offset(inset, size.height - inset) to Offset(1f, -1f), Offset(size.width - inset, size.height - inset) to Offset(-1f, -1f)).forEach { (o, d) ->
+            drawLine(c, o, Offset(o.x + d.x * len, o.y), stroke, StrokeCap.Round)
+            drawLine(c, o, Offset(o.x, o.y + d.y * len), stroke, StrokeCap.Round)
+        }
+        val y = size.height * sweep
+        drawRect(Brush.verticalGradient(listOf(Color.Transparent, c.copy(alpha = 0.35f), Color.Transparent), startY = y - 40f, endY = y + 40f), topLeft = Offset(inset, y - 40f), size = Size(size.width - 2 * inset, 80f))
+        drawLine(c, Offset(inset, y), Offset(size.width - inset, y), 2.dp.toPx(), StrokeCap.Round)
     }
 }
 
