@@ -24,22 +24,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AcUnit
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.CardGiftcard
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.LocalGasStation
-import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.PhoneAndroid
-import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.Storefront
-import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material.icons.rounded.Verified
-import androidx.compose.material.icons.rounded.VerifiedUser
-import androidx.compose.material.icons.rounded.Wallet
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.Draw
+import androidx.compose.material.icons.outlined.AcUnit
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.LocalGasStation
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Verified
+import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import app.tally.R
 import app.tally.core.usdc
 import app.tally.ui.theme.TallyColors
+import app.tally.ui.theme.TallyBrushes
 import kotlinx.coroutines.launch
 
 private val Pad = Modifier.padding(horizontal = 20.dp)
@@ -90,10 +91,10 @@ private fun Greeting(s: Session) {
             Text("Hello 👋", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
             Text(s.ownerAddress?.let { short(it) } ?: "Tally · ${s.config.cluster}", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
         }
-        GlassIconButton(Icons.Rounded.Storefront, "Merchant mode", { s.screen = Screen.Merchant })
+        GlassIconButton(Icons.Outlined.Storefront, "Merchant mode", { s.screen = Screen.Merchant })
         if (s.ownerAddress != null) {
             androidx.compose.foundation.layout.Spacer(Modifier.width(10.dp))
-            GlassIconButton(Icons.Rounded.Tune, "Settings", { s.screen = Screen.Settings })
+            GlassIconButton(Icons.Outlined.Tune, "Settings", { s.screen = Screen.Settings })
         }
     }
 }
@@ -105,31 +106,51 @@ private fun Greeting(s: Session) {
 private fun Welcome(s: Session) {
     val scope = rememberCoroutineScope()
     Column(Pad, horizontalAlignment = Alignment.CenterHorizontally) {
-        Gap(8)
-        HeroTitle("Let your agent pay,", "only for what tallies.")
-        Gap(4)
-        Mascot(Mood.Waving, Modifier.fillMaxWidth(), height = 280.dp)
-        Text(
-            "Your agent proposes. The merchant signs. Tally checks it on-chain, so a tricked agent still can't overpay.",
-            style = MaterialTheme.typography.bodyLarge, color = TallyColors.Muted, textAlign = TextAlign.Center,
-        )
-        Gap(18)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Feature(Icons.Rounded.Draw, "Merchant\nsigned", TallyColors.Accent, Modifier.weight(1f))
-            Feature(Icons.Rounded.Verified, "Cheapest\nmatch", TallyColors.Paid, Modifier.weight(1f))
-            Feature(Icons.Rounded.Link, "On-chain\nchecks", TallyColors.BrandBright, Modifier.weight(1f))
-        }
+        Gap(10)
+        Reveal { HeroTitle("Let your agent pay,", "only for what tallies.") }
         Gap(22)
-        Primary("Connect wallet", { scope.launch { s.connect() } }, icon = Icons.Rounded.AccountBalanceWallet)
+        Reveal(90, Modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().height(326.dp)) {
+                Box(Modifier.fillMaxWidth(0.82f).height(70.dp).align(Alignment.TopCenter).clip(RoundedCornerShape(30.dp)).background(TallyBrushes.HeroLayerBack))
+                Box(Modifier.fillMaxWidth(0.91f).height(70.dp).align(Alignment.TopCenter).offset(y = 10.dp).clip(RoundedCornerShape(30.dp)).background(TallyBrushes.HeroLayerFront))
+                Box(Modifier.fillMaxWidth().height(302.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(32.dp)).background(TallyBrushes.HeroPanel)
+                    .border(1.dp, TallyColors.GlassStroke, RoundedCornerShape(32.dp))) {
+                    Image(painterResource(R.drawable.mascot_editorial), contentDescription = "Tally mascot in cobalt streetwear", contentScale = ContentScale.Crop, alignment = Alignment.TopCenter, modifier = Modifier.fillMaxSize())
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, TallyColors.Ink.copy(alpha = 0.86f)))))
+                    Column(Modifier.align(Alignment.BottomStart).padding(22.dp)) {
+                        Label("Tally / protected payments", Color.White.copy(alpha = 0.8f))
+                        Gap(4)
+                        Text("Pay with proof.", style = MaterialTheme.typography.displaySmall, color = Color.White)
+                    }
+                }
+            }
+        }
+        Gap(18)
+        Reveal(160) {
+            Text(
+                "Your agent proposes. The merchant signs. Tally checks every payment on-chain.",
+                style = MaterialTheme.typography.bodyLarge, color = TallyColors.Muted, textAlign = TextAlign.Center,
+            )
+        }
+        Gap(20)
+        Reveal(210, Modifier.fillMaxWidth()) { Primary("Connect wallet", { scope.launch { s.connect() } }, icon = Icons.Outlined.AccountBalanceWallet) }
         Gap(8)
         Text("Your owner key stays in Seed Vault. Tally only ever holds a capped agent key.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint, textAlign = TextAlign.Center)
+        Gap(18)
+        Reveal(210, Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp)).padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Feature(Icons.Outlined.Draw, "Signed\nmenu", TallyColors.Accent, Modifier.weight(1f))
+                Feature(Icons.Outlined.Verified, "Fair\nprice", TallyColors.Accent, Modifier.weight(1f))
+                Feature(Icons.Outlined.Link, "On-chain\ncheck", TallyColors.Accent, Modifier.weight(1f))
+            }
+        }
     }
 }
 
 @Composable
 private fun Feature(icon: ImageVector, label: String, tint: Color, modifier: Modifier) {
-    Column(modifier.glass(RoundedCornerShape(20.dp)).padding(vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        IconTile(icon, tint, 40.dp)
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        IconTile(icon, tint, 38.dp)
         Gap(8)
         Text(label, style = MaterialTheme.typography.labelMedium, color = TallyColors.Text, textAlign = TextAlign.Center)
     }
@@ -151,7 +172,7 @@ private fun Dashboard(s: Session) {
                     Gap(6)
                     Body("Say what your agent may buy, in your own words. Your wallet signs the rules on-chain once.", TallyColors.Muted)
                     Gap(16)
-                    Primary("Create a capsule", { s.screen = Screen.NewCapsule }, icon = Icons.Rounded.Add)
+                    Primary("Create a capsule", { s.screen = Screen.NewCapsule }, icon = Icons.Outlined.Add)
                 }
             }
             return@Column
@@ -160,27 +181,27 @@ private fun Dashboard(s: Session) {
         BalanceStack(s)
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            QuickAction(Icons.Rounded.Add, "Add \$10") { scope.launch { s.fund(10_000_000) } }
-            QuickAction(Icons.Rounded.Download, "Withdraw", enabled = s.vaultBalance > 0) { scope.launch { s.withdraw(s.vaultBalance) } }
-            QuickAction(Icons.Rounded.Tune, "Rules") { s.screen = Screen.NewCapsule }
-            QuickAction(Icons.Rounded.Storefront, "Merchant") { s.screen = Screen.Merchant }
+            QuickAction(Icons.Outlined.Add, "Add \$10") { scope.launch { s.fund(10_000_000) } }
+            QuickAction(Icons.Outlined.Download, "Withdraw", enabled = s.vaultBalance > 0) { scope.launch { s.withdraw(s.vaultBalance) } }
+            QuickAction(Icons.Outlined.Tune, "Rules") { s.screen = Screen.NewCapsule }
+            QuickAction(Icons.Outlined.Storefront, "Merchant") { s.screen = Screen.Merchant }
         }
 
         if (c.agent != s.agentAddress) {
-            Banner(Icons.Rounded.PhoneAndroid, "This capsule's agent key lives on another phone (or an earlier install), so this phone can't pay from it.", "Make this phone the agent") { scope.launch { s.adoptAgent() } }
+            Banner(Icons.Outlined.PhoneAndroid, "This capsule's agent key lives on another phone (or an earlier install), so this phone can't pay from it.", "Make this phone the agent") { scope.launch { s.adoptAgent() } }
         }
         if (s.agentSol < 10_000_000) {
-            Banner(Icons.Rounded.LocalGasStation, "Your agent needs a little SOL for network fees and receipts (${"%.4f".format(s.agentSol / 1e9)} SOL left).", "Top up agent with 0.05 SOL") { scope.launch { s.topUpAgent() } }
+            Banner(Icons.Outlined.LocalGasStation, "Your agent needs a little SOL for network fees and receipts (${"%.4f".format(s.agentSol / 1e9)} SOL left).", "Top up agent with 0.05 SOL") { scope.launch { s.topUpAgent() } }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Card(Modifier.weight(1f)) { Stat("Blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked, icon = Icons.Rounded.Shield) }
-            Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Paid, icon = Icons.Rounded.Payments) }
+            Card(Modifier.weight(1f)) { Stat("Blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked, icon = Icons.Outlined.Shield) }
+            Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Paid, icon = Icons.Outlined.Payments) }
         }
 
         if (c.flags and 2 != 0) {
             if (s.promoClaimed) {
-                Chip("Seeker launch promo claimed", TallyColors.Paid, Icons.Rounded.CardGiftcard)
+                Chip("Seeker launch promo claimed", TallyColors.Paid, Icons.Outlined.CardGiftcard)
             } else {
                 Card(accent = TallyColors.BrandBright) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -189,7 +210,7 @@ private fun Dashboard(s: Session) {
                             Text("Seeker launch promo", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
                             Text("One claim per Seeker Genesis Token.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
                             Gap(8)
-                            Secondary("Claim", { scope.launch { s.claimPromo(LAUNCH_PROMO) } }, icon = Icons.Rounded.CardGiftcard)
+                            Secondary("Claim", { scope.launch { s.claimPromo(LAUNCH_PROMO) } }, icon = Icons.Outlined.CardGiftcard)
                         }
                     }
                 }
@@ -207,12 +228,12 @@ private fun BalanceStack(s: Session) {
     val bar by animateFloatAsState(pct, tween(900), label = "spent")
     Box(Modifier.fillMaxWidth().padding(top = 26.dp)) {
         // Back layers.
-        Box(Modifier.matchParentWidth(0.84f).align(Alignment.TopCenter).offset(y = (-24).dp).height(70.dp).clip(RoundedCornerShape(26.dp)).background(Brush.horizontalGradient(listOf(Color(0xFF7C5CFF).copy(alpha = 0.55f), TallyColors.BrandBright.copy(alpha = 0.55f)))))
-        Box(Modifier.matchParentWidth(0.92f).align(Alignment.TopCenter).offset(y = (-12).dp).height(70.dp).clip(RoundedCornerShape(26.dp)).background(Brush.horizontalGradient(listOf(TallyColors.BrandBright.copy(alpha = 0.7f), Color(0xFF59B8FF).copy(alpha = 0.6f)))))
+        Box(Modifier.matchParentWidth(0.84f).align(Alignment.TopCenter).offset(y = (-24).dp).height(70.dp).clip(RoundedCornerShape(26.dp)).background(TallyBrushes.HeroLayerBack))
+        Box(Modifier.matchParentWidth(0.92f).align(Alignment.TopCenter).offset(y = (-12).dp).height(70.dp).clip(RoundedCornerShape(26.dp)).background(TallyBrushes.HeroLayerFront))
         // Front card.
         Box(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF1C4FD8), TallyColors.Brand.copy(alpha = 0.85f), Color(0xFF0B1F5C))))
+                .background(TallyBrushes.HeroPanel)
                 .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.05f))), RoundedCornerShape(28.dp))
                 .padding(20.dp),
         ) {
@@ -225,7 +246,7 @@ private fun BalanceStack(s: Session) {
                 Canvas(Modifier.fillMaxWidth().height(8.dp)) {
                     drawRoundRect(Color.White.copy(alpha = 0.2f), cornerRadius = CornerRadius(size.height))
                     drawRoundRect(
-                        Brush.horizontalGradient(listOf(Color(0xFF7CFFC4), TallyColors.Paid)),
+                        Brush.horizontalGradient(listOf(TallyColors.Accent, Color.White)),
                         size = Size(size.width * bar.coerceAtLeast(0.03f), size.height), cornerRadius = CornerRadius(size.height),
                     )
                 }
@@ -233,9 +254,9 @@ private fun BalanceStack(s: Session) {
                 Text("\$${usdc(s.spentToday)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} each", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
                 Gap(12)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (c.frozen) Chip("Frozen", TallyColors.Blocked, Icons.Rounded.AcUnit)
-                    if (c.flags and 2 != 0) Chip("Seeker verified", Color.White, Icons.Rounded.VerifiedUser)
-                    if (c.flags and 1 != 0) Chip("Lighthouse", Color.White, Icons.Rounded.Wallet)
+                    if (c.frozen) Chip("Frozen", TallyColors.Blocked, Icons.Outlined.AcUnit)
+                    if (c.flags and 2 != 0) Chip("Seeker verified", Color.White, Icons.Outlined.VerifiedUser)
+                    if (c.flags and 1 != 0) Chip("Lighthouse", Color.White, Icons.Outlined.Wallet)
                 }
             }
         }
