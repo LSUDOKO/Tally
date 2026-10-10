@@ -31,6 +31,7 @@ import app.tally.MainActivity
 import app.tally.R
 import app.tally.core.usdc
 import app.tally.data.Store
+import app.tally.notify.Notifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,6 +59,13 @@ class TallyWidget : GlanceAppWidget() {
                         style = TextStyle(color = ColorProvider(Color(0xFFFFB4B6), Color(0xFFFFB4B6)), fontSize = 12.sp),
                     )
                 }
+                // Panic button: opens Tally's freeze confirmation (the wallet signs).
+                Text(
+                    "Freeze",
+                    style = TextStyle(color = white, fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                    modifier = GlanceModifier.background(ImageProvider(R.drawable.widget_freeze)).cornerRadius(16.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp).clickable(androidx.glance.appwidget.action.actionStartActivity(Notifier.freezeIntent(context))),
+                )
             }
         }
     }
