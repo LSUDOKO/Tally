@@ -21,6 +21,19 @@ import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.LocalDrink
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AcUnit
+import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.LocalGasStation
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Science
+import androidx.compose.material.icons.rounded.SmartToy
 import androidx.compose.material.icons.rounded.AddCard
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Cancel
@@ -493,52 +506,97 @@ fun SettingsScreen(s: Session) {
     var apiKey by remember { mutableStateOf(s.store.groqKey ?: "") }
     var demo by remember { mutableStateOf(s.store.useDemoOwner) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("Settings", onBack = { s.screen = Screen.Home })
-        Column(Pad, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Pad.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HeroTitle("Your keys,", "your rules.", Modifier.weight(1f), align = TextAlign.Start)
+                Mascot(Mood.Standing, Modifier.size(width = 100.dp, height = 150.dp), height = 150.dp)
+            }
             Card {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Label("Keys")
-                    Mono("owner   ${s.ownerAddress ?: "not connected"}  (${s.owner.label})")
-                    Mono("agent   ${s.agentAddress}")
-                    Mono("agent SOL for fees: ${"%.4f".format(s.agentSol / 1e9)}")
-                    Mono("capsule ${s.capsuleAddress ?: "—"}")
-                    Mono("agent model: ${if (s.modelAvailable) "${GroqAgent.MODEL} on Groq, ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "rule-based (no API key)"}")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(app.tally.R.drawable.mascot_avatar), contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(52.dp).clip(androidx.compose.foundation.shape.CircleShape),
+                    )
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(s.ownerAddress?.let { short(it) } ?: "Not connected", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                        Text(s.owner.label, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+                    }
+                    Chip(s.config.cluster, TallyColors.Accent, Icons.Rounded.Hub)
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Secondary(if (s.capsule?.frozen == true) "Unfreeze capsule" else "Freeze capsule", { scope.launch { s.setFrozen(s.capsule?.frozen != true) } }, Modifier.weight(1f), enabled = s.capsule != null)
-                Secondary("Rotate agent key", { scope.launch { s.rotateAgent() } }, Modifier.weight(1f), enabled = s.capsule != null)
+
+            SectionLabel("Agent")
+            Card {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    InfoRow(Icons.Rounded.SmartToy, "Agent key", s.agentAddress)
+                    InfoRow(Icons.Rounded.LocalGasStation, "Fee balance", "${"%.4f".format(s.agentSol / 1e9)} SOL")
+                    InfoRow(Icons.Rounded.Psychology, "Model", if (s.modelAvailable) "${GroqAgent.MODEL} · ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "Rule-based (no API key)")
+                    s.capsuleAddress?.let { InfoRow(Icons.Rounded.Inventory2, "Capsule", it) }
+                }
             }
+
             if (s.capsule != null) {
+                SectionLabel("Capsule")
+                ToggleRow(Icons.Rounded.AcUnit, "Freeze capsule", "Stops every agent payment until you unfreeze.", s.capsule?.frozen == true, TallyColors.Accent) { scope.launch { s.setFrozen(it) } }
+                ActionRow(Icons.Rounded.Autorenew, "Rotate agent key", "Retire this phone's agent key; its leftover SOL returns to you.") { scope.launch { s.rotateAgent() } }
                 // Two taps: closing returns the money but ends this capsule's rules and history.
                 var confirmClose by remember { mutableStateOf(false) }
-                Secondary(
-                    if (confirmClose) "Tap again: close and refund \$${usdc(s.vaultBalance)}" else "Close capsule",
-                    { if (confirmClose) { confirmClose = false; scope.launch { s.closeCapsule() } } else confirmClose = true },
-                )
+                ActionRow(
+                    Icons.Rounded.DeleteForever,
+                    if (confirmClose) "Tap again to close" else "Close capsule",
+                    if (confirmClose) "Refunds \$${usdc(s.vaultBalance)} and the account rent to your wallet." else "Return the vault's USDC and end this capsule.",
+                    TallyColors.Blocked,
+                ) { if (confirmClose) { confirmClose = false; scope.launch { s.closeCapsule() } } else confirmClose = true }
             }
-            OutlinedTextField(rpc, { rpc = it }, Modifier.fillMaxWidth(), label = { Text("Custom RPC URL (blank = default)") })
-            Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } })
-            OutlinedTextField(
-                apiKey, { apiKey = it.trim() }, Modifier.fillMaxWidth(), singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                label = { Text("Groq API key (blank = rule-based agent)") },
-            )
+
+            SectionLabel("Network")
+            GlassField(rpc, { rpc = it }, "Custom RPC URL (blank = default)", singleLine = true, leading = Icons.Rounded.Dns)
+            Secondary("Save RPC", { s.store.rpcOverride = rpc.trim().ifBlank { null } }, icon = Icons.Rounded.Save)
+
+            SectionLabel("AI agent")
+            GlassField(apiKey, { apiKey = it.trim() }, "Groq API key (blank = rule-based agent)", singleLine = true, leading = Icons.Rounded.Key, visualTransformation = PasswordVisualTransformation())
             Body("The model only ever sees item ids, categories, prices, floors and dictionary words, never merchant text. The chain still enforces every rule.", TallyColors.Muted)
-            Secondary("Save API key", { s.store.groqKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Groq agent enabled" })
+            Secondary("Save API key", { s.store.groqKey = apiKey.ifBlank { null }; s.toast = if (apiKey.isBlank()) "Using the rule-based agent" else "Groq agent enabled" }, icon = Icons.Rounded.Save)
+
             if (BuildConfig.DEMO_OWNER_ALLOWED) {
-                Card(accent = TallyColors.NeedsYou) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Demo owner (debug build)", color = TallyColors.Text, fontWeight = FontWeight.SemiBold)
-                            Text("For emulators without a wallet. Release builds always use Seed Vault.", color = TallyColors.Muted, fontSize = 12.sp)
-                        }
-                        Switch(demo, { demo = it; s.store.useDemoOwner = it; s.ownerAddress = null; s.store.ownerAddress = null })
-                    }
+                SectionLabel("Debug")
+                ToggleRow(Icons.Rounded.Science, "Demo owner", "For emulators without a wallet. Release builds always use the wallet.", demo, TallyColors.NeedsYou) {
+                    demo = it; s.store.useDemoOwner = it; s.ownerAddress = null; s.store.ownerAddress = null
                 }
             }
-            Mono("cluster ${s.config.cluster} · program ${Tally.PROGRAM_ID}")
+            Gap(6)
+            Mono("program ${Tally.PROGRAM_ID}", TallyColors.Faint)
             Gap(24)
         }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) = Label(text, TallyColors.Accent)
+
+/** A labelled value with its icon; tap to copy long values such as addresses. */
+@Composable
+private fun InfoRow(icon: ImageVector, label: String, value: String) {
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    Row(Modifier.fillMaxWidth().clickable { clipboard.setText(androidx.compose.ui.text.AnnotatedString(value)) }, verticalAlignment = Alignment.CenterVertically) {
+        IconTile(icon, TallyColors.Accent, 38.dp)
+        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(label, style = androidx.compose.material3.MaterialTheme.typography.labelMedium, color = TallyColors.Muted)
+            Text(if (value.length > 24) short(value) else value, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = TallyColors.Text)
+        }
+        if (value.length > 24) Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy $label", tint = TallyColors.Faint, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** A tappable settings row with an icon, title, explanation and a chevron. */
+@Composable
+private fun ActionRow(icon: ImageVector, title: String, detail: String, tint: androidx.compose.ui.graphics.Color = TallyColors.Accent, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().glass().pressable(onClick).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        IconTile(icon, tint, 40.dp)
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = if (tint == TallyColors.Blocked) TallyColors.Blocked else TallyColors.Text)
+            Text(detail, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+        }
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = TallyColors.Faint)
     }
 }
