@@ -76,6 +76,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -446,7 +447,7 @@ fun CheckoutScreen(s: Session) {
 
     s.pendingCosign?.let { pc ->
         ModalBottomSheet(onDismissRequest = { s.declineCosign() }, containerColor = TallyColors.Surface, scrimColor = TallyColors.Ink.copy(alpha = 0.7f)) {
-            Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.navigationBarsPadding().padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Mascot(Mood.Pointing, Modifier.size(width = 90.dp, height = 120.dp), height = 120.dp, glow = false)
                     Column(Modifier.padding(start = 8.dp)) {
@@ -479,7 +480,7 @@ fun CartSheet(s: Session) {
     val plan = s.cartPlan() ?: return
     val scope = rememberCoroutineScope()
     ModalBottomSheet(onDismissRequest = { s.cartOpen = false }, containerColor = TallyColors.Surface, scrimColor = TallyColors.Ink.copy(alpha = 0.7f)) {
-        Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.navigationBarsPadding().padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Label("Your cart")
             Big("\$${usdc(plan.totalMicro)}", TallyColors.Text, 38)
             plan.lines.forEach { l ->
