@@ -83,13 +83,28 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 | [`app`](app) | Android app (Kotlin + Compose): Seeker user mode **and** merchant terminal in one APK |
 | [`docs`](docs) | Whitepaper, specs, threat model, research, demo script, deck outline, plans |
 
+## Everyday features
+
+- **Tally Points and levels.** 10 points per settled purchase of at least $1 from someone else's counter (at most five a day), a daily streak multiplier up to 1.5×, and 2× for Seeker-verified capsules. Points come only from on-chain receipts; paying your own counter, disputed buys and red-team runs earn nothing, and points can't be bought or transferred. Levels (Bronze, Silver, Gold, Legend) change the mascot's look: auras, a crown, a turning halo.
+- **My usual.** Save a purchase; next time it's one tap at the same counter, but only if the freshly signed menu has the same item at the same price. Any change stops and says why.
+- **Cart.** Several items, reviewed together (total, limits, which need approval) before anything is paid; each item settles as its own checked transaction, because one signed-menu payment already uses ~1,130 of Solana's 1,232 bytes.
+- **"Was this you?"** A notification after every agent payment with a Freeze button (also on the home-screen widget). The wallet still signs the freeze.
+- **This week.** Spent, kept by declining upsells, attempts blocked, most visited counter.
+- **Share a receipt.** Item, amount, counter and an explorer link anyone can check.
+- **Offline.** Rules, receipts and the last known balance stay readable; payments always need a fresh signed menu and the network.
+
+## Agents outside Tally (MCP)
+
+The [Tally MCP server](mcp/README.md) lets Claude or any MCP client read a counter's menu (signature verified on-chain), check it against your capsule's rules, and **propose** a purchase as a QR code or `tally://` link. Proposals only pre-fill checkout: you tap to pay, pricier picks still go through Second Look, and the chain re-checks everything. The server has no way to pay, withdraw, change rules or see keys.
+
 ## Tests
 
 | Suite | Count | What it proves |
 |---|---|---|
 | `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
-| `pnpm -C sdk test` | **15** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
-| `./gradlew :core:test` (in `app/`) | **72** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; spend allowance. One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
+| `pnpm -C sdk test` | **18** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
+| `./gradlew :core:test` (in `app/`) | **91** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; points, streaks and levels; weekly summary; the usual-order guard; cart limits; agent proposals (including one made by the SDK). One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
+| `pnpm -C mcp test` | **6** | The MCP server's policy: category mask, per-purchase and daily limits with the cycle reset, frozen and expired capsules, approval cases, best match |
 
 The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
 
