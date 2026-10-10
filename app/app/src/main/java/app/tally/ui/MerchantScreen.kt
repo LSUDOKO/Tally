@@ -141,21 +141,19 @@ fun MerchantScreen(s: Session) {
             } else {
                 Box(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-                            .background(TallyBrushes.HeroPanel)
-                            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.05f))), RoundedCornerShape(28.dp))
+                        Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), TallyColors.Brand)
                             .padding(20.dp),
                     ) {
-                        Label("Your counter", Color.White.copy(alpha = 0.75f))
+                        Label("Your counter")
                         Gap(4)
-                        Text(r.name, style = MaterialTheme.typography.displaySmall, color = Color.White, modifier = Modifier.fillMaxWidth(0.62f))
+                        Text(r.name, style = MaterialTheme.typography.displaySmall, color = TallyColors.Text, modifier = Modifier.fillMaxWidth(0.62f))
                         Gap(14)
                         Row(Modifier.fillMaxWidth(0.62f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Stat("Bond", "${usdc(r.skrBonded).substringBefore('.')} SKR", Color.White)
-                            Stat("Slashed", usdc(r.slashedTotal).substringBefore('.'), if (r.slashedTotal > 0) TallyColors.Blocked else Color.White)
+                            Stat("Bond", "${usdc(r.skrBonded).substringBefore('.')} SKR", TallyColors.Text)
+                            Stat("Slashed", usdc(r.slashedTotal).substringBefore('.'), if (r.slashedTotal > 0) TallyColors.Blocked else TallyColors.Text)
                         }
                         Gap(10)
-                        Text("payout ${short(r.payout)} · menu key ${short(r.signingKey)}${if (r.signingKey == terminal.signingKey) " (this phone)" else " (other phone)"}", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+                        Text("payout ${short(r.payout)} · menu key ${short(r.signingKey)}${if (r.signingKey == terminal.signingKey) " (this phone)" else " (other phone)"}", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
                     }
                     Mascot(Mood.Laptop, Modifier.align(Alignment.BottomEnd).size(width = 140.dp, height = 150.dp), height = 150.dp, glow = false)
                 }
