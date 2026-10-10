@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,10 +64,11 @@ fun PointsCard(t: Rewards.Tally, onOpen: () -> Unit) {
     ) {
         Mascot(Mood.ThumbsUp, Modifier.size(width = 84.dp, height = 96.dp), height = 96.dp, level = t.level)
         Column(Modifier.weight(1f).padding(start = 10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Label("${t.level.title} · Tally Points", t.level.auraColor)
+            Label(t.level.title, t.level.auraColor)
+            Row(verticalAlignment = Alignment.Bottom) {
+                Big("${t.points}", TallyColors.Text, 30)
+                Text(" pts", style = MaterialTheme.typography.labelLarge, color = TallyColors.Muted, modifier = Modifier.padding(bottom = 5.dp))
             }
-            Big("${t.points}", TallyColors.Text, 30)
             ProgressBar(bar, t.level.auraColor)
             Gap(6)
             Text(
@@ -74,10 +76,10 @@ fun PointsCard(t: Rewards.Tally, onOpen: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted,
             )
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.padding(start = 10.dp).width(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Outlined.LocalFireDepartment, contentDescription = null, tint = if (t.streakDays > 0) TallyColors.NeedsYou else TallyColors.Faint, modifier = Modifier.size(28.dp))
             Text("${t.streakDays}", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
-            Text("day streak", style = MaterialTheme.typography.labelSmall, color = TallyColors.Muted)
+            Text(if (t.streakDays == 1) "day" else "days", style = MaterialTheme.typography.labelSmall, color = TallyColors.Muted)
         }
     }
 }
