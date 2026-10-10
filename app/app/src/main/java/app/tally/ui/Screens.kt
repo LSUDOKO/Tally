@@ -527,7 +527,7 @@ fun ReceiptsScreen(s: Session) {
         item {
             Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    HeroTitle("Every payment,", "on the record.", align = TextAlign.Start)
+                    HeroTitle("Every payment,", "on the record.", align = TextAlign.Start, style = androidx.compose.material3.MaterialTheme.typography.displaySmall)
                     Gap(6)
                     Body("Paid purchases and blocked attempts, each with its devnet transaction.", TallyColors.Muted)
                 }
@@ -659,8 +659,9 @@ fun SettingsScreen(s: Session) {
                     )
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(s.ownerAddress?.let { short(it) } ?: "Not connected", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
-                        Text(s.owner.label, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+                        Text(s.owner.label, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
+                    androidx.compose.foundation.layout.Spacer(Modifier.padding(start = 8.dp))
                     Chip(s.config.cluster, TallyColors.Accent, Icons.Outlined.Hub)
                 }
             }

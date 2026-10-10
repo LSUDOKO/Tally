@@ -267,10 +267,10 @@ fun IconTile(icon: ImageVector, tint: Color = TallyColors.Accent, size: Dp = 44.
 
 /** A two-line statement in light type, the second line dimmed: "Every payment, / on the record." */
 @Composable
-fun HeroTitle(first: String, second: String, modifier: Modifier = Modifier, align: TextAlign = TextAlign.Center) {
+fun HeroTitle(first: String, second: String, modifier: Modifier = Modifier, align: TextAlign = TextAlign.Center, style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.displayMedium) {
     Column(modifier, horizontalAlignment = if (align == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start) {
-        Text(first, style = MaterialTheme.typography.displayMedium, color = TallyColors.Text, textAlign = align)
-        Text(second, style = MaterialTheme.typography.displayMedium, color = TallyColors.Muted, textAlign = align)
+        Text(first, style = style, color = TallyColors.Text, textAlign = align)
+        Text(second, style = style, color = TallyColors.Muted, textAlign = align)
     }
 }
 
@@ -380,7 +380,7 @@ fun Gap(h: Int = 12) = Spacer(Modifier.height(h.dp))
 fun Stat(label: String, value: String, color: Color = TallyColors.Text, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (icon != null) IconTile(icon, color, 36.dp)
-        Label(label)
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = TallyColors.Muted, maxLines = 1, softWrap = false)
         Text(value, fontFamily = TallyFonts.Sans, fontWeight = FontWeight.Light, fontSize = 26.sp, letterSpacing = (-0.6).sp, color = color, maxLines = 1)
     }
 }
