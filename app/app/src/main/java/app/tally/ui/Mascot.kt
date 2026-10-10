@@ -41,6 +41,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.WorkspacePremium
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import app.tally.core.Level
 import app.tally.R
 import app.tally.ui.theme.TallyColors
 
@@ -73,10 +80,12 @@ enum class Motion { Float, Bounce, Sway, Wave, Settled, Guard }
  * attack).
  */
 @Composable
-fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shakeKey: Any? = null, glow: Boolean = true) {
+fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shakeKey: Any? = null, glow: Boolean = true, level: Level? = null) {
     val density = LocalDensity.current
     val t = rememberInfiniteTransition(label = "mascot")
     val glowPulse by t.animateFloat(0.30f, 0.55f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
+    val haloTurn by t.animateFloat(0f, 360f, infiniteRepeatable(tween(6000, easing = LinearEasing)), label = "halo")
+    val aura = level?.auraColor ?: TallyColors.Brand
 
     val shake = remember { Animatable(0f) }
     LaunchedEffect(shakeKey) {
@@ -95,11 +104,28 @@ fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shake
             Canvas(Modifier.fillMaxSize()) {
                 val r = size.minDimension * 0.62f
                 drawCircle(
-                    Brush.radialGradient(listOf(TallyColors.Brand.copy(alpha = glowPulse), Color.Transparent), center = Offset(size.width / 2, size.height * 0.48f), radius = r),
+                    Brush.radialGradient(listOf(aura.copy(alpha = glowPulse), Color.Transparent), center = Offset(size.width / 2, size.height * 0.48f), radius = r),
                     radius = r,
                     center = Offset(size.width / 2, size.height * 0.48f),
                 )
+                if (level == Level.Legend) {
+                    // Legend: a cobalt halo that slowly turns behind the mascot.
+                    rotate(haloTurn, Offset(size.width / 2, size.height * 0.48f)) {
+                        drawCircle(
+                            Brush.sweepGradient(listOf(Color.Transparent, TallyColors.BrandBright, Color(0xFF9CC2FF), TallyColors.BrandBright, Color.Transparent), center = Offset(size.width / 2, size.height * 0.48f)),
+                            radius = r * 0.8f, center = Offset(size.width / 2, size.height * 0.48f), style = Stroke(width = 4.dp.toPx()),
+                        )
+                    }
+                }
             }
+        }
+        if (level != null && level.ordinal >= Level.Gold.ordinal) {
+            // Gold and above: a crown badge.
+            Icon(
+                Icons.Rounded.WorkspacePremium, contentDescription = "${level.title} level",
+                tint = level.auraColor,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = height * 0.04f, end = height * 0.08f).size(height * 0.16f),
+            )
         }
         AnimatedContent(
             targetState = mood,
@@ -158,3 +184,13 @@ private val Motion.amplitude get() = when (this) { Motion.Bounce -> 14.dp; Motio
 
 /** Bounces snap off the floor (|sin|-like); everything else eases. */
 private fun bounceCurve(x: Float, m: Motion) = if (m == Motion.Bounce) 1f - (1f - x) * (1f - x) else x
+
+/** Each level's aura colour around the mascot. */
+val Level.auraColor: Color
+    get() = when (this) {
+        Level.Starter -> TallyColors.Brand
+        Level.Bronze -> Color(0xFFD08A4E)
+        Level.Silver -> Color(0xFFC9D3E6)
+        Level.Gold -> Color(0xFFFFC94A)
+        Level.Legend -> TallyColors.BrandBright
+    }
