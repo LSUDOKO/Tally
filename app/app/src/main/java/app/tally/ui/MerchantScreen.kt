@@ -148,14 +148,14 @@ fun MerchantScreen(s: Session) {
                         Gap(4)
                         Text(r.name, style = MaterialTheme.typography.displaySmall, color = TallyColors.Text, modifier = Modifier.fillMaxWidth(0.62f))
                         Gap(14)
-                        Row(Modifier.fillMaxWidth(0.62f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(Modifier.fillMaxWidth(0.66f), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                             Stat("Bond", "${usdc(r.skrBonded).substringBefore('.')} SKR", TallyColors.Text)
                             Stat("Slashed", usdc(r.slashedTotal).substringBefore('.'), if (r.slashedTotal > 0) TallyColors.Blocked else TallyColors.Text)
                         }
                         Gap(10)
-                        Text("payout ${short(r.payout)} · menu key ${short(r.signingKey)}${if (r.signingKey == terminal.signingKey) " (this phone)" else " (other phone)"}", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+                        Text("payout ${short(r.payout)} · menu key ${short(r.signingKey)}${if (r.signingKey == terminal.signingKey) " (this phone)" else " (other phone)"}", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted, modifier = Modifier.fillMaxWidth(0.62f))
                     }
-                    Mascot(Mood.Laptop, Modifier.align(Alignment.BottomEnd).size(width = 140.dp, height = 150.dp), height = 150.dp, glow = false)
+                    Mascot(Mood.Laptop, Modifier.align(Alignment.BottomEnd).size(width = 120.dp, height = 140.dp), height = 140.dp, glow = false)
                 }
                 if (r.signingKey != terminal.signingKey) {
                     // Menus signed here would fail verification until the registry points at this phone's key.
