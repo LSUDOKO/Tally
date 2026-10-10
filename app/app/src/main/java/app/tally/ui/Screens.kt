@@ -111,6 +111,7 @@ import androidx.compose.material.icons.outlined.Replay
 import app.tally.core.Hex
 import app.tally.core.Reorder
 import app.tally.core.ReorderCheck
+import androidx.compose.material.icons.outlined.Share
 import app.tally.core.MenuIssue
 import app.tally.core.Purchase
 import app.tally.core.RuleParser
@@ -480,6 +481,7 @@ fun ReceiptsScreen(s: Session) {
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         ExplorerLink(s, e.signature, "Explorer")
+                        if (e.outcome == "paid" && e.receipt != null && e.signature != null) ShareReceipt(s, e)
                         if (e.outcome == "paid" && e.receipt != null && !e.disputed) {
                             Row(
                                 Modifier.padding(top = 8.dp).clip(RoundedCornerShape(50)).background(TallyColors.NeedsYou.copy(alpha = 0.14f))
@@ -642,5 +644,25 @@ private fun ActionRow(icon: ImageVector, title: String, detail: String, tint: an
             Text(detail, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
         }
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = TallyColors.Faint)
+    }
+}
+
+/** Share a settled purchase as a short, verifiable receipt (anyone can open the transaction). */
+@Composable
+private fun ShareReceipt(s: Session, e: app.tally.data.LogEntry) {
+    val ctx = LocalContext.current
+    Row(
+        Modifier.padding(top = 8.dp).clip(RoundedCornerShape(50)).background(TallyColors.Paid.copy(alpha = 0.14f))
+            .clickable {
+                val text = "Paid \$${usdc(e.amountMicro)} to ${e.merchant} for ${e.title}. " +
+                    "My agent paid it and Tally checked the item, price and payee on-chain before the money moved.\n" +
+                    "Verify it: ${s.config.explorerTx(e.signature!!)}"
+                ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Share receipt"))
+            }
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Icons.Outlined.Share, contentDescription = null, tint = TallyColors.Paid, modifier = Modifier.size(15.dp))
+        Text("Share", color = TallyColors.Paid, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
     }
 }
