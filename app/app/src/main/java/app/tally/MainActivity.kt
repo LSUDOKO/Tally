@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import app.tally.ui.BottomBar
+import app.tally.ui.Backdrop
 import app.tally.ui.BrandBackground
 import app.tally.ui.Gap
 import app.tally.ui.Mascot
@@ -127,7 +128,13 @@ private fun Root(s: Session, nfc: NfcReader) {
             onDispose { nfc.stop() }
         }
     }
-    BrandBackground {
+    // Light follows the moment: brand dawn at home, a focused night for paying, dusk for reading.
+    val backdrop = when (s.screen) {
+        Screen.Home -> Backdrop.Dawn
+        Screen.Scan, Screen.Checkout, Screen.NewCapsule, Screen.Merchant -> Backdrop.Night
+        Screen.Receipts, Screen.RedTeam, Screen.Settings, Screen.Rewards -> Backdrop.Dusk
+    }
+    BrandBackground(backdrop) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             AnimatedContent(
                 targetState = s.screen,
