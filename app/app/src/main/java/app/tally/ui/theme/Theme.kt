@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
 import app.tally.R
 
 /**
@@ -27,37 +28,45 @@ object TallyColors {
     val BrandMist = Color(0xFFEBF0FF)
 
     // Canvas and glass.
-    val Ink = Color(0xFF040A1E)
-    val Night = Color(0xFF071233)
-    val Surface = Color(0xFF0D1A3F)
-    val SurfaceHigh = Color(0xFF16275A)
-    val Glass = Color(0x14FFFFFF)
-    val GlassHigh = Color(0x22FFFFFF)
-    val GlassStroke = Color(0x29FFFFFF)
+    val Ink = Color(0xFF050B1E)
+    val Night = Color(0xFF0A1638)
+    val Surface = Color(0xFF101D40)
+    val SurfaceHigh = Color(0xFF192D57)
+    val Glass = Color(0x16FFFFFF)
+    val GlassHigh = Color(0x28FFFFFF)
+    val GlassStroke = Color(0x33FFFFFF)
 
     // Text.
     val Text = Color(0xFFF4F7FF)
-    val Muted = Color(0xFFA3B1D6)
-    val Faint = Color(0xFF6E7DA6)
+    val Muted = Color(0xFFB4C3E2)
+    val Faint = Color(0xFF8496BD)
 
     // Semantics.
     val Paid = Color(0xFF2ED47A)
     val Blocked = Color(0xFFFF5A5F)
     val NeedsYou = Color(0xFFFFB547)
-    val Accent = Color(0xFF6FA6FF)
+    val Accent = Color(0xFF8DB8FF)
 }
 
 object TallyBrushes {
-    /** Primary actions: a lit cobalt pill, brighter at the top like the reference glass buttons. */
-    val PrimaryButton = Brush.verticalGradient(listOf(Color(0xFF4D93FF), TallyColors.Brand, TallyColors.BrandDeep))
+    /** Light arrives from the upper left throughout the app. */
+    val PrimaryButton = Brush.verticalGradient(listOf(Color(0xFF4F98FF), TallyColors.Brand, Color(0xFF0751DA)))
+    val HeroPanel = Brush.verticalGradient(listOf(Color(0xFF165FE8), Color(0xFF1145B7), Color(0xFF101F52)))
+    val HeroLayerBack = Brush.horizontalGradient(listOf(Color(0xFF427FFF), Color(0xFF1E55CC)))
+    val HeroLayerFront = Brush.horizontalGradient(listOf(Color(0xFF285FCF), Color(0xFF1747AE)))
 
     /** Frosted glass: a faint top highlight fading into the panel. */
-    val GlassPanel = Brush.verticalGradient(listOf(Color(0x24FFFFFF), Color(0x0FFFFFFF)))
+    val GlassPanel = Brush.verticalGradient(listOf(Color(0x26FFFFFF), Color(0x0BFFFFFF)))
 
     /** The 1 dp rim on glass panels, lit from above. */
-    val GlassRim = Brush.verticalGradient(listOf(Color(0x47FFFFFF), Color(0x0FFFFFFF)))
+    val GlassRim = Brush.verticalGradient(listOf(Color(0x55FFFFFF), Color(0x10FFFFFF)))
 
     fun tinted(c: Color) = Brush.verticalGradient(listOf(c.copy(alpha = 0.95f), c.copy(alpha = 0.75f)))
+}
+
+object TallyShadows {
+    val Card = 12.dp
+    val Action = 18.dp
 }
 
 private fun variable(res: Int, weight: Int) =
@@ -83,11 +92,11 @@ object TallyFonts {
 }
 
 private val type = Typography(
-    displayLarge = TextStyle(fontFamily = TallyFonts.Display, fontWeight = FontWeight.SemiBold, fontSize = 40.sp, lineHeight = 46.sp),
-    displayMedium = TextStyle(fontFamily = TallyFonts.Display, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 38.sp),
-    displaySmall = TextStyle(fontFamily = TallyFonts.Display, fontWeight = FontWeight.SemiBold, fontSize = 26.sp, lineHeight = 32.sp),
-    headlineMedium = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 34.sp),
-    headlineSmall = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
+    displayLarge = TextStyle(fontFamily = TallyFonts.Display, fontWeight = FontWeight.SemiBold, fontSize = 40.sp, lineHeight = 46.sp, letterSpacing = (-0.8).sp),
+    displayMedium = TextStyle(fontFamily = TallyFonts.Display, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 38.sp, letterSpacing = (-0.6).sp),
+    displaySmall = TextStyle(fontFamily = TallyFonts.Display, fontWeight = FontWeight.SemiBold, fontSize = 26.sp, lineHeight = 32.sp, letterSpacing = (-0.4).sp),
+    headlineMedium = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.6).sp),
+    headlineSmall = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = (-0.3).sp),
     titleLarge = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
     titleMedium = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
     bodyLarge = TextStyle(fontFamily = TallyFonts.Sans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 23.sp),
