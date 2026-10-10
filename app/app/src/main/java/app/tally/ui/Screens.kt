@@ -112,6 +112,9 @@ import app.tally.core.Hex
 import app.tally.core.Reorder
 import app.tally.core.ReorderCheck
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Add
 import app.tally.core.MenuIssue
 import app.tally.core.Purchase
 import app.tally.core.RuleParser
@@ -299,7 +302,7 @@ fun CheckoutScreen(s: Session) {
             Card {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Label("Signed menu · shown to you, not the agent")
-                    p.rows().forEach { r ->
+                    p.rows().forEachIndexed { i, r ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconTile(categoryIcon(r.item.category), TallyColors.Accent, 40.dp)
                             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
@@ -310,7 +313,39 @@ fun CheckoutScreen(s: Session) {
                                 Text("\$${usdc(r.item.price)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
                                 if (r.item.price == r.item.floor) Text("cheapest", style = androidx.compose.material3.MaterialTheme.typography.labelSmall, color = TallyColors.Paid)
                             }
+                            val inCart = i in s.cart
+                            Box(
+                                Modifier.padding(start = 10.dp).size(34.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(if (inCart) TallyColors.Brand else TallyColors.Glass).clickable { s.toggleCart(i) },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(if (inCart) Icons.Outlined.Check else Icons.Outlined.Add, contentDescription = if (inCart) "Remove ${r.name} from cart" else "Add ${r.name} to cart", tint = TallyColors.Text, modifier = Modifier.size(18.dp))
+                            }
                         }
+                    }
+                }
+            }
+            s.cartPlan()?.takeIf { it.lines.isNotEmpty() }?.let { plan ->
+                Row(
+                    Modifier.fillMaxWidth().glass(RoundedCornerShape(50), TallyColors.BrandBright).clickable { s.cartOpen = true }.padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Outlined.ShoppingCart, contentDescription = null, tint = TallyColors.Text)
+                    Text("  Cart · ${plan.lines.size} item${if (plan.lines.size == 1) "" else "s"}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text, modifier = Modifier.weight(1f))
+                    Text("\$${usdc(plan.totalMicro)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                }
+            }
+            s.cartResults.takeIf { it.isNotEmpty() }?.let { results ->
+                Card(accent = if (results.all { it.ok }) TallyColors.Paid else TallyColors.Blocked) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Label("Cart result")
+                        results.forEach { r ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(if (r.ok) Icons.Outlined.CheckCircle else Icons.Outlined.Block, contentDescription = null, tint = if (r.ok) TallyColors.Paid else TallyColors.Blocked, modifier = Modifier.size(18.dp))
+                                Text("  ${r.title}", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = TallyColors.Text)
+                            }
+                        }
+                        if (s.cart.isNotEmpty()) Body("Still in your cart: items that need your approval. Ask the agent for each, or pay them one by one.", TallyColors.Muted)
                     }
                 }
             }
@@ -383,6 +418,8 @@ fun CheckoutScreen(s: Session) {
         }
     }
 
+    if (s.cartOpen) CartSheet(s)
+
     s.pendingCosign?.let { pc ->
         ModalBottomSheet(onDismissRequest = { s.declineCosign() }, containerColor = TallyColors.Surface, scrimColor = TallyColors.Ink.copy(alpha = 0.7f)) {
             Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -407,6 +444,37 @@ fun CheckoutScreen(s: Session) {
                 Primary("Approve in wallet", { scope.launch { s.approveCosign() } }, enabled = pc.review.approveEnabled, color = TallyColors.NeedsYou, icon = Icons.Outlined.Fingerprint)
                 Secondary("No, cancel", { s.declineCosign() })
             }
+        }
+    }
+}
+
+/** Review the whole cart before anything is paid. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CartSheet(s: Session) {
+    val plan = s.cartPlan() ?: return
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(onDismissRequest = { s.cartOpen = false }, containerColor = TallyColors.Surface, scrimColor = TallyColors.Ink.copy(alpha = 0.7f)) {
+        Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Label("Your cart")
+            Big("\$${usdc(plan.totalMicro)}", TallyColors.Text, 38)
+            plan.lines.forEach { l ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(categoryIcon(s.payload!!.menu.items[l.index].category), if (l.needsOwner) TallyColors.NeedsYou else TallyColors.Accent, 36.dp)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(l.name, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                        Text(if (l.needsOwner) "Pricier than the cheapest match: needs your approval" else "Within your rules: pays on its own", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = if (l.needsOwner) TallyColors.NeedsYou else TallyColors.Muted)
+                    }
+                    Text("\$${usdc(l.priceMicro)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                }
+            }
+            plan.problems.forEach { Chip(it, TallyColors.Blocked, Icons.Outlined.Block) }
+            Text("Each item settles as its own on-chain transaction with its own receipt; the chain checks every one against your rules.", style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Faint)
+            Primary(
+                if (plan.needsApproval.isEmpty()) "Pay cart \$${usdc(plan.totalMicro)}" else "Pay ${plan.autonomous.size} item${if (plan.autonomous.size == 1) "" else "s"} now",
+                { scope.launch { s.payCart() } }, enabled = plan.payable && plan.autonomous.isNotEmpty(), icon = Icons.Outlined.Bolt,
+            )
+            Secondary("Keep shopping", { s.cartOpen = false })
         }
     }
 }

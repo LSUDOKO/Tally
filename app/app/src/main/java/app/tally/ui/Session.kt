@@ -17,6 +17,8 @@ import app.tally.core.SystemProgram
 import app.tally.core.sha256
 import app.tally.core.Base58
 import app.tally.core.Ed25519
+import app.tally.core.Cart
+import app.tally.core.CartPlan
 import app.tally.core.Hex
 import app.tally.core.Instruction
 import app.tally.core.Item
@@ -304,6 +306,8 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         issues = Payload.verifyLocally(p, Base58.decode(m.signingKey), slot) + (if (!m.active) listOf(MenuIssue.BadSignature) else emptyList())
         g.store.lastPayloadQr = Payload.toQr(p)
         reorderCheck = reorder?.let { Reorder.check(it, p.menu) }
+        cart = emptyList()
+        cartResults = emptyList()
         agentResult = null
         payResult = null
         screen = Screen.Checkout
@@ -363,6 +367,42 @@ class Session(val context: Context, private val mwaOwner: Owner) {
     }
 
     /** Agent pays; if the chain will demand the owner (above floor, low bond, extended window), open Second Look first. */
+    // ------------------------------------------------------------------ cart
+
+    var cart by mutableStateOf<List<Int>>(emptyList())
+    var cartOpen by mutableStateOf(false)
+    var cartResults by mutableStateOf<List<PayResult>>(emptyList())
+
+    fun toggleCart(index: Int) {
+        cart = if (index in cart) cart - index else Cart.add(cart, index)
+    }
+
+    /** The cart checked against today's limits, or null without a menu and capsule. */
+    fun cartPlan(): CartPlan? {
+        val p = payload ?: return null
+        val c = capsule ?: return null
+        val m = merchant ?: return null
+        return Cart.plan(
+            cart, p.menu.items, p.names, c.perTxCap,
+            Purchase.dailyRemaining(c.dailyCap, c.spentInCycle, c.cycleStartSlot, slot), vaultBalance,
+        ) { Purchase.needsOwner(it, m.skrBonded, c.minMerchantBond, p.menu.window) }
+    }
+
+    /** Pay the cart's autonomous items one checked transaction at a time; stop at the first failure. */
+    suspend fun payCart() {
+        val plan = cartPlan()?.takeIf { it.payable } ?: return
+        cartOpen = false
+        val results = mutableListOf<PayResult>()
+        for (line in plan.autonomous) {
+            pay(line.index, "Cart: ${line.name}")
+            payResult?.let { results += it.copy(title = "${line.name}: ${it.title}") }
+            if (payResult?.ok != true) break
+        }
+        cartResults = results
+        // Items that need the owner stay in the cart to be reviewed one by one.
+        cart = plan.needsApproval.map { it.index }
+    }
+
     /** Index of the item in the latest payment attempt (offered as "save as my usual" once paid). */
     var lastPaidIndex by mutableStateOf<Int?>(null)
 
