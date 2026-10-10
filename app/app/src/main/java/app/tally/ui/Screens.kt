@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.LocalDrink
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.ShoppingBasket
 import androidx.compose.material.icons.rounded.Storefront
@@ -367,30 +368,63 @@ fun ReceiptsScreen(s: Session) {
     @Suppress("UNUSED_VARIABLE") val v = s.logVersion
     val log = s.store.log()
     val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize()) {
-        TopBar("Receipts & forensics", onBack = { s.screen = Screen.Home })
-        if (log.isEmpty()) Body("Nothing yet. Paid purchases and blocked attempts appear here with explorer links.", TallyColors.Muted)
-        LazyColumn(Pad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(log) { e ->
-                val color = when (e.outcome) { "paid" -> TallyColors.Paid; "blocked" -> TallyColors.Blocked; else -> TallyColors.NeedsYou }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    HeroTitle("Every payment,", "on the record.", align = TextAlign.Start)
+                    Gap(6)
+                    Body("Paid purchases and blocked attempts, each with its devnet transaction.", TallyColors.Muted)
+                }
+                Mascot(Mood.WithReceipt, Modifier.size(width = 110.dp, height = 150.dp), height = 150.dp)
+            }
+        }
+        if (log.isEmpty()) {
+            item {
                 Card {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Dot(color)
-                            Text(e.title, color = TallyColors.Text, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            Text("\$${usdc(e.amountMicro)}", color = color)
-                        }
-                        Text(e.detail, color = TallyColors.Muted, fontSize = 13.sp)
-                        if (e.attack) Chip("red team", TallyColors.Blocked)
-                        if (e.disputed) Chip("disputed", TallyColors.NeedsYou)
-                        ExplorerLink(s, e.signature)
-                        if (e.outcome == "paid" && e.receipt != null && !e.disputed) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Mascot(Mood.Sleepy, Modifier.fillMaxWidth(), height = 160.dp)
+                        Body("Nothing yet. Scan a counter and your receipts land here.", TallyColors.Muted)
+                    }
+                }
+            }
+        }
+        items(log) { e ->
+            val color = when (e.outcome) { "paid" -> TallyColors.Paid; "blocked" -> TallyColors.Blocked; else -> TallyColors.NeedsYou }
+            val icon = when (e.outcome) { "paid" -> Icons.Rounded.CheckCircle; "blocked" -> Icons.Rounded.Block; else -> Icons.Rounded.Schedule }
+            Card {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconTile(icon, color, 42.dp)
+                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                            Text(e.title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text, maxLines = 2)
                             Text(
-                                "Dispute this purchase",
-                                color = TallyColors.NeedsYou,
-                                fontSize = 14.sp,
-                                modifier = Modifier.padding(top = 6.dp).clickable { scope.launch { s.dispute(e, "Not received as described") } },
+                                listOf(e.merchant.ifBlank { null }, android.text.format.DateUtils.getRelativeTimeSpanString(e.at).toString()).filterNotNull().joinToString(" · "),
+                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted,
                             )
+                        }
+                        Text("\$${usdc(e.amountMicro)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = color)
+                    }
+                    Gap(10)
+                    Body(e.detail, TallyColors.Muted)
+                    if (e.attack || e.disputed) {
+                        Gap(8)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (e.attack) Chip("Red team", TallyColors.Blocked, Icons.Rounded.Security)
+                            if (e.disputed) Chip("Disputed", TallyColors.NeedsYou, Icons.Rounded.Gavel)
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ExplorerLink(s, e.signature, "Explorer")
+                        if (e.outcome == "paid" && e.receipt != null && !e.disputed) {
+                            Row(
+                                Modifier.padding(top = 8.dp).clip(RoundedCornerShape(50)).background(TallyColors.NeedsYou.copy(alpha = 0.14f))
+                                    .clickable { scope.launch { s.dispute(e, "Not received as described") } }.padding(horizontal = 12.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Icon(Icons.Rounded.Gavel, contentDescription = null, tint = TallyColors.NeedsYou, modifier = Modifier.size(15.dp))
+                                Text("Dispute", color = TallyColors.NeedsYou, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+                            }
                         }
                     }
                 }
