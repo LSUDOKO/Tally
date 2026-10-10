@@ -5,16 +5,37 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
+import app.tally.ui.BottomBar
+import app.tally.ui.BrandBackground
+import app.tally.ui.Gap
+import app.tally.ui.Mascot
+import app.tally.ui.Mood
+import app.tally.ui.Primary
+import app.tally.ui.TabScreens
+import app.tally.ui.glass
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -68,36 +89,65 @@ private fun Root(s: Session, nfc: NfcReader) {
             onDispose { nfc.stop() }
         }
     }
-    Surface(Modifier.fillMaxSize(), color = TallyColors.Ink) {
-        Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-            when (s.screen) {
-                Screen.Home -> HomeScreen(s)
-                Screen.NewCapsule -> NewCapsuleScreen(s)
-                Screen.Scan -> ScanScreen(s, nfcStatus)
-                Screen.Checkout -> CheckoutScreen(s)
-                Screen.Receipts -> ReceiptsScreen(s)
-                Screen.RedTeam -> RedTeamScreen(s)
-                Screen.Merchant -> MerchantScreen(s)
-                Screen.Settings -> SettingsScreen(s)
-            }
-            s.busy?.let { label ->
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Surface(color = TallyColors.SurfaceHigh, shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)) {
-                        Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = TallyColors.Accent)
-                            Text(label, color = TallyColors.Text, modifier = Modifier.padding(top = 12.dp))
-                        }
+    BrandBackground {
+        Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+            AnimatedContent(
+                targetState = s.screen,
+                transitionSpec = {
+                    val forward = targetState !in TabScreens || initialState in TabScreens
+                    (fadeIn(tween(260)) + slideInVertically(tween(320)) { if (forward) it / 14 else -it / 14 })
+                        .togetherWith(fadeOut(tween(180)))
+                },
+                modifier = Modifier.weight(1f),
+                label = "screen",
+            ) { screen ->
+                Box(Modifier.fillMaxSize()) {
+                    when (screen) {
+                        Screen.Home -> HomeScreen(s)
+                        Screen.NewCapsule -> NewCapsuleScreen(s)
+                        Screen.Scan -> ScanScreen(s, nfcStatus)
+                        Screen.Checkout -> CheckoutScreen(s)
+                        Screen.Receipts -> ReceiptsScreen(s)
+                        Screen.RedTeam -> RedTeamScreen(s)
+                        Screen.Merchant -> MerchantScreen(s)
+                        Screen.Settings -> SettingsScreen(s)
                     }
                 }
             }
-            s.toast?.let { msg ->
-                AlertDialog(
-                    onDismissRequest = { s.toast = null },
-                    confirmButton = { TextButton({ s.toast = null }) { Text("OK") } },
-                    text = { Text(msg) },
-                    containerColor = TallyColors.Surface,
-                )
+            if (s.screen in TabScreens && s.ownerAddress != null) {
+                BottomBar(s.screen, scanEnabled = s.capsule != null) { s.screen = it }
             }
+        }
+        s.busy?.let { BusyOverlay(it) }
+        s.toast?.let { msg -> Notice(msg) { s.toast = null } }
+    }
+}
+
+/** Work in flight: the mascot thinks on a frosted panel while the wallet or the chain answers. */
+@Composable
+private fun BusyOverlay(label: String) {
+    Box(Modifier.fillMaxSize().background(TallyColors.Ink.copy(alpha = 0.55f)).pointerInput(Unit) {}, contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(32.dp).glass().padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Mascot(Mood.Thinking, Modifier.size(width = 150.dp, height = 150.dp), height = 150.dp)
+            Gap(8)
+            Text(label, style = MaterialTheme.typography.titleMedium, color = TallyColors.Text, textAlign = TextAlign.Center)
+            Gap(12)
+            LinearProgressIndicator(Modifier.width(140.dp).clip(RoundedCornerShape(50)), color = TallyColors.BrandBright, trackColor = TallyColors.GlassHigh)
+        }
+    }
+}
+
+/** A message for the user; the mascot reacts to whether it is good news. */
+@Composable
+private fun Notice(message: String, onDismiss: () -> Unit) {
+    val good = listOf("enabled", "proven", "claimed", "rule-based agent", "Paid").any { message.contains(it, ignoreCase = true) }
+    Dialog(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().glass().background(TallyColors.Surface.copy(alpha = 0.92f)).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Mascot(if (good) Mood.ThumbsUp else Mood.Confused, Modifier.size(width = 150.dp, height = 140.dp), height = 140.dp)
+            Gap(8)
+            Text(message, style = MaterialTheme.typography.bodyLarge, color = TallyColors.Text, textAlign = TextAlign.Center)
+            Gap(18)
+            Primary("Got it", onDismiss)
         }
     }
 }
