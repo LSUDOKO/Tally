@@ -363,7 +363,11 @@ class Session(private val context: Context, private val mwaOwner: Owner) {
     }
 
     /** Agent pays; if the chain will demand the owner (above floor, low bond, extended window), open Second Look first. */
+    /** Index of the item in the latest payment attempt (offered as "save as my usual" once paid). */
+    var lastPaidIndex by mutableStateOf<Int?>(null)
+
     suspend fun pay(index: Int, reason: String) = work("Paying") {
+        lastPaidIndex = index
         payload ?: return@work
         val m = merchant ?: return@work
         val c = capsule ?: error("Create a capsule first")

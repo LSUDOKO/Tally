@@ -107,6 +107,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.tally.BuildConfig
 import app.tally.agent.GroqAgent
+import androidx.compose.material.icons.outlined.Replay
+import app.tally.core.Hex
+import app.tally.core.Reorder
+import app.tally.core.ReorderCheck
 import app.tally.core.MenuIssue
 import app.tally.core.Purchase
 import app.tally.core.RuleParser
@@ -234,6 +238,36 @@ fun CheckoutScreen(s: Session) {
                 if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Outlined.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Outlined.Schedule)
                 if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Outlined.Memory)
             }
+            val usual = s.reorder
+            val check = s.reorderCheck
+            if (usual != null && check != null) {
+                val why = Reorder.explain(check, usual)
+                Card(accent = if (why == null) TallyColors.Paid else TallyColors.NeedsYou) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(Icons.Outlined.Replay, if (why == null) TallyColors.Paid else TallyColors.NeedsYou, 40.dp)
+                            Column(Modifier.padding(start = 12.dp)) {
+                                Label("Your usual")
+                                Text("${usual.name} · \$${usdc(usual.priceMicro)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+                            }
+                        }
+                        Gap(10)
+                        if (why == null) {
+                            Body("Same counter, same item, same signed price.", TallyColors.Muted)
+                            Gap(10)
+                            Primary("Pay your usual \$${usdc(usual.priceMicro)}", { scope.launch { s.payUsual() } }, icon = Icons.Outlined.Bolt)
+                        } else {
+                            Body(why, TallyColors.Text)
+                            Gap(10)
+                            if (check is ReorderCheck.PriceChanged) {
+                                Primary("Pay the new price \$${usdc(check.newMicro)}", { scope.launch { s.payUsual() } }, color = TallyColors.NeedsYou, icon = Icons.Outlined.Visibility)
+                                Gap(6)
+                            }
+                            Secondary("Not now", { s.cancelReorder() })
+                        }
+                    }
+                }
+            }
             if (s.issues.isNotEmpty()) {
                 Card(accent = TallyColors.Blocked) {
                     Column {
@@ -336,6 +370,11 @@ fun CheckoutScreen(s: Session) {
                         Gap(8)
                         Body(r.detail)
                         ExplorerLink(s, r.signature)
+                        val paid = s.lastPaidIndex
+                        if (r.ok && paid != null && s.store.usual?.itemIdHex != Hex.encode(p.menu.items[paid].id)) {
+                            Gap(10)
+                            Secondary("Save as my usual", { s.saveUsual(paid) }, icon = Icons.Outlined.Replay)
+                        }
                     }
                 }
             }

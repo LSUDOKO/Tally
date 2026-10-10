@@ -71,6 +71,8 @@ private val Pad = Modifier.padding(horizontal = 20.dp)
 @Composable
 fun HomeScreen(s: Session) {
     LaunchedEffect(s.ownerAddress) { if (s.ownerAddress != null) s.refresh() }
+    // Back on Home: a reorder that wasn't completed is abandoned, so the next scan is a normal one.
+    LaunchedEffect(Unit) { s.cancelReorder() }
     @Suppress("UNUSED_VARIABLE") val v = s.logVersion
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Greeting(s)
