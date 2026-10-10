@@ -81,17 +81,17 @@ fun HomeScreen(s: Session) {
     }
 }
 
-/** "Hello 👋" header with the mascot avatar, the cluster and the merchant switch. */
+/** The top row: the mascot avatar, where you are, and the merchant and settings switches. */
 @Composable
 private fun Greeting(s: Session) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Image(
             painterResource(R.drawable.mascot_avatar), contentDescription = null, contentScale = ContentScale.Crop,
-            modifier = Modifier.size(46.dp).clip(CircleShape).border(2.dp, Brush.verticalGradient(listOf(TallyColors.BrandBright, TallyColors.BrandDeep)), CircleShape),
+            modifier = Modifier.size(44.dp).clip(CircleShape).border(1.dp, TallyBrushes.GlassRim, CircleShape),
         )
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Text("Hello 👋", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
-            Text(s.ownerAddress?.let { short(it) } ?: "Tally · ${s.config.cluster}", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+            Text("Tally", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
+            Text(s.ownerAddress?.let { short(it) } ?: s.config.cluster, style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
         }
         GlassIconButton(Icons.Outlined.Storefront, "Merchant mode", { s.screen = Screen.Merchant })
         if (s.ownerAddress != null) {
@@ -113,10 +113,10 @@ private fun Welcome(s: Session) {
         Gap(22)
         Reveal(90, Modifier.fillMaxWidth()) {
             Box(Modifier.fillMaxWidth().height(326.dp)) {
-                Box(Modifier.fillMaxWidth(0.82f).height(70.dp).align(Alignment.TopCenter).clip(RoundedCornerShape(30.dp)).background(TallyBrushes.HeroLayerBack))
-                Box(Modifier.fillMaxWidth(0.91f).height(70.dp).align(Alignment.TopCenter).offset(y = 10.dp).clip(RoundedCornerShape(30.dp)).background(TallyBrushes.HeroLayerFront))
+                Box(Modifier.fillMaxWidth(0.82f).height(70.dp).align(Alignment.TopCenter).glass(RoundedCornerShape(30.dp)).background(TallyColors.Brand.copy(alpha = 0.10f)))
+                Box(Modifier.fillMaxWidth(0.91f).height(70.dp).align(Alignment.TopCenter).offset(y = 10.dp).glass(RoundedCornerShape(30.dp)).background(TallyColors.Brand.copy(alpha = 0.16f)))
                 Box(Modifier.fillMaxWidth().height(302.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(32.dp)).background(TallyBrushes.HeroPanel)
-                    .border(1.dp, TallyColors.GlassStroke, RoundedCornerShape(32.dp))) {
+                    .border(1.dp, TallyBrushes.GlassRim, RoundedCornerShape(32.dp))) {
                     Image(painterResource(R.drawable.mascot_editorial), contentDescription = "Tally mascot in cobalt streetwear", contentScale = ContentScale.Crop, alignment = Alignment.TopCenter, modifier = Modifier.fillMaxSize())
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, TallyColors.Ink.copy(alpha = 0.86f)))))
                     Column(Modifier.align(Alignment.BottomStart).padding(22.dp)) {
@@ -140,7 +140,7 @@ private fun Welcome(s: Session) {
         Text("Your owner key stays in Seed Vault. Tally only ever holds a capped agent key.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint, textAlign = TextAlign.Center)
         Gap(18)
         Reveal(210, Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp)).padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp)).padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Feature(Icons.Outlined.Draw, "Signed\nmenu", TallyColors.Accent, Modifier.weight(1f))
                 Feature(Icons.Outlined.Verified, "Fair\nprice", TallyColors.Accent, Modifier.weight(1f))
                 Feature(Icons.Outlined.Link, "On-chain\ncheck", TallyColors.Accent, Modifier.weight(1f))
@@ -186,6 +186,8 @@ private fun Dashboard(s: Session) {
         }
 
         if (s.offline) OfflineCard(s.store.snapshot)
+
+        Reveal { DayLine(s) }
 
         BalanceStack(s)
 
@@ -247,35 +249,32 @@ private fun BalanceStack(s: Session) {
     val bar by animateFloatAsState(pct, tween(900), label = "spent")
     Box(Modifier.fillMaxWidth().padding(top = 26.dp)) {
         // Back layers.
-        Box(Modifier.matchParentWidth(0.84f).align(Alignment.TopCenter).offset(y = (-24).dp).height(70.dp).clip(RoundedCornerShape(26.dp)).background(TallyBrushes.HeroLayerBack))
-        Box(Modifier.matchParentWidth(0.92f).align(Alignment.TopCenter).offset(y = (-12).dp).height(70.dp).clip(RoundedCornerShape(26.dp)).background(TallyBrushes.HeroLayerFront))
+        Box(Modifier.matchParentWidth(0.84f).align(Alignment.TopCenter).offset(y = (-22).dp).height(70.dp).glass(RoundedCornerShape(26.dp)).background(TallyColors.Brand.copy(alpha = 0.10f)))
+        Box(Modifier.matchParentWidth(0.92f).align(Alignment.TopCenter).offset(y = (-11).dp).height(70.dp).glass(RoundedCornerShape(26.dp)).background(TallyColors.Brand.copy(alpha = 0.16f)))
         // Front card.
         Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp))
-                .background(TallyBrushes.HeroPanel)
-                .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White.copy(alpha = 0.05f))), RoundedCornerShape(28.dp))
-                .padding(20.dp),
+            Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp)).background(TallyColors.GlassStrong.copy(alpha = 0.35f)).padding(20.dp),
         ) {
             Column(Modifier.fillMaxWidth(0.62f)) {
-                Label("Coffee capsule", Color.White.copy(alpha = 0.75f))
+                Label("Coffee capsule")
                 Gap(6)
-                Big("\$${usdc(s.vaultBalance)}", Color.White, 38)
-                Text("USDC in vault", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.75f))
+                Big("\$${usdc(s.vaultBalance)}", TallyColors.Text, 44)
+                Text("USDC in vault", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
                 Gap(16)
                 Canvas(Modifier.fillMaxWidth().height(8.dp)) {
-                    drawRoundRect(Color.White.copy(alpha = 0.2f), cornerRadius = CornerRadius(size.height))
+                    drawRoundRect(TallyColors.GlassHigh, cornerRadius = CornerRadius(size.height))
                     drawRoundRect(
-                        Brush.horizontalGradient(listOf(TallyColors.Accent, Color.White)),
+                        Brush.horizontalGradient(listOf(TallyColors.Brand, TallyColors.BrandCore)),
                         size = Size(size.width * bar.coerceAtLeast(0.03f), size.height), cornerRadius = CornerRadius(size.height),
                     )
                 }
                 Gap(8)
-                Text("\$${usdc(s.spentToday)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} each", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
+                Text("\$${usdc(s.spentToday)} of \$${usdc(c.dailyCap)} today · max \$${usdc(c.perTxCap)} each", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
                 Gap(12)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (c.frozen) Chip("Frozen", TallyColors.Blocked, Icons.Outlined.AcUnit)
-                    if (c.flags and 2 != 0) Chip("Seeker verified", Color.White, Icons.Outlined.VerifiedUser)
-                    if (c.flags and 1 != 0) Chip("Lighthouse", Color.White, Icons.Outlined.Wallet)
+                    if (c.flags and 2 != 0) Chip("Seeker verified", TallyColors.BrandCore, Icons.Outlined.VerifiedUser)
+                    if (c.flags and 1 != 0) Chip("Lighthouse", TallyColors.BrandCore, Icons.Outlined.Wallet)
                 }
             }
         }
@@ -283,6 +282,22 @@ private fun BalanceStack(s: Session) {
             if (c.frozen) Mood.Sleepy else Mood.Cool,
             Modifier.align(Alignment.BottomEnd).offset(x = 6.dp).size(width = 150.dp, height = 210.dp).graphicsLayer { clip = false },
             height = 210.dp, glow = false,
+        )
+    }
+}
+
+/** "Good evening." over one plain line about what the agent can still do today. */
+@Composable
+private fun DayLine(s: Session) {
+    val c = s.capsule ?: return
+    val hour = java.time.LocalTime.now().hour
+    val part = when (hour) { in 5..11 -> "Good morning"; in 12..16 -> "Good afternoon"; else -> "Good evening" }
+    val left = (c.dailyCap - s.spentToday).coerceAtLeast(0)
+    Column(Modifier.padding(top = 6.dp)) {
+        Text("$part.", style = MaterialTheme.typography.displayMedium, color = TallyColors.Text)
+        Text(
+            if (c.frozen) "Your capsule is frozen. Nothing can be spent." else "Your agent can spend \$${usdc(left)} more today.",
+            style = MaterialTheme.typography.headlineMedium, color = TallyColors.Muted,
         )
     }
 }
