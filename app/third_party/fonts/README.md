@@ -4,6 +4,7 @@ Bundled in `app/app/src/main/res/font/` (variable TTFs from [Google Fonts](https
 
 | Font | Used for | License |
 |---|---|---|
-| Playfair Display | Headlines | [OFL](OFL-playfairdisplay.txt) |
-| Plus Jakarta Sans | Interface text | [OFL](OFL-plusjakartasans.txt) |
+| Inter Tight | Headlines and interface text | [OFL](OFL-intertight.txt) |
+| Playfair Display | (legacy) | [OFL](OFL-playfairdisplay.txt) |
+| Plus Jakarta Sans | (legacy) | [OFL](OFL-plusjakartasans.txt) |
 | JetBrains Mono | Addresses, agent trace | [OFL](OFL-jetbrainsmono.txt) |
