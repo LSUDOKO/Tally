@@ -164,6 +164,11 @@ private fun Dashboard(s: Session) {
     val scope = rememberCoroutineScope()
     val c = s.capsule
     Column(Pad, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (c == null && s.offline) {
+            // Unknown, not absent: never invite a new capsule just because the network is down.
+            OfflineCard(s.store.snapshot)
+            return@Column
+        }
         if (c == null) {
             Card {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -178,13 +183,23 @@ private fun Dashboard(s: Session) {
             return@Column
         }
 
+        if (s.offline) OfflineCard(s.store.snapshot)
+
         BalanceStack(s)
+
+        PointsCard(s.rewards) { s.screen = Screen.Rewards }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             QuickAction(Icons.Outlined.Add, "Add \$10") { scope.launch { s.fund(10_000_000) } }
             QuickAction(Icons.Outlined.Download, "Withdraw", enabled = s.vaultBalance > 0) { scope.launch { s.withdraw(s.vaultBalance) } }
             QuickAction(Icons.Outlined.Tune, "Rules") { s.screen = Screen.NewCapsule }
             QuickAction(Icons.Outlined.Storefront, "Merchant") { s.screen = Screen.Merchant }
+        }
+
+        s.store.usual?.let { UsualCard(it) { s.startReorder() } }
+
+        if (s.vaultBalance < c.perTxCap && c.agent == s.agentAddress) {
+            Banner(Icons.Outlined.Payments, "Your vault has \$${usdc(s.vaultBalance)}, less than one \$${usdc(c.perTxCap)} purchase. Add funds so your agent isn't stopped at the counter.", "Add \$10") { scope.launch { s.fund(10_000_000) } }
         }
 
         if (c.agent != s.agentAddress) {
@@ -198,6 +213,8 @@ private fun Dashboard(s: Session) {
             Card(Modifier.weight(1f)) { Stat("Blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked, icon = Icons.Outlined.Shield) }
             Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Paid, icon = Icons.Outlined.Payments) }
         }
+
+        WeeklyCard(s.weekly)
 
         if (c.flags and 2 != 0) {
             if (s.promoClaimed) {

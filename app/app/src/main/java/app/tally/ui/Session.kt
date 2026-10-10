@@ -57,7 +57,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
-enum class Screen { Home, NewCapsule, Scan, Checkout, Receipts, RedTeam, Merchant, Settings }
+enum class Screen { Home, NewCapsule, Scan, Checkout, Receipts, RedTeam, Merchant, Settings, Rewards }
 
 /** What the user sees after a payment attempt. */
 data class PayResult(val ok: Boolean, val title: String, val detail: String, val signature: String?)

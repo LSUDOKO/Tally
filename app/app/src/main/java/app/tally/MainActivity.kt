@@ -65,6 +65,8 @@ import app.tally.ui.ScanScreen
 import app.tally.ui.Screen
 import app.tally.ui.Session
 import app.tally.ui.SettingsScreen
+import app.tally.ui.RewardsScreen
+import app.tally.ui.LevelUpDialog
 import app.tally.ui.theme.TallyColors
 import app.tally.ui.theme.TallyTheme
 import app.tally.ui.theme.TallyFonts
@@ -120,6 +122,7 @@ private fun Root(s: Session, nfc: NfcReader) {
                         Screen.RedTeam -> RedTeamScreen(s)
                         Screen.Merchant -> MerchantScreen(s)
                         Screen.Settings -> SettingsScreen(s)
+                        Screen.Rewards -> RewardsScreen(s)
                     }
                 }
             }
@@ -128,6 +131,7 @@ private fun Root(s: Session, nfc: NfcReader) {
             }
         }
         s.busy?.let { BusyOverlay(it) }
+        s.levelUp?.let { lvl -> LevelUpDialog(lvl) { s.levelUp = null } }
         s.toast?.let { msg -> Notice(msg) { s.toast = null } }
     }
 }
