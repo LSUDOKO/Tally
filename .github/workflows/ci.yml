@@ -52,6 +52,8 @@ jobs:
       - run: pnpm -C sdk typecheck
       - run: pnpm -C sdk test
       - run: pnpm -C scripts typecheck
+      - run: pnpm -C mcp typecheck
+      - run: pnpm -C mcp test
 
   android:
     name: Android (core tests + APK)
