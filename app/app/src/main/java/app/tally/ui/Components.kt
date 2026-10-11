@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -202,6 +203,41 @@ fun Modifier.pressable(onClick: () -> Unit, enabled: Boolean = true, role: Role 
     val source = remember { MutableInteractionSource() }
     val scale = pressScale(source)
     return this.graphicsLayer { scaleX = scale; scaleY = scale }.clickable(source, indication = null, enabled = enabled, role = role, onClick = onClick)
+}
+
+// ---------------------------------------------------------------------------------- brand
+
+/** The Tally mark: four strokes and the fifth across, white on the brand blue. The logo, not the mascot. */
+@Composable
+fun TallyMark(size: Dp = 40.dp, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(size * 0.28f)
+    androidx.compose.foundation.Canvas(
+        modifier.size(size).background(Brush.verticalGradient(listOf(Color(0xFF2E78FF), TallyColors.Brand, Color(0xFF0F4BD8))), shape)
+            .border(1.dp, Brush.verticalGradient(listOf(Color(0x80E8F1FF), Color(0x00E8F1FF))), shape),
+    ) {
+        val u = this.size.minDimension / 108f
+        val w = 7.5f * u
+        val cap = androidx.compose.ui.graphics.StrokeCap.Round
+        for (x in listOf(37f, 48f, 59f, 70f)) drawLine(Color.White, Offset(x * u, 34f * u), Offset(x * u, 72f * u), w, cap)
+        drawLine(Color.White, Offset(29f * u, 69f * u), Offset(78f * u, 38f * u), w, cap)
+    }
+}
+
+/** Icons drawn for Tally where the stock set reads wrong. */
+object TallyIcons {
+    /** A viewfinder: four corner brackets and the scan line. */
+    val Scan: ImageVector by lazy {
+        val stroke = androidx.compose.ui.graphics.SolidColor(Color.Black)
+        androidx.compose.ui.graphics.vector.ImageVector.Builder("tally.scan", 24.dp, 24.dp, 24f, 24f).apply {
+            fun corner(block: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit) =
+                path(stroke = stroke, strokeLineWidth = 2f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = androidx.compose.ui.graphics.StrokeJoin.Round, pathBuilder = block)
+            corner { moveTo(3.5f, 8.5f); verticalLineTo(6f); arcToRelative(2.5f, 2.5f, 0f, false, true, 2.5f, -2.5f); horizontalLineTo(8.5f) }
+            corner { moveTo(15.5f, 3.5f); horizontalLineTo(18f); arcToRelative(2.5f, 2.5f, 0f, false, true, 2.5f, 2.5f); verticalLineTo(8.5f) }
+            corner { moveTo(20.5f, 15.5f); verticalLineTo(18f); arcToRelative(2.5f, 2.5f, 0f, false, true, -2.5f, 2.5f); horizontalLineTo(15.5f) }
+            corner { moveTo(8.5f, 20.5f); horizontalLineTo(6f); arcToRelative(2.5f, 2.5f, 0f, false, true, -2.5f, -2.5f); verticalLineTo(15.5f) }
+            corner { moveTo(7.5f, 12f); horizontalLineTo(16.5f) }
+        }.build()
+    }
 }
 
 // ---------------------------------------------------------------------------------- chrome

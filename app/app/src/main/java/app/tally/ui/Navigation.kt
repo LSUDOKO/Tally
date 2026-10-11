@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
@@ -82,7 +81,7 @@ private fun TabButton(tab: Tab, selected: Boolean, onClick: () -> Unit) {
 private fun ScanOrb(enabled: Boolean, onClick: () -> Unit) {
     val breathe by rememberInfiniteTransition(label = "scan").animateFloat(1f, 1.05f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathe")
     OrbButton(
-        Icons.Outlined.QrCodeScanner, "Scan or tap to pay", onClick,
+        TallyIcons.Scan, "Scan or tap to pay", onClick,
         Modifier.offset(y = (-14).dp).graphicsLayer { if (enabled) { scaleX = breathe; scaleY = breathe } },
         size = 64.dp, enabled = enabled,
     )
