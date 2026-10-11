@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/brand/app-icon-192.png" width="96" alt="Tally">
+
 # Tally
 
 **Your agent proposes. The merchant signs. Tally checks it on-chain.**
@@ -15,7 +17,7 @@ An AI agent buys coffee, lunch and transit for you from a Solana Seeker phone, b
 
 Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
-[Whitepaper](docs/00-whitepaper.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md) · [Real-phone run](docs/21-real-phone-run.md)
+[Whitepaper](docs/00-whitepaper.md) · [v3 plan](docs/24-v3-plan.md) · [Brand kit](docs/brand/README.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md) · [Real-phone run](docs/21-real-phone-run.md)
 
 </div>
 
@@ -83,7 +85,20 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 | [`app`](app) | Android app (Kotlin + Compose): Seeker user mode **and** merchant terminal in one APK |
 | [`docs`](docs) | Whitepaper, specs, threat model, research, demo script, deck outline, plans |
 
+## The app
+
+<p align="center"><img src="docs/images/screens.jpg" alt="Tally screens: home, receipts, scan, merchant" width="100%"></p>
+
+Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the mark, wordmark, icon and palette.
+
+| Pay | Red team | Rewards |
+| --- | --- | --- |
+| ![Scan and pay](docs/images/pay.gif) | ![Attack your own agent](docs/images/redteam.gif) | ![Points and levels](docs/images/rewards.gif) |
+
 ## Everyday features
+
+- **App lock.** Your phone's fingerprint, face or PIN on launch and before every payment you tap.
+- **Export.** Every receipt as CSV with its explorer link.
 
 - **Tally Points and levels.** 10 points per settled purchase of at least $1 from someone else's counter (at most five a day), a daily streak multiplier up to 1.5×, and 2× for Seeker-verified capsules. Points come only from on-chain receipts; paying your own counter, disputed buys and red-team runs earn nothing, and points can't be bought or transferred. Levels (Bronze, Silver, Gold, Legend) change the mascot's look: auras, a crown, a turning halo.
 - **My usual.** Save a purchase; next time it's one tap at the same counter, but only if the freshly signed menu has the same item at the same price. Any change stops and says why.
