@@ -83,7 +83,7 @@ enum class Motion { Float, Bounce, Sway, Wave, Settled, Guard }
 fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shakeKey: Any? = null, glow: Boolean = true, level: Level? = null) {
     val density = LocalDensity.current
     val t = rememberInfiniteTransition(label = "mascot")
-    val glowPulse by t.animateFloat(0.30f, 0.55f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
+    val glowPulse by t.animateFloat(0.22f, 0.34f, infiniteRepeatable(tween(4200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
     val haloTurn by t.animateFloat(0f, 360f, infiniteRepeatable(tween(6000, easing = LinearEasing)), label = "halo")
     val aura = level?.auraColor ?: TallyColors.Brand
 
@@ -96,8 +96,8 @@ fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shake
             })
         }
     }
-    val entrance = remember { Animatable(0.6f) }
-    LaunchedEffect(Unit) { entrance.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessLow)) }
+    val entrance = remember { Animatable(0.92f) }
+    LaunchedEffect(Unit) { entrance.animateTo(1f, tween(480, easing = FastOutSlowInEasing)) }
 
     Box(modifier.height(height), contentAlignment = Alignment.BottomCenter) {
         if (glow) {
@@ -130,14 +130,14 @@ fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shake
         AnimatedContent(
             targetState = mood,
             transitionSpec = {
-                (fadeIn(tween(220)) + scaleIn(spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow), initialScale = 0.82f))
-                    .togetherWith(fadeOut(tween(160)) + scaleOut(tween(160), targetScale = 1.06f))
+                (fadeIn(tween(260)) + scaleIn(tween(260, easing = FastOutSlowInEasing), initialScale = 0.96f))
+                    .togetherWith(fadeOut(tween(180)))
             },
             label = "mood",
         ) { m ->
             val lift by t.animateFloat(
                 0f, 1f,
-                infiniteRepeatable(tween(m.motion.period, easing = if (m.motion == Motion.Bounce) LinearEasing else FastOutSlowInEasing), RepeatMode.Reverse),
+                infiniteRepeatable(tween(m.motion.period, easing = FastOutSlowInEasing), RepeatMode.Reverse),
                 label = "lift",
             )
             val sway by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(3200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sway")
@@ -163,13 +163,13 @@ fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shake
                             transformOrigin = TransformOrigin(0.5f, 1f)
                             translationY = -liftPx - height.toPx() * 0.03f
                             translationX = shake.value * density.density
-                            val breathe = 1f + 0.018f * lift
+                            val breathe = 1f + 0.008f * lift
                             scaleX = entrance.value * breathe
-                            scaleY = entrance.value * (breathe + if (m.motion == Motion.Bounce) 0.02f * (1 - lift) else 0f)
+                            scaleY = entrance.value * breathe
                             rotationZ = when (m.motion) {
-                                Motion.Sway -> 3f * sway
-                                Motion.Wave -> 2f * sway
-                                Motion.Guard -> 1.2f * sway
+                                Motion.Sway -> 1.2f * sway
+                                Motion.Wave -> 0.8f * sway
+                                Motion.Guard -> 0.5f * sway
                                 else -> 0f
                             }
                         },
@@ -179,11 +179,11 @@ fun Mascot(mood: Mood, modifier: Modifier = Modifier, height: Dp = 180.dp, shake
     }
 }
 
-private val Motion.period get() = when (this) { Motion.Bounce -> 520; Motion.Settled -> 3400; Motion.Wave -> 1400; else -> 2300 }
-private val Motion.amplitude get() = when (this) { Motion.Bounce -> 14.dp; Motion.Settled -> 3.dp; Motion.Wave -> 6.dp; else -> 8.dp }
+private val Motion.period get() = when (this) { Motion.Bounce -> 2600; Motion.Settled -> 4200; Motion.Wave -> 3000; else -> 3600 }
+private val Motion.amplitude get() = when (this) { Motion.Bounce -> 5.dp; Motion.Settled -> 2.dp; Motion.Wave -> 3.dp; else -> 3.dp }
 
-/** Bounces snap off the floor (|sin|-like); everything else eases. */
-private fun bounceCurve(x: Float, m: Motion) = if (m == Motion.Bounce) 1f - (1f - x) * (1f - x) else x
+/** Every idle is a slow ease now; the old floor-snapping bounce read as jittery. */
+private fun bounceCurve(x: Float, @Suppress("UNUSED_PARAMETER") m: Motion) = x
 
 /** Each level's aura colour around the mascot. */
 val Level.auraColor: Color
