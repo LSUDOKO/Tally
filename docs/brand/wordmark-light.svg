@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 108" width="840" height="216">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E78FF"/><stop offset=".55" stop-color="#1F6BFF"/><stop offset="1" stop-color="#0F4BD8"/></linearGradient></defs>
+  <rect width="108" height="108" rx="30" fill="url(#g)"/>
+  <g stroke="#fff" stroke-width="8" stroke-linecap="round" fill="none"><path d="M37 34v38M48 34v38M59 34v38M70 34v38"/><path d="M29 69L78 38"/></g>
+  <text x="134" y="78" font-family="Inter Tight, Inter, system-ui, sans-serif" font-weight="500" font-size="66" letter-spacing="-2.5" fill="#03060F">Tally</text>
+</svg>
