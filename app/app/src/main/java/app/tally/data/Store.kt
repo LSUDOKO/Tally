@@ -61,6 +61,11 @@ class Store(context: Context) {
         override fun write(day: Long, used: Int) { prefs.edit().putLong("model_day", day).putInt("model_calls", used).commit() }
     }
 
+    /** Ask for the phone's lock on launch and before every payment the owner taps. */
+    var appLock: Boolean
+        get() = prefs.getBoolean("app_lock", false)
+        set(v) = prefs.edit().putBoolean("app_lock", v).apply()
+
     /** The user's own Groq API key (app-private storage; never part of the APK). */
     var groqKey: String?
         get() = prefs.getString("groq_key", null)

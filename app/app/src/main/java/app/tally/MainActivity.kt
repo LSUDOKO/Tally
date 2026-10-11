@@ -43,6 +43,7 @@ import app.tally.ui.TabScreens
 import app.tally.ui.glass
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -90,6 +91,12 @@ class MainActivity : ComponentActivity() {
         nfc = NfcReader(this)
         handle(intent)
         setContent { TallyTheme { Root(session, nfc) } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Every return to the front asks for the phone's lock, when the owner turned that on.
+        if (session.store.appLock) session.locked = true
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -165,9 +172,28 @@ private fun Root(s: Session, nfc: NfcReader) {
             }
         }
         s.busy?.let { BusyOverlay(it) }
+        if (s.locked) LockOverlay(s)
         s.levelUp?.let { lvl -> LevelUpDialog(lvl) { s.levelUp = null } }
         if (s.askFreeze) FreezeDialog(s) { s.askFreeze = false }
         s.toast?.let { msg -> Notice(msg) { s.toast = null } }
+    }
+}
+
+/** The app behind the phone's lock: nothing shows until it is passed. */
+@Composable
+private fun LockOverlay(s: Session) {
+    val scope = rememberCoroutineScope()
+    androidx.compose.runtime.LaunchedEffect(Unit) { s.unlock() }
+    Box(Modifier.fillMaxSize().background(TallyColors.Ink).pointerInput(Unit) {
+        awaitPointerEventScope { while (true) awaitPointerEvent().changes.forEach { it.consume() } }
+    }, contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            app.tally.ui.TallyMark(64.dp)
+            Spacer(Modifier.height(18.dp))
+            Text("Tally is locked", style = MaterialTheme.typography.headlineSmall, color = TallyColors.Text)
+            Spacer(Modifier.height(18.dp))
+            app.tally.ui.Secondary("Unlock", { scope.launch { s.unlock() } }, Modifier.width(180.dp))
+        }
     }
 }
 

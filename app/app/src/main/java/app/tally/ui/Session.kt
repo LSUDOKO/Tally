@@ -80,6 +80,10 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     var screen by mutableStateOf(Screen.Home)
     var busy by mutableStateOf<String?>(null)
+    /** True while the app lock has not been passed since it came to the front. */
+    var locked by mutableStateOf(false)
+    /** USD per SOL from a public price feed; null until it loads (shown beside the fee balance). */
+    var solUsd by mutableStateOf<Double?>(null)
     var toast by mutableStateOf<String?>(null)
 
     var ownerAddress by mutableStateOf(g.store.ownerAddress)
@@ -116,6 +120,20 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         get() = ConfirmingOwner(if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) DemoOwner(g.demoOwnerKey.exportSeedForMenuSigning()) else mwaOwner, g.submitter)
 
     val capsuleAddress: String? get() = ownerAddress?.let { TallyPda.capsule(it, g.store.capsuleId) }
+
+    /** The phone's lock in front of a payment the owner taps, when they turned that on. */
+    private var preConfirmed = 0
+    private suspend fun ownerConfirms(what: String): Boolean {
+        if (!g.store.appLock) return true
+        if (preConfirmed > 0) { preConfirmed--; return true }
+        val ok = app.tally.security.AppLock.confirm(context, "Confirm with your phone's lock", what)
+        if (!ok) toast = "Not paid: the lock wasn't passed."
+        return ok
+    }
+
+    suspend fun unlock() {
+        locked = !app.tally.security.AppLock.confirm(context, "Unlock Tally")
+    }
 
     private suspend fun <T> work(label: String, block: suspend () -> T): T? {
         busy = label
@@ -155,6 +173,7 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         offline = false
         slot = online.getOrThrow()
         agentSol = runCatching { rpc.getBalance(agentAddress) }.getOrDefault(0)
+        solUsd = app.tally.chain.Prices.solUsd() ?: solUsd
         val c = capsuleAddress?.let { rpc.getAccountData(it) }?.let(Accounts::capsule)
         capsule = c
         vaultBalance = c?.let { rpc.getAccountData(it.vault) }?.let(Accounts::tokenAmount) ?: 0
@@ -402,6 +421,9 @@ class Session(val context: Context, private val mwaOwner: Owner) {
     suspend fun payCart() {
         val plan = cartPlan()?.takeIf { it.payable } ?: return
         cartOpen = false
+        // One lock prompt for the whole cart, not one per line.
+        if (!ownerConfirms("Pay ${plan.autonomous.size} items")) return
+        preConfirmed = plan.autonomous.size
         val results = mutableListOf<PayResult>()
         for (line in plan.autonomous) {
             pay(line.index, "Cart: ${line.name}")
@@ -419,6 +441,7 @@ class Session(val context: Context, private val mwaOwner: Owner) {
     suspend fun pay(index: Int, reason: String) = work("Paying") {
         lastPaidIndex = index
         payload ?: return@work
+        if (!ownerConfirms("Pay ${payload?.names?.getOrNull(index) ?: "this item"}")) return@work
         val m = merchant ?: return@work
         val c = capsule ?: error("Create a capsule first")
         val p = livePayload() ?: run {
