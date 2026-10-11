@@ -16,6 +16,8 @@ data class SpendRecord(
     /** Money kept because the owner declined a pricier pick on Second Look. */
     val savedMicro: Long = 0,
     val merchant: String = "",
+    /** Menu category of the item (RuleParser.CATEGORY_NAMES); -1 when unknown. */
+    val category: Int = -1,
 )
 
 /** Tally Points: earned only from real, settled purchases; never from opening the app. */

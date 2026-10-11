@@ -11,6 +11,8 @@ data class Summary(
     val savedMicro: Long,
     val topMerchant: String?,
     val activeDays: Int,
+    /** Spend per menu category, largest first (categories unknown to the log are left out). */
+    val byCategory: List<Pair<Int, Long>> = emptyList(),
 )
 
 object Insights {
@@ -28,6 +30,7 @@ object Insights {
             savedMicro = recent.sumOf { it.savedMicro },
             topMerchant = paid.filter { it.merchant.isNotBlank() }.groupingBy { it.merchant }.eachCount().maxByOrNull { it.value }?.key,
             activeDays = paid.map { Rewards.day(it.at) }.distinct().size,
+            byCategory = paid.filter { it.category >= 0 }.groupBy { it.category }.map { (c, rs) -> c to rs.sumOf { it.amountMicro } }.sortedByDescending { it.second },
         )
     }
 }

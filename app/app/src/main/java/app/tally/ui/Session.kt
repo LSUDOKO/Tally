@@ -508,7 +508,7 @@ class Session(val context: Context, private val mwaOwner: Owner) {
             is Outcome.Pending -> PayResult(false, "Still confirming", "The network is slow; check Receipts in a moment.", sig)
         }
         val receipt = payload?.let { pl -> capsuleAddress?.let { TallyPda.receipt(it, pl.menu.merchant, pl.menu.menuNonce, item.id) } }
-        log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack, receipt.takeIf { r.ok }, payload?.menu?.merchant)
+        log(name, merchant?.name ?: "", item.price, if (r.ok) "paid" else if (outcome is Outcome.Pending) "pending" else "blocked", r.detail, sig, attack, receipt.takeIf { r.ok }, payload?.menu?.merchant, category = item.category)
         payResult = r
         if (r.ok && !attack) app.tally.notify.Notifier.paid(context, name, merchant?.name ?: "the merchant", usdc(item.price))
         refreshNow()
@@ -575,8 +575,8 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     // ------------------------------------------------------------------ log
 
-    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false, receipt: String? = null, merchantPda: String? = null, savedMicro: Long = 0) {
-        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack, receipt, merchantPda, savedMicro = savedMicro))
+    private fun log(title: String, merchant: String, amount: Long, outcome: String, detail: String, sig: String?, attack: Boolean = false, receipt: String? = null, merchantPda: String? = null, savedMicro: Long = 0, category: Int = -1) {
+        g.store.append(LogEntry(System.currentTimeMillis(), title, merchant, amount, outcome, detail, sig, attack, receipt, merchantPda, savedMicro = savedMicro, category = category))
         logVersion++
         app.tally.widget.TallyWidget.refresh(context)
         checkLevelUp()

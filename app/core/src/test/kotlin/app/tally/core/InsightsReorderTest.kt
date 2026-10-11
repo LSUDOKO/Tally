@@ -27,6 +27,19 @@ class InsightsReorderTest {
         assertEquals(2, s.activeDays) // now is midnight, so the first two purchases share a day
     }
 
+    @Test
+    fun weeklySummarySplitsSpendByCategory() {
+        val r = listOf(
+            SpendRecord(now - 1_000, 4_500_000, verified = true, merchant = "Blue Door", category = 3),
+            SpendRecord(now - 2_000, 5_900_000, verified = true, merchant = "Blue Door", category = 3),
+            SpendRecord(now - 3_000, 2_750_000, verified = true, merchant = "Metro", category = 4),
+            SpendRecord(now - 4_000, 9_000_000, verified = false, blocked = true, category = 3),
+        )
+        val s = Insights.summary(r, now)
+        // Largest first; blocked money never counts as spent.
+        assertEquals(listOf(3 to 10_400_000L, 4 to 2_750_000L), s.byCategory)
+    }
+
     private val key = ByteArray(32) { 3 }
     private fun item(i: Int, price: Long) = Item(ByteArray(16) { (i + 1).toByte() }, 3, price, 0)
     private fun menu(merchant: String, vararg items: Item) =

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -124,6 +126,7 @@ fun WeeklyCard(w: Summary) {
                 MiniStat(Icons.Outlined.Savings, "\$${usdc(w.savedMicro)}", "kept", TallyColors.Accent, Modifier.weight(1f))
                 MiniStat(Icons.Outlined.Shield, "${w.blocked}", "blocked", TallyColors.Blocked, Modifier.weight(1f))
             }
+            if (w.byCategory.isNotEmpty()) CategorySplit(w.byCategory, w.spentMicro)
             w.topMerchant?.let {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Storefront, contentDescription = null, tint = TallyColors.Muted, modifier = Modifier.size(16.dp))
@@ -132,6 +135,27 @@ fun WeeklyCard(w: Summary) {
             }
             if (w.protectedMicro > 0) {
                 Text("Tally refused \$${usdc(w.protectedMicro)} in payments you didn't intend.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+            }
+        }
+    }
+}
+
+/** One bar, one segment per category, with a legend: where the week's money went. */
+@Composable
+private fun CategorySplit(parts: List<Pair<Int, Long>>, total: Long) {
+    val tints = listOf(TallyColors.Brand, TallyColors.BrandBright, TallyColors.BrandCore, Color(0xFF7FB2FF), Color(0xFF3F7FE0))
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(TallyColors.GlassHigh), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            parts.forEachIndexed { i, (_, micro) ->
+                Box(Modifier.weight((micro.toFloat() / total.coerceAtLeast(1)).coerceAtLeast(0.02f)).fillMaxHeight().background(tints[i % tints.size]))
+            }
+        }
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            parts.forEachIndexed { i, (cat, micro) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Dot(tints[i % tints.size])
+                    Text("${app.tally.core.RuleParser.CATEGORY_NAMES[cat] ?: "Other"} \$${usdc(micro)}", style = MaterialTheme.typography.labelSmall, color = TallyColors.Muted)
+                }
             }
         }
     }

@@ -24,6 +24,7 @@ data class LogEntry(
     val disputed: Boolean = false,
     /** Kept by declining a pricier pick on Second Look (price difference to the cheaper match). */
     val savedMicro: Long = 0,
+    val category: Int = -1,
 )
 
 /** The capsule as last seen online (read-only offline view). */
@@ -114,6 +115,7 @@ class Store(context: Context) {
             blocked = it.outcome == "blocked",
             savedMicro = it.savedMicro,
             merchant = it.merchant,
+            category = it.category,
         )
     }
 
