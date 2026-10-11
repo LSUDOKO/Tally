@@ -177,8 +177,8 @@ fun NewCapsuleScreen(s: Session) {
                         parsed.categories.forEach { Chip(RuleParser.CATEGORY_NAMES[it] ?: "Category $it", TallyColors.Accent, Icons.Outlined.Category) }
                         Chip("≤ \$${usdc(parsed.perTxCap)} per purchase", TallyColors.Accent, Icons.Outlined.Payments)
                         Chip("≤ \$${usdc(parsed.dailyCap)} per day", TallyColors.Accent, Icons.Outlined.CalendarToday)
-                        Chip("Cheapest by default", TallyColors.Paid, Icons.Outlined.Verified)
-                        Chip("Bonded merchants only", TallyColors.Paid, Icons.Outlined.VerifiedUser)
+                        Chip("Cheapest by default", TallyColors.Accent, Icons.Outlined.Verified)
+                        Chip("Bonded merchants only", TallyColors.Accent, Icons.Outlined.VerifiedUser)
                         Chip("Expires in ~30 days", TallyColors.Muted, Icons.Outlined.Schedule)
                     }
                     Gap(12)
@@ -462,7 +462,7 @@ fun CheckoutScreen(s: Session) {
                 SheetRow(categoryIcon(p.menu.items[pc.index].category), p.names[pc.index], "Agent's reason: ${pc.reason}")
                 pc.cheaper?.let { (name, price) -> Card(accent = TallyColors.Paid) { Row(verticalAlignment = Alignment.CenterVertically) { IconTile(Icons.Outlined.Savings, TallyColors.Paid, 36.dp); Body("  Cheaper match: $name · \$${usdc(price)}", TallyColors.Paid) } } }
                 if (pc.review.approveEnabled) {
-                    Chip("Only: Ed25519 verify · Tally pay_offer · compute budget", TallyColors.Paid, Icons.Outlined.VerifiedUser)
+                    Chip("Only: Ed25519 verify · Tally pay_offer · compute budget", TallyColors.Accent, Icons.Outlined.VerifiedUser)
                 } else {
                     Card(accent = TallyColors.Blocked) { Body("Unexpected instructions: ${pc.review.unexpectedPrograms.joinToString()}. Approval disabled.", TallyColors.Blocked) }
                 }
@@ -562,7 +562,7 @@ fun ReceiptsScreen(s: Session) {
                                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted,
                             )
                         }
-                        Text("\$${usdc(e.amountMicro)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = color)
+                        Text("\$${usdc(e.amountMicro)}", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = if (e.outcome == "paid") TallyColors.Text else color)
                     }
                     Gap(10)
                     Body(e.detail, TallyColors.Muted)
@@ -747,7 +747,7 @@ private fun ActionRow(icon: ImageVector, title: String, detail: String, tint: an
 private fun ShareReceipt(s: Session, e: app.tally.data.LogEntry) {
     val ctx = LocalContext.current
     Row(
-        Modifier.padding(top = 8.dp).clip(RoundedCornerShape(50)).background(TallyColors.Paid.copy(alpha = 0.14f))
+        Modifier.padding(top = 8.dp).glass(CircleShape)
             .clickable {
                 val text = "Paid \$${usdc(e.amountMicro)} to ${e.merchant} for ${e.title}. " +
                     "My agent paid it and Tally checked the item, price and payee on-chain before the money moved.\n" +
@@ -757,7 +757,7 @@ private fun ShareReceipt(s: Session, e: app.tally.data.LogEntry) {
             .padding(horizontal = 12.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(Icons.Outlined.Share, contentDescription = null, tint = TallyColors.Paid, modifier = Modifier.size(15.dp))
-        Text("Share", color = TallyColors.Paid, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+        Icon(Icons.Outlined.Share, contentDescription = null, tint = TallyColors.Text, modifier = Modifier.size(15.dp))
+        Text("Share", color = TallyColors.Text, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
     }
 }

@@ -85,10 +85,7 @@ fun HomeScreen(s: Session) {
 @Composable
 private fun Greeting(s: Session) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Image(
-            painterResource(R.drawable.mascot_avatar), contentDescription = null, contentScale = ContentScale.Crop,
-            modifier = Modifier.size(44.dp).clip(CircleShape).border(1.dp, TallyBrushes.GlassRim, CircleShape),
-        )
+        TallyMark(40.dp)
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text("Tally", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
             Text(s.ownerAddress?.let { short(it) } ?: s.config.cluster, style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
@@ -215,7 +212,7 @@ private fun Dashboard(s: Session) {
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Card(Modifier.weight(1f)) { Stat("Blocked · 7d", "${s.store.attacksBlockedThisWeek()}", TallyColors.Blocked, icon = Icons.Outlined.Shield) }
-            Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Paid, icon = Icons.Outlined.Payments) }
+            Card(Modifier.weight(1f)) { Stat("Spent today", "\$${usdc(s.spentToday)}", TallyColors.Text, icon = Icons.Outlined.Payments) }
         }
 
         WeeklyCard(s.weekly)

@@ -53,7 +53,7 @@ object TallyColors {
     val OnBrand = Color(0xFF00102E)
 
     // Semantics.
-    val Paid = Color(0xFF33D17A)
+    val Paid = Color(0xFF3DBD8C)
     val Blocked = Color(0xFFFF6B6B)
     val NeedsYou = Color(0xFFFFB547)
     val Accent = BrandBright
