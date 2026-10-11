@@ -27,6 +27,8 @@ import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Key
@@ -530,6 +532,14 @@ fun ReceiptsScreen(s: Session) {
                     HeroTitle("Every payment,", "on the record.", align = TextAlign.Start, style = androidx.compose.material3.MaterialTheme.typography.displaySmall)
                     Gap(6)
                     Body("Paid purchases and blocked attempts, each with its devnet transaction.", TallyColors.Muted)
+                    if (log.isNotEmpty()) {
+                        Gap(10)
+                        val ctx = LocalContext.current
+                        Row(Modifier.glass(CircleShape).pressable({ app.tally.data.Export.share(ctx, app.tally.data.Export.receiptsCsv(log, s.config::explorerTx)) }).padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Outlined.FileDownload, contentDescription = null, tint = TallyColors.Text, modifier = Modifier.size(15.dp))
+                            Text("Export CSV", color = TallyColors.Text, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+                        }
+                    }
                 }
                 Mascot(Mood.WithReceipt, Modifier.size(width = 110.dp, height = 150.dp), height = 150.dp)
             }
@@ -670,9 +680,23 @@ fun SettingsScreen(s: Session) {
             Card {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     InfoRow(Icons.Outlined.SmartToy, "Agent key", s.agentAddress)
-                    InfoRow(Icons.Outlined.LocalGasStation, "Fee balance", "${"%.4f".format(s.agentSol / 1e9)} SOL")
+                    InfoRow(Icons.Outlined.LocalGasStation, "Fee balance", "${"%.4f".format(s.agentSol / 1e9)} SOL" + (s.solUsd?.let { " · ≈ \$${"%.2f".format(s.agentSol / 1e9 * it)}" } ?: ""))
                     InfoRow(Icons.Outlined.Psychology, "Model", if (s.modelAvailable) "${GroqAgent.MODEL} · ${s.modelCallsLeft}/${GroqAgent.MAX_CALLS_PER_DAY} calls left today" else "Rule-based (no API key)")
                     s.capsuleAddress?.let { InfoRow(Icons.Outlined.Inventory2, "Capsule", it) }
+                }
+            }
+
+            SectionLabel("Security")
+            val lockAvailable = remember { app.tally.security.AppLock.available(s.context) }
+            var appLock by remember { mutableStateOf(s.store.appLock) }
+            ToggleRow(
+                Icons.Outlined.Fingerprint, "App lock",
+                if (lockAvailable) "Your phone's fingerprint, face or PIN on launch and before every payment you tap." else "Set a screen lock on this phone first.",
+                appLock, enabled = lockAvailable,
+            ) { on ->
+                scope.launch {
+                    // Turning it on proves the lock works before it can ever shut the owner out.
+                    if (!on || app.tally.security.AppLock.confirm(s.context, "Turn on App lock")) { appLock = on; s.store.appLock = on }
                 }
             }
 
