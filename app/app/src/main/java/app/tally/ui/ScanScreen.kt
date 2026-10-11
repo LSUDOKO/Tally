@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.Nfc
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.MaterialTheme
@@ -113,6 +114,7 @@ fun ScanScreen(s: Session, nfcStatus: String) {
             s.store.lastPayloadQr?.let { last ->
                 Secondary("Use last scanned menu (demo)", { runCatching { Payload.fromQr(last) }.onSuccess(onPayload) }, icon = Icons.Outlined.History)
             }
+            Directory(s)
             // Debug builds: one phone can be both counter and customer (Merchant mode broadcasts here).
             if (BuildConfig.DEMO_OWNER_ALLOWED && s.ownerAddress != null) {
                 Secondary("Pay this phone's merchant menu (demo)", { scope.launch { s.payOwnMerchant() } }, icon = Icons.Outlined.Storefront)
@@ -172,4 +174,36 @@ private fun CameraQr(onText: (String) -> Unit) {
             view
         },
     )
+}
+
+
+/** Every counter registered on this cluster, read from the program's accounts: who to trust before you scan. */
+@Composable
+private fun Directory(s: Session) {
+    LaunchedEffect(Unit) { s.loadDirectory() }
+    val list = s.directory ?: return
+    if (list.isEmpty()) return
+    val minBond = s.capsule?.minMerchantBond ?: 0
+    Card {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Label("Registered counters · ${list.size}")
+            list.take(6).forEach { (_, m) ->
+                val trusted = m.skrBonded >= minBond && m.slashedTotal == 0L
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(Icons.Outlined.Storefront, if (trusted) TallyColors.Accent else TallyColors.NeedsYou, 36.dp)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(m.name.ifBlank { short(m.authority) }, style = MaterialTheme.typography.titleSmall, color = TallyColors.Text, maxLines = 1)
+                        Text(
+                            "${app.tally.core.usdc(m.skrBonded).substringBefore('.')} SKR bonded" +
+                                (if (m.slashedTotal > 0) " · slashed ${app.tally.core.usdc(m.slashedTotal).substringBefore('.')}" else "") +
+                                (if (m.openDisputes > 0) " · ${m.openDisputes} open dispute${if (m.openDisputes > 1) "s" else ""}" else ""),
+                            style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted, maxLines = 1,
+                        )
+                    }
+                    Chip(if (trusted) "Trusted" else "Check", if (trusted) TallyColors.Paid else TallyColors.NeedsYou)
+                }
+            }
+            Text("Bond and slash history are read from chain. Your capsule only pays counters bonded at or above its minimum.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint)
+        }
+    }
 }

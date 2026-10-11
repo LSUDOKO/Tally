@@ -64,6 +64,23 @@ class Rpc(private val transport: (String) -> String) {
         return Base64.getDecoder().decode(v.jsonObject["data"]!!.jsonArray[0].jsonPrimitive.content)
     }
 
+    /** `(address, data)` of every account of exactly [dataSize] bytes owned by [programId]: one Anchor account type. */
+    fun getProgramAccounts(programId: String, dataSize: Int): List<Pair<String, ByteArray>> {
+        val v = call(
+            "getProgramAccounts",
+            str(programId),
+            buildJsonObject {
+                put("encoding", "base64")
+                put("commitment", "confirmed")
+                put("filters", buildJsonArray { add(buildJsonObject { put("dataSize", dataSize) }) })
+            },
+        ).jsonArray
+        return v.map { e ->
+            val o = e.jsonObject
+            o["pubkey"]!!.jsonPrimitive.content to Base64.getDecoder().decode(o["account"]!!.jsonObject["data"]!!.jsonArray[0].jsonPrimitive.content)
+        }
+    }
+
     /** `(address, data)` of every token account `owner` holds under `programId`. */
     fun getTokenAccountsByOwner(owner: String, programId: String): List<Pair<String, ByteArray>> {
         val v = call(
@@ -149,6 +166,9 @@ object Accounts {
         fun u64(): Long = Le.readU64(b, o).also { o += 8 }
         fun bool(): Boolean = u8() != 0
     }
+
+    /** 8 (discriminator) + 3 keys + 32-byte name + u64 + u64 + u8 + u64 + u32 + bool + bump. */
+    const val MERCHANT_SIZE = 8 + 32 * 3 + 32 + 8 + 8 + 1 + 8 + 4 + 1 + 1
 
     fun merchant(d: ByteArray) = Reader(d).run {
         Merchant(key(), key(), key(), bytes(32).toString(Charsets.UTF_8).trimEnd('\u0000'), u64(), u64(), u8(), u64(), u32(), bool())

@@ -160,6 +160,20 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     suspend fun refresh() = work("Refreshing") { refreshNow() }
 
+    /** Every registered counter on this cluster, biggest bond first; null until loaded. */
+    var directory by mutableStateOf<List<Pair<String, Accounts.Merchant>>?>(null)
+
+    suspend fun loadDirectory() {
+        directory = withContext(Dispatchers.IO) {
+            runCatching {
+                g.rpc.getProgramAccounts(app.tally.core.Tally.PROGRAM_ID, Accounts.MERCHANT_SIZE)
+                    .map { (addr, data) -> addr to Accounts.merchant(data) }
+                    .filter { it.second.active }
+                    .sortedByDescending { it.second.skrBonded }
+            }.getOrDefault(directory ?: emptyList())
+        }
+    }
+
     /** True while the chain can't be reached; Home then shows the last snapshot read-only. */
     var offline by mutableStateOf(false)
 
