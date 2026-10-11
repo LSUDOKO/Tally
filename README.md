@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/brand/app-icon-192.png" width="96" alt="Tally">
+<img src="docs/images/banner.png" alt="Tally: let your agent pay, only for what tallies" width="100%">
 
-# Tally
+<br>
 
 **Your agent proposes. The merchant signs. Tally checks it on-chain.**
 
@@ -11,9 +11,10 @@ An AI agent buys coffee, lunch and transit for you from a Solana Seeker phone, b
 *Spending limits protect your balance. Tally protects your decision.*
 
 [![CI](https://github.com/LSUDOKO/Tally/actions/workflows/ci.yml/badge.svg)](https://github.com/LSUDOKO/Tally/actions/workflows/ci.yml)
-![Solana](https://img.shields.io/badge/Solana-Anchor%201.2-9945FF)
-![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-3DDC84)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![Solana](https://img.shields.io/badge/Solana-Anchor%201.2-1F6BFF)
+![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-1F6BFF)
+![MCP](https://img.shields.io/badge/MCP-Streamable%20HTTP-1F6BFF)
+![License](https://img.shields.io/badge/license-MIT-0A3DB8)
 
 Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
@@ -22,6 +23,45 @@ Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 </div>
 
 ---
+
+## See it
+
+<table>
+<tr>
+<td align="center" width="25%"><img src="docs/images/pay.gif" alt="Pay"><br><b>Pay</b><br><sub>A proposal from outside Tally, one tap, the chain checks it, the notification lands.</sub></td>
+<td align="center" width="25%"><img src="docs/images/redteam.gif" alt="Red team"><br><b>Red team</b><br><sub>Four attacks on your own agent, every one reverted on devnet.</sub></td>
+<td align="center" width="25%"><img src="docs/images/telegram.gif" alt="Telegram"><br><b>Telegram</b><br><sub>The bot finds what your rules allow and hands it to the app. It can never pay.</sub></td>
+<td align="center" width="25%"><img src="docs/images/rewards.gif" alt="Rewards"><br><b>Rewards</b><br><sub>Points only from on-chain receipts; levels change the mascot.</sub></td>
+</tr>
+</table>
+
+<p align="center"><img src="docs/images/screens.jpg" alt="Tally screens: home, receipts, scan, merchant" width="100%"></p>
+
+Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the mark, wordmark, icon, palette and rules.
+
+## What you get
+
+| | |
+|---|---|
+| **Capsule** | Your rules (categories, per-purchase and daily caps, merchant bond tier, expiry) and a USDC vault, signed once in Seed Vault. Only your key can change them. |
+| **Signed menus** | QR or NFC. The merchant's registered key signs the menu; the program verifies it and the Merkle proof for the item you pay for. |
+| **Agent** | Groq-hosted model or a rule-based fallback, behind a context firewall: it sees item ids, categories, prices and floors, never merchant prose. |
+| **Second Look** | Anything pricier than the cheapest match, from an under-bonded merchant or on a long-lived menu stops for your signature, with the gross outflow shown. |
+| **Red team** | Four attacks against the last scanned menu, each reaching devnet and reverting with its exact error. |
+| **"Was this you?"** | A notification after every agent payment with a Freeze button, also on the home-screen widget. |
+| **App lock** | Your phone's fingerprint, face or PIN on launch and before every payment you tap. |
+| **Points and levels** | 10 points per settled purchase, streak multiplier, 2× for Seeker-verified capsules. Only on-chain receipts count; nothing can be bought or transferred. |
+| **My usual, cart, this week** | One-tap reorder (only if the fresh menu matches), several items reviewed together, a weekly summary with a spend-by-category bar. |
+| **Receipts** | Every payment and blocked attempt with its explorer link; share one, or export them all as CSV. |
+| **Counter directory** | Every registered merchant on the cluster with bond, slash history and open disputes, read from chain before you scan. |
+| **Merchant mode** | The same APK runs a counter: register with an SKR bond, broadcast a signed menu over QR and NFC, plus a standard Solana Pay QR for wallets without Tally. |
+| **Offline** | Rules, receipts and the last balance stay readable; payments always need a fresh signed menu. |
+
+### New in v3
+
+<p align="center"><img src="docs/images/v3.jpg" alt="Counter directory, Solana Pay QR, App lock, receipts export" width="100%"></p>
+
+App lock · fee balance in dollars (Jupiter price feed, no key) · receipts export · spend by category · counter directory · Solana Pay QR for merchants · a public capsule page on Tally cloud (`/c/<owner>`) and a `/share` bot command · the brand kit. What's next, and which integrations need a key, is in the [v3 plan](docs/24-v3-plan.md).
 
 ## The problem
 
@@ -85,34 +125,12 @@ Also on-chain: an **SKR merchant bond** (no bond means no autonomy), **trustless
 | [`app`](app) | Android app (Kotlin + Compose): Seeker user mode **and** merchant terminal in one APK |
 | [`docs`](docs) | Whitepaper, specs, threat model, research, demo script, deck outline, plans |
 
-## The app
-
-<p align="center"><img src="docs/images/screens.jpg" alt="Tally screens: home, receipts, scan, merchant" width="100%"></p>
-
-Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the mark, wordmark, icon and palette.
-
-| Pay | Red team | Rewards |
-| --- | --- | --- |
-| ![Scan and pay](docs/images/pay.gif) | ![Attack your own agent](docs/images/redteam.gif) | ![Points and levels](docs/images/rewards.gif) |
-
-## Everyday features
-
-- **App lock.** Your phone's fingerprint, face or PIN on launch and before every payment you tap.
-- **Export.** Every receipt as CSV with its explorer link.
-
-- **Tally Points and levels.** 10 points per settled purchase of at least $1 from someone else's counter (at most five a day), a daily streak multiplier up to 1.5×, and 2× for Seeker-verified capsules. Points come only from on-chain receipts; paying your own counter, disputed buys and red-team runs earn nothing, and points can't be bought or transferred. Levels (Bronze, Silver, Gold, Legend) change the mascot's look: auras, a crown, a turning halo.
-- **My usual.** Save a purchase; next time it's one tap at the same counter, but only if the freshly signed menu has the same item at the same price. Any change stops and says why.
-- **Cart.** Several items, reviewed together (total, limits, which need approval) before anything is paid; each item settles as its own checked transaction, because one signed-menu payment already uses ~1,130 of Solana's 1,232 bytes.
-- **"Was this you?"** A notification after every agent payment with a Freeze button (also on the home-screen widget). The wallet still signs the freeze.
-- **This week.** Spent, kept by declining upsells, attempts blocked, most visited counter.
-- **Share a receipt.** Item, amount, counter and an explorer link anyone can check.
-- **Offline.** Rules, receipts and the last known balance stay readable; payments always need a fresh signed menu and the network.
-
 ## Live demo (Tally cloud)
 
 - **Café counter:** https://tally-cloud-b792.onrender.com/counter (scan with Tally)
 - **MCP server:** `claude mcp add --transport http tally https://tally-cloud-b792.onrender.com/mcp`
-- **Telegram:** [@Tally_Sol_Bot](https://t.me/Tally_Sol_Bot): `/wallet <your address>`, then "oat latte"
+- **Telegram:** [@Tally_Sol_Bot](https://t.me/Tally_Sol_Bot): `/wallet <your address>`, then "oat latte"; `/share` gives a link to your capsule's rules
+- **Capsule page:** `https://tally-cloud-b792.onrender.com/c/<owner address>`: a capsule's rules, read live from chain
 
 Free-tier hosting: the first request after ~15 idle minutes takes about 30–50 s while the service wakes.
 
@@ -126,8 +144,8 @@ The [Tally MCP server](mcp/README.md) lets Claude or any MCP client read a count
 |---|---|---|
 | `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
 | `pnpm -C sdk test` | **19** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
-| `./gradlew :core:test` (in `app/`) | **91** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; points, streaks and levels; weekly summary; the usual-order guard; cart limits; agent proposals (including one made by the SDK). One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
-| `pnpm -C mcp test` | **6** | The MCP server's policy: category mask, per-purchase and daily limits with the cycle reset, frozen and expired capsules, approval cases, best match |
+| `./gradlew :core:test` (in `app/`) | **92** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; points, streaks and levels; weekly summary; the usual-order guard; cart limits; agent proposals (including one made by the SDK). One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
+| `pnpm -C mcp test` | **10** | The MCP server's policy: category mask, per-purchase and daily limits with the cycle reset, frozen and expired capsules, approval cases, best match |
 
 The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
 
