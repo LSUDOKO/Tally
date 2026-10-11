@@ -5,6 +5,7 @@ describe('telegram bot', () => {
   it('parses commands, including the @botname suffix Telegram adds in groups', () => {
     expect(parseCommand('/start')).toEqual({ kind: 'start' });
     expect(parseCommand('/rules@TallyBot')).toEqual({ kind: 'rules' });
+    expect(parseCommand('/share')).toEqual({ kind: 'share' });
     expect(parseCommand('/wallet 9tGAS2N4DNVpLC3WwYxN8SFCR9m1AF22jVwvNAXLQX9R')).toEqual({ kind: 'wallet', address: '9tGAS2N4DNVpLC3WwYxN8SFCR9m1AF22jVwvNAXLQX9R' });
     expect(parseCommand('/wallet')).toEqual({ kind: 'wallet', address: null });
   });

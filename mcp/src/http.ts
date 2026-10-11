@@ -2,6 +2,7 @@
 //   /            landing page          /counter   live café QR (scan with Tally)
 //   /menu.json   machine-readable menu /mcp       MCP over Streamable HTTP (stateless)
 //   /p/<id>      "Open in Tally" hand-off for a proposal (from the Telegram bot)
+//   /c/<owner>[/<id>]  a capsule's rules, read from chain (share with whoever you gave an allowance)
 //   /telegram/<secret>  Telegram webhook   /health
 // Env: PORT, PUBLIC_URL, TALLY_RPC_URL, TALLY_MERCHANT, TALLY_MENU_SECRET (JSON array of 32 bytes),
 //      TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET.
@@ -11,7 +12,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { address, createSolanaRpc } from '@solana/kit';
 import { Proposals, TallyBot } from './bot.js';
 import { Counter } from './counter.js';
-import { createTallyServer } from './tools.js';
+import { createTallyServer, readRules } from './tools.js';
+import { CATEGORY_NAMES, usd } from './policy.js';
 
 const env = (k: string, fallback?: string) => {
   const v = process.env[k] ?? fallback;
@@ -95,6 +97,25 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     );
   }
 
+  if (path.startsWith('/c/')) {
+    const [owner, id = '1'] = path.slice(3).split('/');
+    const esc = (t: string) => t.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c] as string);
+    let body: string;
+    try {
+      const { capsule, rules } = await readRules(owner, Number(id));
+      const cats = rules.categories.map((x) => CATEGORY_NAMES[x] ?? String(x)).join(', ') || 'none';
+      body =
+        `<p class="k">Tally capsule</p><h1>${rules.frozen ? 'Frozen' : rules.expired ? 'Expired' : 'Active'}</h1>` +
+        `<div class="card"><b>What the agent may buy</b><br>${esc(cats)}</div>` +
+        `<div class="card"><b>Per purchase</b> up to ${usd(rules.perTxCapMicro)}<br><b>Today</b> ${usd(rules.dailyRemainingMicro)} of ${usd(rules.dailyCapMicro)} left<br><b>Merchant bond</b> at least ${usd(rules.minMerchantBondMicro).replace('$', '')} SKR</div>` +
+        `<div class="card"><b>Owner</b> <code>${esc(owner)}</code><br><b>Capsule</b> <code>${capsule}</code></div>` +
+        `<p>Read live from Solana devnet. Pricier-than-cheapest picks always need the owner's tap in Tally.</p>`;
+    } catch (e) {
+      body = `<p class="k">Tally capsule</p><h1>Not found</h1><p>${esc(String((e as Error).message))}</p>`;
+    }
+    return send(res, 200, 'text/html; charset=utf-8', page('Capsule · Tally', body));
+  }
+
   if (path === '/counter') {
     return send(
       res,
@@ -119,7 +140,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 <p>A demo café, an MCP server and a Telegram bot. None of them can pay: every purchase opens in the Tally app, where you approve and the chain re-checks it.</p>
 <div class="card"><b>Café counter</b><br><a href="/counter" style="color:#9cc2ff">/counter</a> (scan with Tally) · <a href="/menu.json" style="color:#9cc2ff">/menu.json</a></div>
 <div class="card"><b>MCP server</b> (Streamable HTTP)<br><code>${PUBLIC_URL}/mcp</code><br><small>claude mcp add --transport http tally ${PUBLIC_URL}/mcp</small></div>
-<div class="card"><b>Telegram</b><br>Message the bot "oat latte" after <code>/wallet &lt;your address&gt;</code>.</div>`,
+<div class="card"><b>Telegram</b><br>Message the bot "oat latte" after <code>/wallet &lt;your address&gt;</code>.</div>
+<div class="card"><b>Share a capsule</b><br><code>${PUBLIC_URL}/c/&lt;owner address&gt;</code>: its rules, read from chain.</div>`,
       ),
     );
   }

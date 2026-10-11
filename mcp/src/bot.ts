@@ -14,6 +14,7 @@ export type Command =
   | { kind: 'wallet'; address: string | null }
   | { kind: 'rules' }
   | { kind: 'menu' }
+  | { kind: 'share' }
   | { kind: 'want'; request: string };
 
 /** Map a chat message to a command; plain text is a shopping request. */
@@ -33,6 +34,8 @@ export function parseCommand(text: string): Command {
       return { kind: 'rules' };
     case '/menu':
       return { kind: 'menu' };
+    case '/share':
+      return { kind: 'share' };
     default:
       return { kind: 'want', request: (cmd.startsWith('/') ? arg : t).slice(0, 200) };
   }
@@ -71,7 +74,7 @@ export class Proposals {
 
 const HELP =
   'I find things within your Tally rules and hand them to the app for you to approve. I can never pay.\n\n' +
-  '/wallet <address>: link your Tally wallet\n/rules: what your capsule allows today\n/menu: the café\'s signed menu\n' +
+  '/wallet <address>: link your Tally wallet\n/rules: what your capsule allows today\n/menu: the café\'s signed menu\n/share: a link to your capsule\'s rules for someone else\n' +
   'Or just say what you want, e.g. "oat latte".';
 
 export class TallyBot {
@@ -106,6 +109,7 @@ export class TallyBot {
         { command: 'wallet', description: 'Link your Tally wallet address' },
         { command: 'rules', description: 'What your capsule allows today' },
         { command: 'menu', description: "The café's signed menu" },
+        { command: 'share', description: 'A link to your capsule\'s rules' },
         { command: 'help', description: 'How this works' },
       ],
     });
@@ -148,6 +152,11 @@ export class TallyBot {
       case 'menu': {
         const m = await readMenu(this.counterUrl);
         return this.say(chat, `${m.merchantName} (signature verified on-chain):\n` + m.items.map((i) => `• ${i.name}: ${usd(i.priceMicro)}${i.priceMicro === i.floorMicro ? ' (cheapest)' : ''}`).join('\n'));
+      }
+      case 'share': {
+        const owner = this.owners.get(chat);
+        if (!owner) return this.say(chat, 'Link your wallet first: /wallet <address>');
+        return this.say(chat, `Your capsule's rules, read live from chain: ${this.publicUrl}/c/${owner}`);
       }
       case 'want':
         return this.offer(chat, c.request);
