@@ -246,7 +246,28 @@ fun CheckoutScreen(s: Session) {
                 if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Outlined.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Outlined.Schedule)
                 if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Outlined.Memory)
             }
-            s.proposal?.takeIf { it.index >= 0 }?.let { pr ->
+            // The outcome leads once there is one: the mascot and the result card, above everything else.
+            if (s.payResult != null) Mascot(mood, Modifier.fillMaxWidth(), height = 190.dp, shakeKey = s.payResult?.takeIf { !it.ok })
+            s.payResult?.let { r ->
+                Card(accent = if (r.ok) TallyColors.Paid else TallyColors.Blocked) {
+                    Column(Modifier.semantics { contentDescription = r.title }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconTile(if (r.ok) Icons.Outlined.CheckCircle else Icons.Outlined.Block, if (r.ok) TallyColors.Paid else TallyColors.Blocked, 44.dp)
+                            Big("  ${r.title}", if (r.ok) TallyColors.Paid else TallyColors.Blocked, 22)
+                        }
+                        Gap(8)
+                        Body(r.detail)
+                        ExplorerLink(s, r.signature)
+                        val paid = s.lastPaidIndex
+                        if (r.ok && paid != null && s.store.usual?.itemIdHex != Hex.encode(p.menu.items[paid].id)) {
+                            Gap(10)
+                            Secondary("Save as my usual", { s.saveUsual(paid) }, icon = Icons.Outlined.Replay)
+                        }
+                    }
+                }
+            }
+            // A paid proposal is done; the card would only invite paying it twice.
+            s.proposal?.takeIf { it.index >= 0 && s.payResult?.ok != true }?.let { pr ->
                 val item = p.menu.items[pr.index]
                 val owner = s.capsule != null && m != null && Purchase.needsOwner(item, m.skrBonded, s.capsule!!.minMerchantBond, p.menu.window)
                 Card(accent = TallyColors.BrandBright) {
@@ -391,8 +412,8 @@ fun CheckoutScreen(s: Session) {
                 },
             )
             Primary("Ask the agent", { scope.launch { s.askAgent(request) } }, icon = Icons.Outlined.AutoAwesome)
-            if (s.agentResult != null || s.payResult != null) {
-                Mascot(mood, Modifier.fillMaxWidth(), height = 190.dp, shakeKey = s.payResult?.takeIf { !it.ok })
+            if (s.agentResult != null && s.payResult == null) {
+                Mascot(mood, Modifier.fillMaxWidth(), height = 190.dp)
             }
             s.agentResult?.let { ar ->
                 Card(accent = TallyColors.BrandBright) {
@@ -420,24 +441,6 @@ fun CheckoutScreen(s: Session) {
                                 color = if (needsOwner) TallyColors.NeedsYou else TallyColors.Brand,
                                 icon = if (needsOwner) Icons.Outlined.Visibility else Icons.Outlined.Bolt,
                             )
-                        }
-                    }
-                }
-            }
-            s.payResult?.let { r ->
-                Card(accent = if (r.ok) TallyColors.Paid else TallyColors.Blocked) {
-                    Column(Modifier.semantics { contentDescription = r.title }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconTile(if (r.ok) Icons.Outlined.CheckCircle else Icons.Outlined.Block, if (r.ok) TallyColors.Paid else TallyColors.Blocked, 44.dp)
-                            Big("  ${r.title}", if (r.ok) TallyColors.Paid else TallyColors.Blocked, 22)
-                        }
-                        Gap(8)
-                        Body(r.detail)
-                        ExplorerLink(s, r.signature)
-                        val paid = s.lastPaidIndex
-                        if (r.ok && paid != null && s.store.usual?.itemIdHex != Hex.encode(p.menu.items[paid].id)) {
-                            Gap(10)
-                            Secondary("Save as my usual", { s.saveUsual(paid) }, icon = Icons.Outlined.Replay)
                         }
                     }
                 }
