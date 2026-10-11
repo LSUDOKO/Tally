@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Podcasts
+import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.MaterialTheme
@@ -193,6 +194,17 @@ fun MerchantScreen(s: Session) {
                         Image(bmp.asImageBitmap(), contentDescription = "Signed menu QR", modifier = Modifier.fillMaxSize())
                     }
                     Chip("Live · re-signs every ~20 s · ${catalog.size} items", TallyColors.Paid, Icons.Outlined.Podcasts)
+                }
+                // Any Solana wallet can still pay this counter the plain way; Tally's signed menu stays the protected path.
+                var solanaPay by remember { mutableStateOf(false) }
+                ToggleRow(Icons.Outlined.QrCode2, "Solana Pay QR", "A standard transfer request for ${s.config.usdcMint.ifBlank { "USDC" }.take(4)}… USDC that any wallet can scan. No menu, no rules: a tip jar.", solanaPay) { solanaPay = it }
+                if (solanaPay) {
+                    val url = remember(r.payout) { "solana:${r.payout}?spl-token=${s.config.usdcMint}&label=${java.net.URLEncoder.encode(r.name, "UTF-8")}&message=${java.net.URLEncoder.encode("Tally counter", "UTF-8")}" }
+                    val bmp = remember(url) { QrCode.render(url) }
+                    Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(28.dp)).background(Color.White).padding(18.dp)) {
+                        Image(bmp.asImageBitmap(), contentDescription = "Solana Pay QR", modifier = Modifier.fillMaxSize())
+                    }
+                    Mono(url.substringBefore('?'), TallyColors.Faint)
                 }
                 Secondary(if (editing) "Done editing menu" else "Edit menu (${catalog.size} items)", { editing = !editing; if (!editing) g.store.catalog = catalog }, icon = Icons.Outlined.EditNote)
                 if (editing) {
