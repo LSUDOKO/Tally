@@ -4,15 +4,20 @@
 //   /p/<id>      "Open in Tally" hand-off for a proposal (from the Telegram bot)
 //   /c/<owner>[/<id>]  a capsule's rules, read from chain (share with whoever you gave an allowance)
 //   /telegram/<secret>  Telegram webhook   /health
+//   /helius/<secret>/<chat>/<owner>  Helius webhook: payment alerts in Telegram
+//   /places/merchant/<pda>  a registered counter's Google Maps place   /places/photo?ref=...
 // Env: PORT, PUBLIC_URL, TALLY_RPC_URL, TALLY_MERCHANT, TALLY_MENU_SECRET (JSON array of 32 bytes),
-//      TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET.
+//      TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, HELIUS_API_KEY, GOOGLE_PLACES_KEY, PLACE_PINS.
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { address, createSolanaRpc } from '@solana/kit';
+import { Alerts, describe, type RawTx } from './alerts.js';
 import { Proposals, TallyBot } from './bot.js';
+import { Places, parsePins } from './places.js';
 import { Counter } from './counter.js';
-import { createTallyServer, readRules } from './tools.js';
+import { createTallyServer, merchantName, payoutNames, readRules } from './tools.js';
+import { findCapsulePda } from '@tally/sdk';
 import { CATEGORY_NAMES, usd } from './policy.js';
 
 const env = (k: string, fallback?: string) => {
@@ -27,7 +32,16 @@ const rpc = createSolanaRpc(env('TALLY_RPC_URL', 'https://api.devnet.solana.com'
 const counter = new Counter(rpc, address(env('TALLY_MERCHANT')), Uint8Array.from(JSON.parse(env('TALLY_MENU_SECRET')) as number[]));
 const proposals = new Proposals();
 const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET ?? randomBytes(24).toString('base64url');
-const bot = process.env.TELEGRAM_BOT_TOKEN ? new TallyBot(process.env.TELEGRAM_BOT_TOKEN, PUBLIC_URL, PUBLIC_URL, proposals) : undefined;
+const alerts = process.env.HELIUS_API_KEY && PUBLIC_URL.startsWith('https://') ? new Alerts(process.env.HELIUS_API_KEY, PUBLIC_URL, webhookSecret) : undefined;
+const bot = process.env.TELEGRAM_BOT_TOKEN ? new TallyBot(process.env.TELEGRAM_BOT_TOKEN, PUBLIC_URL, PUBLIC_URL, proposals, alerts) : undefined;
+const places = process.env.GOOGLE_PLACES_KEY ? new Places(process.env.GOOGLE_PLACES_KEY, parsePins(process.env.PLACE_PINS)) : undefined;
+
+/** Payout → merchant name, refreshed at most every ten minutes, to name who an agent paid. */
+let names: { at: number; map: Map<string, string> } = { at: 0, map: new Map() };
+async function merchantNames() {
+  if (Date.now() - names.at > 600_000) names = { at: Date.now(), map: await payoutNames().catch(() => names.map) };
+  return names.map;
+}
 
 const page = (title: string, body: string) => `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
@@ -78,6 +92,37 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     send(res, 200, 'application/json', '{}'); // acknowledge first; Telegram retries slow webhooks
     await bot?.handle(update as Parameters<TallyBot['handle']>[0]);
     return;
+  }
+
+  if (path.startsWith(`/helius/${webhookSecret}/`) && req.method === 'POST') {
+    if (req.headers.authorization !== webhookSecret) return send(res, 401, 'text/plain', 'no');
+    const [chat, owner] = path.slice(`/helius/${webhookSecret}/`.length).split('/');
+    const txs = ((await readBody(req)) ?? []) as RawTx[];
+    send(res, 200, 'application/json', '{}');
+    if (!bot || !chat || !owner) return;
+    const [capsule] = await findCapsulePda({ owner: address(owner), capsuleId: 1n });
+    const map = await merchantNames();
+    for (const tx of txs) {
+      const line = describe(tx, capsule, owner, map, (sig) => `https://explorer.solana.com/tx/${sig}?cluster=devnet`);
+      if (line) await bot.notify(Number(chat), line).catch((e) => console.error('alert:', String(e)));
+    }
+    return;
+  }
+
+  if (path.startsWith('/places/merchant/')) {
+    if (!places) return send(res, 404, 'application/json', '{"error":"places not configured"}');
+    const merchant = path.slice('/places/merchant/'.length);
+    const name = await merchantName(merchant).catch(() => null);
+    if (!name) return send(res, 404, 'application/json', '{"error":"not a registered merchant"}');
+    const view = await places.forMerchant(merchant, name);
+    return send(res, 200, 'application/json', JSON.stringify({ merchant, merchantName: name, place: view }));
+  }
+
+  if (path === '/places/photo') {
+    const img = await places?.photo(url.searchParams.get('ref') ?? '');
+    if (!img) return send(res, 404, 'text/plain', 'not found');
+    res.writeHead(200, { 'content-type': img.type, 'cache-control': 'public, max-age=86400' });
+    return res.end(img.body);
   }
 
   if (path.startsWith('/p/')) {
@@ -158,5 +203,14 @@ createServer((req, res) => {
   console.log(`tally cloud on ${PUBLIC_URL} (port ${PORT})`);
   if (bot && PUBLIC_URL.startsWith('https://')) {
     await bot.register(webhookSecret).then(() => console.log('telegram webhook registered'), (e) => console.error('telegram:', String(e)));
+  }
+  if (bot && alerts) {
+    await alerts.restore().then(
+      (links) => {
+        for (const [chat, owner] of links) bot.link(chat, owner);
+        console.log(`payment alerts: ${links.size} linked chat(s)`);
+      },
+      (e) => console.error('helius:', String(e)),
+    );
   }
 });

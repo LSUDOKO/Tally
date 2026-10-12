@@ -7,7 +7,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as ed from '@noble/ed25519';
 import { address, createSolanaRpc, getAddressEncoder, type Address } from '@solana/kit';
-import { explainError, fetchMaybeCapsule, fetchMaybeMerchant, findCapsulePda, fromQr, toProposalLink, toProposalQr, type MenuPayload } from '@tally/sdk';
+import { TALLY_PROGRAM_ADDRESS, explainError, fetchMaybeCapsule, fetchMaybeMerchant, findCapsulePda, getMerchantDecoder, getMerchantSize, fromQr, toProposalLink, toProposalQr, type MenuPayload } from '@tally/sdk';
 import QRCode from 'qrcode';
 import { z } from 'zod';
 import { CATEGORY_NAMES, SLOT_SECONDS, bestMatch, judge, rulesView, usd, type ItemVerdict, type MenuItemView, type RulesView } from './policy.js';
@@ -75,16 +75,35 @@ async function readMenuOnce(counterUrl: string): Promise<LiveMenu> {
   };
 }
 
-export async function readRules(owner: string, capsuleId: number): Promise<{ capsule: Address; rules: RulesView }> {
+export async function readRules(owner: string, capsuleId: number): Promise<{ capsule: Address; vault: Address; rules: RulesView }> {
   return retry(() => readRulesOnce(owner, capsuleId));
 }
 
-async function readRulesOnce(owner: string, capsuleId: number): Promise<{ capsule: Address; rules: RulesView }> {
+async function readRulesOnce(owner: string, capsuleId: number): Promise<{ capsule: Address; vault: Address; rules: RulesView }> {
   const [capsule] = await findCapsulePda({ owner: address(owner), capsuleId: BigInt(capsuleId) });
   const acct = await fetchMaybeCapsule(rpc, capsule);
   if (!acct.exists) throw new Error(`no capsule ${capsuleId} for ${owner}`);
   const slot = await rpc.getSlot().send();
-  return { capsule, rules: rulesView(acct.data, slot) };
+  return { capsule, vault: acct.data.vault, rules: rulesView(acct.data, slot) };
+}
+
+/** A registered merchant's on-chain name, or null when the address isn't a registered merchant. */
+export async function merchantName(merchant: string): Promise<string | null> {
+  const m = await retry(() => fetchMaybeMerchant(rpc, address(merchant)));
+  return m.exists ? new TextDecoder().decode(m.data.name).replace(/\0+$/, '') : null;
+}
+
+/** Payout address → merchant name for every registered counter (to name who an agent paid). */
+export async function payoutNames(): Promise<Map<string, string>> {
+  const accounts = await retry(() =>
+    rpc.getProgramAccounts(TALLY_PROGRAM_ADDRESS, { encoding: 'base64', filters: [{ dataSize: BigInt(getMerchantSize()) }] }).send(),
+  );
+  const out = new Map<string, string>();
+  for (const a of accounts) {
+    const m = getMerchantDecoder().decode(Buffer.from(a.account.data[0], 'base64'));
+    out.set(m.payout, new TextDecoder().decode(m.name).replace(/\0+$/, ''));
+  }
+  return out;
 }
 
 const view = (j: ItemVerdict) => ({

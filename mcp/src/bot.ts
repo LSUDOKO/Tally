@@ -6,6 +6,7 @@ import { address } from '@solana/kit';
 import { toProposalLink, toProposalQr } from '@tally/sdk';
 import QRCode from 'qrcode';
 import { CATEGORY_NAMES, bestMatch, judge, usd, type ItemVerdict } from './policy.js';
+import type { Alerts } from './alerts.js';
 import { readMenu, readRules } from './tools.js';
 
 export type Command =
@@ -85,7 +86,18 @@ export class TallyBot {
     private publicUrl: string,
     private counterUrl: string,
     private proposals: Proposals,
+    private alerts?: Alerts,
   ) {}
+
+  /** Restore chat links (e.g. from Helius after a restart). */
+  link(chat: number, owner: string) {
+    this.owners.set(chat, owner);
+  }
+
+  /** Send a message to a linked chat (payment alerts). */
+  notify(chat: number, text: string) {
+    return this.say(chat, text);
+  }
 
   private async api(method: string, body: Record<string, unknown> | FormData) {
     const res = await fetch(`https://api.telegram.org/bot${this.token}/${method}`, {
@@ -134,9 +146,16 @@ export class TallyBot {
       case 'wallet': {
         if (!c.address) return this.say(chat, 'Send /wallet followed by your Tally wallet address (the one shown on Tally\'s home screen).');
         if (!isWalletAddress(c.address)) return this.say(chat, "That doesn't look like a Solana address.");
-        const { rules } = await readRules(c.address, 1);
+        const { vault, rules } = await readRules(c.address, 1);
         this.owners.set(chat, c.address);
-        return this.say(chat, `Linked. Your capsule allows ${rules.categories.map((x) => CATEGORY_NAMES[x] ?? x).join(', ')}, up to ${usd(rules.perTxCapMicro)} each, ${usd(rules.dailyRemainingMicro)} left today.`);
+        let watching = '';
+        if (this.alerts) {
+          watching = await this.alerts.watch(chat, c.address, vault).then(
+            () => "\n\nI'll message you here whenever money moves in your capsule, even with Tally closed.",
+            () => '',
+          );
+        }
+        return this.say(chat, `Linked. Your capsule allows ${rules.categories.map((x) => CATEGORY_NAMES[x] ?? x).join(', ')}, up to ${usd(rules.perTxCapMicro)} each, ${usd(rules.dailyRemainingMicro)} left today.${watching}`);
       }
       case 'rules': {
         const owner = this.owners.get(chat);
