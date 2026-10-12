@@ -65,6 +65,9 @@ import app.tally.core.usdc
 import app.tally.ui.theme.TallyColors
 import app.tally.ui.theme.TallyBrushes
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 private val Pad = Modifier.padding(horizontal = 20.dp)
 
@@ -88,7 +91,7 @@ private fun Greeting(s: Session) {
         TallyMark(40.dp)
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text("Tally", style = MaterialTheme.typography.titleMedium, color = TallyColors.Text)
-            Text(s.ownerAddress?.let { short(it) } ?: s.config.cluster, style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted)
+            Text(s.ownerAddress?.let { a -> listOfNotNull(s.accountLabel, short(a)).joinToString(" · ") } ?: s.config.cluster, style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted, maxLines = 1)
         }
         GlassIconButton(Icons.Outlined.Storefront, "Merchant mode", { s.screen = Screen.Merchant })
         if (s.ownerAddress != null) {
@@ -132,9 +135,11 @@ private fun Welcome(s: Session) {
             )
         }
         Gap(20)
-        Reveal(210, Modifier.fillMaxWidth()) { Primary("Connect wallet", { scope.launch { s.connect() } }, icon = Icons.Outlined.AccountBalanceWallet) }
+        var choosing by remember { mutableStateOf(false) }
+        Reveal(210, Modifier.fillMaxWidth()) { Primary("Sign in with wallet", { choosing = true }, icon = Icons.Outlined.AccountBalanceWallet) }
+        if (choosing) ConnectSheet(s) { choosing = false }
         Gap(8)
-        Text("Your owner key stays in Seed Vault. Tally only ever holds a capped agent key.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint, textAlign = TextAlign.Center)
+        Text("Solflare, Phantom, Backpack or Seed Vault. Your key stays in your wallet; Tally only holds a capped agent key.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint, textAlign = TextAlign.Center)
         Gap(18)
         Reveal(210, Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp)).padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -195,6 +200,19 @@ private fun Dashboard(s: Session) {
             QuickAction(Icons.Outlined.Download, "Withdraw", enabled = s.vaultBalance > 0) { scope.launch { s.withdraw(s.vaultBalance) } }
             QuickAction(Icons.Outlined.Tune, "Rules") { s.screen = Screen.NewCapsule }
             QuickAction(Icons.Outlined.Storefront, "Merchant") { s.screen = Screen.Merchant }
+        }
+
+        s.scheduleDue?.let { target ->
+            Card(accent = TallyColors.NeedsYou) {
+                Column {
+                    val weekend = java.time.LocalDate.now().dayOfWeek.value >= 6
+                    Label(if (weekend) "Weekend allowance" else "Weekday allowance", TallyColors.NeedsYou)
+                    Gap(4)
+                    Text("Your schedule says \$${usdc(target)} a day today; the capsule is at \$${usdc(c.dailyCap)}.", style = MaterialTheme.typography.bodyMedium, color = TallyColors.Text)
+                    Gap(12)
+                    Secondary("Apply in wallet", { scope.launch { s.applySchedule() } }, icon = Icons.Outlined.Tune)
+                }
+            }
         }
 
         s.store.usual?.let { UsualCard(it) { s.startReorder() } }

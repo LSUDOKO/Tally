@@ -62,6 +62,7 @@ import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.ui.text.style.TextAlign
@@ -664,20 +665,7 @@ fun SettingsScreen(s: Session) {
                 HeroTitle("Your keys,", "your rules.", Modifier.weight(1f), align = TextAlign.Start)
                 Mascot(Mood.Standing, Modifier.size(width = 100.dp, height = 150.dp), height = 150.dp)
             }
-            Card {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.foundation.Image(
-                        androidx.compose.ui.res.painterResource(app.tally.R.drawable.mascot_avatar), contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(52.dp).clip(androidx.compose.foundation.shape.CircleShape),
-                    )
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(s.ownerAddress?.let { short(it) } ?: "Not connected", style = androidx.compose.material3.MaterialTheme.typography.titleMedium, color = TallyColors.Text)
-                        Text(s.owner.label, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, color = TallyColors.Muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    }
-                    androidx.compose.foundation.layout.Spacer(Modifier.padding(start = 8.dp))
-                    Chip(s.config.cluster, TallyColors.Accent, Icons.Outlined.Hub)
-                }
-            }
+            AccountCard(s)
 
             SectionLabel("Agent")
             Card {
@@ -704,6 +692,9 @@ fun SettingsScreen(s: Session) {
             }
 
             if (s.capsule != null) {
+                SectionLabel("Allowance schedule")
+                ScheduleCard(s)
+
                 SectionLabel("Capsule")
                 ToggleRow(Icons.Outlined.AcUnit, "Freeze capsule", "Stops every agent payment until you unfreeze.", s.capsule?.frozen == true, TallyColors.Accent) { scope.launch { s.setFrozen(it) } }
                 ActionRow(Icons.Outlined.Autorenew, "Rotate agent key", "Retire this phone's agent key; its leftover SOL returns to you.") { scope.launch { s.rotateAgent() } }
@@ -741,6 +732,31 @@ fun SettingsScreen(s: Session) {
 
 @Composable
 private fun SectionLabel(text: String) = Label(text, TallyColors.Accent)
+
+/** Different daily caps for weekdays and weekends; Home asks for one wallet approval when the day type changes. */
+@Composable
+private fun ScheduleCard(s: Session) {
+    val current = s.schedule
+    var on by remember { mutableStateOf(current != null) }
+    var weekday by remember { mutableStateOf(current?.let { usdc(it.weekdayCap) } ?: usdc(s.capsule?.dailyCap ?: 15_000_000)) }
+    var weekend by remember { mutableStateOf(current?.let { usdc(it.weekendCap) } ?: "5.00") }
+    ToggleRow(Icons.Outlined.CalendarMonth, "Weekday / weekend caps", "One daily cap Monday to Friday, another at weekends. Your wallet signs each change.", on) {
+        on = it
+        if (!it) s.saveSchedule(null)
+    }
+    if (on) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            GlassField(weekday, { weekday = it }, "Weekdays \$", Modifier.weight(1f), singleLine = true, keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+            GlassField(weekend, { weekend = it }, "Weekends \$", Modifier.weight(1f), singleLine = true, keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+        }
+        val wd = weekday.toBigDecimalOrNull()?.movePointRight(6)?.toLong()
+        val we = weekend.toBigDecimalOrNull()?.movePointRight(6)?.toLong()
+        Secondary("Save schedule", {
+            if (wd == null || we == null || wd <= 0 || we <= 0) s.toast = "Enter both caps in dollars, above zero."
+            else { s.saveSchedule(app.tally.core.AllowanceSchedule(wd, we)); s.toast = "Schedule saved. Home will ask your wallet when the cap should change." }
+        }, icon = Icons.Outlined.Save)
+    }
+}
 
 /** A labelled value with its icon; tap to copy long values such as addresses. */
 @Composable

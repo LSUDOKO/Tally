@@ -437,6 +437,7 @@ fun GlassField(
     leading: ImageVector? = null,
     trailing: @Composable (() -> Unit)? = null,
     visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
 ) {
     val shape = RoundedCornerShape(20.dp)
     androidx.compose.material3.TextField(
@@ -449,6 +450,7 @@ fun GlassField(
         leadingIcon = leading?.let { { Icon(it, contentDescription = null) } },
         trailingIcon = trailing,
         visualTransformation = visualTransformation,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
         colors = androidx.compose.material3.TextFieldDefaults.colors(
             focusedContainerColor = TallyColors.GlassStrong,
             unfocusedContainerColor = TallyColors.Glass,

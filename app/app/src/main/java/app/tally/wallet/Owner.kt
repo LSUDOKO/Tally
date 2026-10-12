@@ -19,6 +19,9 @@ import kotlinx.coroutines.withContext
 
 class WalletException(message: String) : Exception(message)
 
+/** Who signed in: the address, the account's name in the wallet, and the wallet's endpoint (names the app). */
+class SignedIn(val address: String, val label: String?, val walletUriBase: Uri?)
+
 /** The owner's co-signature: either the signed bytes for Tally to submit, or a signature the wallet already sent. */
 sealed class Cosigned {
     class Signed(val wire: ByteArray) : Cosigned()
@@ -33,8 +36,14 @@ sealed class Cosigned {
 interface Owner {
     val label: String
 
+    /** Sign in with Solana and return who signed in. */
+    suspend fun signIn(): SignedIn
+
     /** Connect (Sign-in-with-Solana) and return the owner address. */
-    suspend fun connect(): String
+    suspend fun connect(): String = signIn().address
+
+    /** Revoke Tally's access in the wallet and forget the session. */
+    suspend fun disconnect() {}
 
     /** Owner pays fees and signs; the wallet sends. Returns the signature (base58). */
     suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String
@@ -43,7 +52,7 @@ interface Owner {
     suspend fun cosign(wireTx: ByteArray): Cosigned
 }
 
-class MwaOwner(private val sender: ActivityResultSender, private val cluster: String) : Owner {
+class MwaOwner(private val sender: ActivityResultSender, private val cluster: String, private val store: app.tally.data.Store) : Owner {
     override val label = "Seed Vault (Mobile Wallet Adapter)"
 
     private val adapter = MobileWalletAdapter(
@@ -52,23 +61,37 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
             iconUri = Uri.parse("favicon.ico"),
             identityName = "Tally",
         ),
-    ).apply { blockchain = if (cluster == "mainnet-beta") Solana.Mainnet else Solana.Devnet }
+    ).apply {
+        blockchain = if (cluster == "mainnet-beta") Solana.Mainnet else Solana.Devnet
+        // A saved session reauthorizes silently instead of asking the owner to sign in again.
+        authToken = store.walletToken
+    }
 
-    private var address: String? = null
+    private var address: String? = store.walletToken?.let { store.ownerAddress }
 
     private fun <T> unwrap(r: TransactionResult<T>): Pair<T, String> = when (r) {
         is TransactionResult.Success -> {
             val addr = Base58.encode(r.authResult.accounts.first().publicKey)
             address = addr
+            store.walletToken = r.authResult.authToken
             r.payload to addr
         }
         is TransactionResult.NoWalletFound -> throw WalletException("No Mobile Wallet Adapter wallet found. On Seeker, Seed Vault is built in.")
         is TransactionResult.Failure -> throw WalletException(r.e.message ?: "Wallet request failed")
     }
 
-    override suspend fun connect(): String {
-        val r = adapter.transact(sender, SignInWithSolana.Payload("tally.app", "Sign in to Tally to protect your agent's purchases")) { }
-        return unwrap(r).second
+    override suspend fun signIn(): SignedIn {
+        adapter.authToken = null
+        val r = adapter.transact(sender, SignInWithSolana.Payload("tally.app", "Sign in to Tally to protect your agent's purchases")) { it }
+        val (auth, addr) = unwrap(r)
+        return SignedIn(addr, auth.accounts.first().accountLabel ?: auth.accountLabel, auth.walletUriBase)
+    }
+
+    override suspend fun disconnect() {
+        // Best effort: the wallet opens briefly to revoke the token. Signing out locally never depends on it.
+        if (adapter.authToken != null) runCatching { adapter.disconnect(sender) }
+        adapter.authToken = null
+        address = null
     }
 
     override suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String {
@@ -105,7 +128,7 @@ class DemoOwner(private val seed: ByteArray) : Owner {
     override val label = "Demo owner (debug build, local key)"
     val address: String = Base58.encode(Ed25519.publicKey(seed))
 
-    override suspend fun connect() = address
+    override suspend fun signIn() = SignedIn(address, "Demo owner", null)
 
     override suspend fun signAndSend(instructions: List<Instruction>, rpc: Rpc): String {
         val message = Message.compile(address, withContext(Dispatchers.IO) { rpc.getLatestBlockhash() }, instructions)

@@ -12,6 +12,15 @@
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.nfc.hce" android:required="false" />
 
+    <!-- Lists the Mobile Wallet Adapter wallets on the phone for the sign-in screen. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="solana-wallet" />
+        </intent>
+    </queries>
+
     <application
         android:name=".TallyApp"
         android:allowBackup="false"

@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // MWA's sender must be created before the activity is STARTED.
         val sender = ActivityResultSender(this)
-        session = Session(this, MwaOwner(sender, graph.config.cluster))
+        session = Session(this, MwaOwner(sender, graph.config.cluster, graph.store))
         nfc = NfcReader(this)
         handle(intent)
         setContent { TallyTheme { Root(session, nfc) } }
@@ -239,7 +239,7 @@ private fun BusyOverlay(label: String) {
 /** A message for the user; the mascot reacts to whether it is good news. */
 @Composable
 private fun Notice(message: String, onDismiss: () -> Unit) {
-    val good = listOf("enabled", "proven", "claimed", "rule-based agent", "Paid").any { message.contains(it, ignoreCase = true) }
+    val good = listOf("enabled", "proven", "claimed", "rule-based agent", "Paid", "Signed in").any { message.contains(it, ignoreCase = true) }
     Dialog(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().glass().background(TallyColors.Surface.copy(alpha = 0.92f)).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Mascot(if (good) Mood.ThumbsUp else Mood.Confused, Modifier.size(width = 150.dp, height = 140.dp), height = 140.dp)

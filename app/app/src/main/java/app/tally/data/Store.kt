@@ -40,6 +40,40 @@ class Store(context: Context) {
         get() = prefs.getString("owner", null)
         set(v) = prefs.edit().putString("owner", v).apply()
 
+    /** The wallet's Mobile Wallet Adapter auth token, so later requests reauthorize without a new sign-in. */
+    var walletToken: String?
+        get() = prefs.getString("wallet_token", null)
+        set(v) = prefs.edit().putString("wallet_token", v).apply()
+
+    /** Which wallet app signed in (e.g. "Solflare") and the account's own label in it. */
+    var walletName: String?
+        get() = prefs.getString("wallet_name", null)
+        set(v) = prefs.edit().putString("wallet_name", v).apply()
+
+    var accountLabel: String?
+        get() = prefs.getString("account_label", null)
+        set(v) = prefs.edit().putString("account_label", v).apply()
+
+    /**
+     * Signing out sets this account's receipts, usual order, level and snapshot aside under its
+     * address; signing in brings back whatever that address left on this phone. Two people sharing
+     * a phone never see each other's history.
+     */
+    fun signOut(owner: String) {
+        val e = prefs.edit()
+        for (k in PerAccount) {
+            prefs.getString(k, null)?.let { e.putString("$k@$owner", it) } ?: e.remove("$k@$owner")
+            e.remove(k)
+        }
+        e.remove("owner").remove("wallet_token").remove("wallet_name").remove("account_label").apply()
+    }
+
+    fun signIn(owner: String) {
+        val e = prefs.edit()
+        for (k in PerAccount) prefs.getString("$k@$owner", null)?.let { e.putString(k, it).remove("$k@$owner") }
+        e.putString("owner", owner).apply()
+    }
+
     var capsuleId: Long
         get() = prefs.getLong("capsule_id", 1)
         set(v) = prefs.edit().putLong("capsule_id", v).apply()
@@ -88,6 +122,13 @@ class Store(context: Context) {
         prefs.edit().putString("log", json.encodeToString(log().map { if (it.receipt == receipt) it.copy(disputed = true) else it })).apply()
     }
 
+    /** "$15 on weekdays, $5 at weekends", or null when the owner keeps one daily cap. */
+    var schedule: app.tally.core.AllowanceSchedule?
+        get() = prefs.getString("schedule", null)?.split(',')?.takeIf { it.size == 2 }?.let { (w, e) ->
+            runCatching { app.tally.core.AllowanceSchedule(w.toLong(), e.toLong()) }.getOrNull()
+        }
+        set(v) = prefs.edit().putString("schedule", v?.let { "${it.weekdayCap},${it.weekendCap}" }).apply()
+
     /** The owner's saved repeat order, if any. */
     var usual: Usual?
         get() = prefs.getString("usual", null)?.let { runCatching { json.decodeFromString<Usual>(it) }.getOrNull() }
@@ -125,4 +166,8 @@ class Store(context: Context) {
     /** Purchases only (they carry a receipt, or slipped through red team); funding the capsule is not spending. */
     fun spentToday(now: Long = System.currentTimeMillis()): Long =
         log().filter { it.outcome == "paid" && (it.receipt != null || it.attack) && now - it.at < 24L * 3600 * 1000 }.sumOf { it.amountMicro }
+
+    private companion object {
+        val PerAccount = listOf("log", "usual", "celebrated_level", "snapshot", "schedule")
+    }
 }

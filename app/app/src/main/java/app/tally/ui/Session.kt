@@ -151,11 +151,50 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     // ------------------------------------------------------------------ owner & capsule
 
-    suspend fun connect() = work("Connecting wallet") {
-        val addr = owner.connect()
-        ownerAddress = addr
-        g.store.ownerAddress = addr
+    /** The wallet app and account name the owner signed in with, for the header and Settings. */
+    var walletName by mutableStateOf(g.store.walletName)
+    var accountLabel by mutableStateOf(g.store.accountLabel)
+
+    suspend fun connect() = work("Waiting for your wallet") {
+        val who = owner.signIn()
+        g.store.signIn(who.address)
+        g.store.walletName = if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) "Demo owner" else app.tally.wallet.Wallets.nameFor(context, who.walletUriBase)
+        g.store.accountLabel = who.label
+        walletName = g.store.walletName
+        accountLabel = who.label
+        schedule = g.store.schedule
+        ownerAddress = who.address
+        logVersion++
         refreshNow()
+        toast = "Signed in with $walletName" + (who.label?.let { " · $it" } ?: "")
+    }
+
+    /**
+     * Sign out: the wallet revokes Tally's access, this account's receipts and rewards are set aside
+     * on the phone (they come back if the same wallet signs in again), and the app returns to the
+     * welcome screen. The capsule and its money stay on chain, untouched.
+     */
+    suspend fun disconnect() = work("Signing out") {
+        val o = ownerAddress
+        runCatching { owner.disconnect() }
+        if (o != null) g.store.signOut(o) else g.store.ownerAddress = null
+        ownerAddress = null
+        walletName = null
+        accountLabel = null
+        capsule = null
+        vaultBalance = 0
+        sgt = null
+        promoClaimed = false
+        payload = null
+        merchant = null
+        agentResult = null
+        payResult = null
+        pendingCosign = null
+        redTeam = emptyList()
+        cancelReorder()
+        schedule = null
+        logVersion++
+        screen = Screen.Home
     }
 
     suspend fun refresh() = work("Refreshing") { refreshNow() }
@@ -232,6 +271,27 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         owner.signAndSend(listOf(TallyIx.updateRules(o, cap, r)), g.rpc)
         refreshNow()
         screen = Screen.Home
+    }
+
+    /** Today's daily cap from the owner's schedule, when the capsule on chain doesn't match it yet. */
+    var schedule by mutableStateOf(g.store.schedule)
+    val scheduleDue: Long?
+        get() = capsule?.let { c -> schedule?.due(c.dailyCap, java.time.LocalDate.now().dayOfWeek) }
+
+    fun saveSchedule(v: app.tally.core.AllowanceSchedule?) {
+        g.store.schedule = v
+        schedule = v
+    }
+
+    /** Sign today's scheduled cap: same rules, new daily cap (and a per-payment cap no higher than it). */
+    suspend fun applySchedule() = work("Waiting for your wallet") {
+        val o = ownerAddress ?: return@work
+        val c = capsule ?: return@work
+        val target = schedule?.due(c.dailyCap, java.time.LocalDate.now().dayOfWeek) ?: return@work
+        val r = app.tally.core.Rules(schedule!!.perTxFor(c.perTxCap, target), target, c.allowedCategories, c.minMerchantBond, c.expirySlot, flags = c.flags and 1)
+        owner.signAndSend(listOf(TallyIx.updateRules(o, capsuleAddress!!, r)), g.rpc)
+        refreshNow()
+        toast = "Today's allowance enabled: \$${app.tally.core.usdc(target)} a day."
     }
 
     suspend fun fund(amountMicro: Long) = work("Waiting for Seed Vault") {
