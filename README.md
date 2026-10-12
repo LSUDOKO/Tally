@@ -2,7 +2,8 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-lockup-dark.png">
-  <img src="docs/brand/app-icon-512.png" alt="Tally" width="120">
+  <source media="(prefers-color-scheme: light)" srcset="docs/brand/logo-lockup-light.png">
+  <img src="docs/brand/logo-lockup-light.png" alt="Tally" width="460">
 </picture>
 
 ### Let your agent pay, only for what tallies.
@@ -37,12 +38,22 @@ Caps answer *how much*. Allowlists answer *to whom*. **Tally answers *which item
 
 ## See it
 
-Real recordings from a Moto G34 with Solflare on devnet (waits sped up, nothing staged).
+Real recordings from a Moto G34 with Solflare on devnet. Waits are sped up; nothing is staged.
 
 <table>
 <tr>
-<td align="center" width="50%"><img src="docs/images/readme/tally-pay.gif" alt="Telegram offer to Paid 4.50 USDC" width="340"><br><b>Telegram → Paid</b><br><sub>Ask TallyBot for an oat latte. It finds the cheapest match your rules allow and hands it to the app; one tap, the chain checks it, Paid 4.50 USDC.</sub></td>
-<td align="center" width="50%"><img src="docs/images/readme/tally-secondlook.gif" alt="Second Look approved in Solflare, Paid 5.90 USDC" width="340"><br><b>Second Look → Paid</b><br><sub>The large latte is pricier than the cheapest match, so Tally stops for your signature. Approved in Solflare, Paid 5.90 USDC.</sub></td>
+<td align="center" width="33%"><img src="docs/images/readme/tally-pay.gif" alt="Telegram offer to Paid 4.50 USDC" width="260"><br><b>Telegram → Paid</b><br><sub>TallyBot finds the cheapest match your rules allow; one tap, the chain checks it, Paid 4.50 USDC.</sub></td>
+<td align="center" width="33%"><img src="docs/images/readme/tally-secondlook.gif" alt="Second Look approved in Solflare, Paid 5.90 USDC" width="260"><br><b>Second Look → Paid</b><br><sub>The large latte is pricier than the cheapest match, so Tally waits for your signature in Solflare.</sub></td>
+<td align="center" width="33%"><img src="docs/images/readme/tally-scan.gif" alt="Camera scan of the counter QR, then pay" width="260"><br><b>Scan → pay</b><br><sub>The camera reads the counter's signed menu, the agent picks the cheapest match, Tally pays and notifies you.</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/images/readme/tally-signin.gif" alt="Sign out, then sign in with Solflare" width="260"><br><b>Sign in with your wallet</b><br><sub>Sign out, pick Solflare from the phone's wallets, Sign in with Solana, back Home.</sub></td>
+<td align="center"><img src="docs/images/readme/tally-redteam.gif" alt="Red team: four attacks reverted on devnet" width="260"><br><b>Red team</b><br><sub>Four attacks against your own agent, each sent to devnet and reverted.</sub></td>
+<td align="center"><img src="docs/images/readme/tally-allowance.gif" alt="Weekday allowance applied in Solflare" width="260"><br><b>Weekday allowance</b><br><sub>$25 on weekdays, $5 at weekends; Home asks the wallet once when the day type changes.</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/images/readme/tally-merchant.gif" alt="Merchant mode: signed-menu QR and Solana Pay QR" width="260"><br><b>Merchant mode</b><br><sub>The same APK runs the counter: a live signed-menu QR, plus a Solana Pay QR for any wallet.</sub></td>
+<td></td><td></td>
 </tr>
 </table>
 
@@ -62,8 +73,10 @@ Real recordings from a Moto G34 with Solflare on devnet (waits sped up, nothing 
 ## Screens
 
 <p align="center"><img src="docs/images/readme/screens-gallery.jpg" alt="Tally screens: Home, wallet sign-in, checkout, Paid, Second Look" width="100%"></p>
+<p align="center"><img src="docs/images/readme/screens-gallery-2.jpg" alt="Tally screens: Welcome, Sign out, Solflare sign-in, Rewards, Receipts" width="100%"></p>
+<p align="center"><img src="docs/images/readme/screens-gallery-3.jpg" alt="Tally screens: Red team, Merchant mode, Solana Pay QR, Telegram alert, Settings" width="100%"></p>
 
-More real screens: [Telegram offer](docs/images/readme/screens/telegram.jpg) · ["Was this you?"](docs/images/readme/screens/alert.jpg) · [Red team](docs/images/readme/screens/redteam.jpg) · [Receipts](docs/images/readme/screens/receipts.jpg) · [Rewards](docs/images/readme/screens/rewards.jpg) · [Settings](docs/images/readme/screens/settings.jpg) · [Weekday allowance](docs/images/readme/screens/allowance.jpg) · [Signed-menu QR](docs/images/readme/screens/menuqr.jpg) · [Solana Pay QR](docs/images/readme/screens/solanapay.jpg) · [Camera scan](docs/images/readme/screens/scan.jpg)
+Single screens: [Welcome](docs/images/readme/screens/welcome.jpg) · [Wallet picker](docs/images/readme/screens/signin.jpg) · [Solflare sign-in](docs/images/readme/screens/solflare_signin.jpg) · [Account card](docs/images/readme/screens/account.jpg) · [Sign out](docs/images/readme/screens/signout.jpg) · [Home](docs/images/readme/screens/home.jpg) · [Telegram offer](docs/images/readme/screens/telegram.jpg) · [Checkout](docs/images/readme/screens/checkout.jpg) · [Paid](docs/images/readme/screens/paid.jpg) · [Second Look](docs/images/readme/screens/secondlook.jpg) · ["Was this you?"](docs/images/readme/screens/alert.jpg) · [Red team](docs/images/readme/screens/redteam.jpg) · [Receipts](docs/images/readme/screens/receipts.jpg) · [Rewards](docs/images/readme/screens/rewards.jpg) · [Settings](docs/images/readme/screens/settings.jpg) · [Weekday allowance](docs/images/readme/screens/allowance.jpg) · [Signed-menu QR](docs/images/readme/screens/menuqr.jpg) · [Solana Pay QR](docs/images/readme/screens/solanapay.jpg) · [Camera scan](docs/images/readme/screens/scan.jpg)
 
 ## Features
 
@@ -269,7 +282,10 @@ Tally combines what five 2026 papers found ([docs/03](docs/03-research-foundatio
 
 ## Brand kit
 
-<img src="docs/brand/logo-lockup-dark.png" alt="Tally logo lockup" width="280">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-lockup-dark.png">
+  <img src="docs/brand/logo-lockup-light.png" alt="Tally logo lockup" width="280">
+</picture>
 
 Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the logo lockup, mark, wordmark, app icon, mascot, palette and rules.
 
