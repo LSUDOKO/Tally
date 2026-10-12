@@ -56,6 +56,9 @@ enum class MenuIssue { BadSignature, RootMismatch, ItemCountMismatch, NotYetVali
 
 /** Wire format shared by QR and NFC (docs/07): a compact CBOR map. */
 object Payload {
+    /** How far apart two healthy RPC nodes' slots can be (~8 s). */
+    const val RPC_SLOT_SKEW = 20L
+
     const val QR_PREFIX = "TALLY:V1:"
 
     @Serializable
@@ -121,7 +124,9 @@ object Payload {
         if (!m.signerPubkey.contentEquals(registeredSigningKey) || !Ed25519.verify(registeredSigningKey, m.header, m.signature)) issues += MenuIssue.BadSignature
         if (!MerkleTree(m.items.map(Menu::leafHash)).root().contentEquals(m.root)) issues += MenuIssue.RootMismatch
         if (m.itemCount != m.items.size) issues += MenuIssue.ItemCountMismatch
-        if (currentSlot < m.issuedSlot) issues += MenuIssue.NotYetValid
+        // Counters and phones read the slot from different RPC nodes, a few slots apart; a menu is only
+        // "from the future" beyond that. The program checks the real slot when the payment lands.
+        if (currentSlot + RPC_SLOT_SKEW < m.issuedSlot) issues += MenuIssue.NotYetValid
         if (currentSlot > m.expiresSlot) issues += MenuIssue.Expired
         if (m.window > Tally.MAX_AUTONOMOUS_WINDOW) issues += MenuIssue.ExtendedWindow
         if (m.window > 9_000) issues += MenuIssue.WindowTooLong

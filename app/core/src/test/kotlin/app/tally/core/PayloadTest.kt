@@ -51,7 +51,7 @@ class PayloadTest {
         val p = signed()
         assertTrue(MenuIssue.BadSignature in Payload.verifyLocally(p, Ed25519.publicKey(ByteArray(32) { 9 }), 1050))
         assertTrue(MenuIssue.Expired in Payload.verifyLocally(p, Ed25519.publicKey(seed), 1101))
-        assertTrue(MenuIssue.NotYetValid in Payload.verifyLocally(p, Ed25519.publicKey(seed), 999))
+        assertTrue(MenuIssue.NotYetValid in Payload.verifyLocally(p, Ed25519.publicKey(seed), 1000 - Payload.RPC_SLOT_SKEW - 1))
         assertTrue(MenuIssue.ExtendedWindow in Payload.verifyLocally(signed(1000, 1200), Ed25519.publicKey(seed), 1050))
     }
 
@@ -71,5 +71,14 @@ class PayloadTest {
         org.junit.jupiter.api.Assertions.assertFalse(Payload.sameOffer(old, changed))
         val renamed = SignedPayload(old.menu, listOf("Oat latte (REGULAR)", "Oat latte (large)", "Croissant"), old.descriptions)
         org.junit.jupiter.api.Assertions.assertFalse(Payload.sameOffer(old, renamed))
+    }
+
+    @Test
+    fun aCounterOnAFasterRpcIsNotTreatedAsStale() {
+        // The counter's RPC can run a few slots ahead of the phone's; only a menu clearly from the
+        // future is "not yet valid" (the chain still checks the real slot when the payment lands).
+        val key = Ed25519.publicKey(seed)
+        assertTrue(Payload.verifyLocally(signed(1000, 1150), key, 995).isEmpty())
+        assertTrue(MenuIssue.NotYetValid in Payload.verifyLocally(signed(1000, 1150), key, 970))
     }
 }
