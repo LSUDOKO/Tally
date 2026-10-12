@@ -1,0 +1,5 @@
+# Maintainer reviews every change; the program and its tests need extra care.
+*                     @LSUDOKO
+/programs/            @LSUDOKO
+/crates/              @LSUDOKO
+/tests/litesvm/       @LSUDOKO
