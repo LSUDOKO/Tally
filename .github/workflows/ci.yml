@@ -68,7 +68,7 @@ jobs:
         with:
           packages: platform-tools
       - run: yes | sdkmanager --licenses > /dev/null; sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Core tests (byte parity with Rust and the TS SDK)
         working-directory: app
         run: ./gradlew :core:test --console=plain
