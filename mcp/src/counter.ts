@@ -17,7 +17,7 @@ export const CATALOG: Array<[string, number, bigint]> = [
 ];
 
 const WINDOW = 120n; // slots (~48 s): autonomous payments refuse longer-lived menus
-const RESIGN_BELOW = 40n; // re-sign when fewer slots than this remain (~16 s)
+const RESIGN_BELOW = 100n; // re-sign when fewer slots than this remain (~40 s), so a menu handed to a chat or agent still has time to reach the app
 
 export interface CounterMenu {
   payload: MenuPayload;
