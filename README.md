@@ -22,11 +22,30 @@ A Solana program checks every payment, and anything else reverts.
 
 Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
+**▶ [Watch the demo video](https://youtu.be/Bj0FDTXTpZA)** · **[Verify it yourself](docs/VERIFY.md)** · **[Download the APK (v1.2.0)](https://github.com/LSUDOKO/Tally/releases/download/v1.2.0/tally-v1.2.0-devnet.apk)**
+
 [Whitepaper](docs/00-whitepaper.md) · [v3 plan](docs/24-v3-plan.md) · [Brand kit](docs/brand/README.md) · [Threat model](docs/11-threat-model.md) · [Test suite map](tests/litesvm/THREAT_SUITE.md) · [Demo script](docs/14-demo-script.md) · [Real-phone run](docs/21-real-phone-run.md)
 
 </div>
 
 ---
+
+## Demo video
+
+[![Watch the Tally demo on YouTube](https://img.youtube.com/vi/Bj0FDTXTpZA/maxresdefault.jpg)](https://youtu.be/Bj0FDTXTpZA)
+
+## Verify it yourself
+
+Every claim here maps to something you can run, open on the explorer, or read in the code. **[docs/VERIFY.md](docs/VERIFY.md)** has the full audit trail. In short:
+
+| Claim | How to check it |
+|---|---|
+| The program is deployed and enforces ten invariants | [Program on Explorer](https://explorer.solana.com/address/3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk?cluster=devnet) · [code map](docs/VERIFY.md#4-code-map-the-ten-invariants) |
+| Attacks revert with exact errors | [Payee swap, 2001](https://explorer.solana.com/tx/4eCo3iQviYdcfnjLxqyETCoWZTCqFskQX3uBieXeEeR9vNfVPVwK2wcQnEQ75As8p7Qw6TkyvmejuAtLN6XBvPCE?cluster=devnet) · [phantom add-on, 6009](https://explorer.solana.com/tx/4oot9a8F18zqqAFXjK6ntL7uKEh8s93LuaMMBqqb5shNwtqbUE8GUdsQpaghyAjH7sosj2wdoRm6yPDwbsxDx8NS?cluster=devnet) · [all evidence](#on-chain-evidence-devnet) |
+| It all builds and passes tests | [CI on every push](https://github.com/LSUDOKO/Tally/actions/workflows/ci.yml): 155 Rust · 19 TS · 97 Kotlin · 16 cloud, [commands and expected counts](docs/VERIFY.md#2-run-the-tests-expected-counts) |
+| It runs on a real phone with a real wallet | [Demo video](https://youtu.be/Bj0FDTXTpZA) · [APK v1.2.0](https://github.com/LSUDOKO/Tally/releases/tag/v1.2.0) · [co-signed in Solflare on devnet](https://explorer.solana.com/tx/58ePPqG3hK7TWYzXYtsoJXn5iSaNYX2tN8R67uzRhs2TA3esUx8Nb1CQPNqoAag7bxhcTwg2fgNWKLtzBbaHEGyD?cluster=devnet) |
+
+**Shipped vs. not:** the program, app, merchant mode and cloud are shipped and on devnet. The research numbers below (73.3%, 140 → 0) are **other teams' published results** that motivated the design, not our measurements. **Not done yet:** a security audit, mainnet, and merchant pilots ([honest status](docs/VERIFY.md#6-merchant-adoption-honest-status)). On devnet, SKR and the Seeker Genesis Token are mock mints from our faucet.
 
 ## Why
 
