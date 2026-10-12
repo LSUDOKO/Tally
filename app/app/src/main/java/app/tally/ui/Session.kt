@@ -455,11 +455,13 @@ class Session(val context: Context, private val mwaOwner: Owner) {
      * The current menu if it is still comfortably live. In debug loopback (this phone is the merchant)
      * an expiring menu is simply re-signed; otherwise null means "scan the counter again".
      */
-    private suspend fun livePayload(): SignedPayload? {
+    private suspend fun livePayload(minSlotsLeft: Long = 0): SignedPayload? {
         val p = payload ?: return null
         val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
-        if (Purchase.gate(slot, p.menu.expiresSlot) != Purchase.Gate.Rescan) return p
+        val live = Purchase.gate(slot, p.menu.expiresSlot) != Purchase.Gate.Rescan
+        if (live && p.menu.expiresSlot - slot >= minSlotsLeft) return p
         counterRefresh(p, slot)?.let { fresh -> payload = fresh; g.store.lastPayloadQr = Payload.toQr(fresh); return fresh }
+        if (live) return p
         val own = ownerAddress?.takeIf { BuildConfig.DEMO_OWNER_ALLOWED && p.menu.merchant == TallyPda.merchant(it) } ?: return null
         return signOwnMenu(own, slot).also { payload = it }
     }
@@ -600,7 +602,7 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         val pc = pendingCosign ?: return@work
         pendingCosign = null
         // A person reading Second Look can outlast the menu's short window; never co-sign a stale menu.
-        val p = livePayload() ?: run {
+        val p = livePayload(minSlotsLeft = COSIGN_SLOTS) ?: run {
             toast = "That menu expired while you were reviewing. Scan the counter again."
             screen = Screen.Scan
             return@work
@@ -640,6 +642,12 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         refreshNow()
         return r
     }
+
+    /**
+     * A co-signed payment waits on a person in their wallet (unlock, read, slide), often 10–20 s, so it
+     * starts only on a menu with ~30 s left; otherwise the counter's identical fresh menu is used.
+     */
+    private val COSIGN_SLOTS = 75L
 
     /** Raised by the notification or widget Freeze button; the owner still confirms in the wallet. */
     var askFreeze by mutableStateOf(false)
