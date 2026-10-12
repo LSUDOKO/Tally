@@ -21,3 +21,4 @@ app/.kotlin/
 
 # Design references from other apps (not our brand assets)
 iassets/image*.png
+.playwright-mcp/
