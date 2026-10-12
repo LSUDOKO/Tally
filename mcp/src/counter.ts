@@ -16,8 +16,8 @@ export const CATALOG: Array<[string, number, bigint]> = [
   ['Day pass', 4, 9_000_000n],
 ];
 
-const WINDOW = 120n; // slots (~48 s): autonomous payments refuse longer-lived menus
-const RESIGN_BELOW = 100n; // re-sign when fewer slots than this remain (~40 s), so a menu handed to a chat or agent still has time to reach the app
+const WINDOW = 150n; // slots (~60 s): the longest window the program lets an agent pay on its own
+const RESIGN_BELOW = 120n; // re-sign while at least ~48 s remain, so a menu handed to a chat, agent or camera has time to reach the app
 
 export interface CounterMenu {
   payload: MenuPayload;
