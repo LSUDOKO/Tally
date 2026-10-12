@@ -568,15 +568,15 @@ class Session(val context: Context, private val mwaOwner: Owner) {
     suspend fun approveCosign() = work("Waiting for Seed Vault") {
         val pc = pendingCosign ?: return@work
         pendingCosign = null
-        val before = payload
         // A person reading Second Look can outlast the menu's short window; never co-sign a stale menu.
         val p = livePayload() ?: run {
             toast = "That menu expired while you were reviewing. Scan the counter again."
             screen = Screen.Scan
             return@work
         }
-        val wire = if (p === before) pc.wire else agentSignedPay(p, pc.index, ownerSigns = true).second
-        android.util.Log.i("Tally", "co-signing item ${pc.index} (${p.names[pc.index]}), menu ${if (p === before) "unchanged" else "re-signed"}")
+        // Always a fresh blockhash at the moment the owner approves: reading Second Look takes time.
+        val wire = agentSignedPay(p, pc.index, ownerSigns = true).second
+        android.util.Log.i("Tally", "co-signing item ${pc.index} (${p.names[pc.index]}), fresh blockhash")
         when (val c = owner.cosign(wire)) {
             is Cosigned.Signed -> submit(c.wire, p.names[pc.index], p.menu.items[pc.index], attack = false)
             is Cosigned.Sent -> submit(null, p.names[pc.index], p.menu.items[pc.index], attack = false, sentBy = c.signature)
@@ -597,7 +597,9 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         val (sig, outcome) = if (sentBy != null) sentBy to g.submitter.awaitOutcome(sentBy) else g.submitter.sendAndConfirm(wire!!, land = land)
         val r = when (outcome) {
             is Outcome.Confirmed -> PayResult(true, "Paid ${usdc(item.price)} USDC", "$name — straight to ${merchant?.name ?: "the merchant"}'s registered account.", sig)
-            is Outcome.Reverted -> PayResult(false, "Blocked on-chain", outcome.sentence, sig)
+            // No signature and no program error: the network refused it before the program ran.
+            is Outcome.Reverted -> if (sig == null && outcome.code == null) PayResult(false, "Not sent", "The network turned it away before it reached Tally's program, so nothing moved. Try again. (${outcome.sentence})", null)
+                else PayResult(false, "Blocked on-chain", outcome.sentence, sig)
             is Outcome.Pending -> PayResult(false, "Still confirming", "The network is slow; check Receipts in a moment.", sig)
         }
         val receipt = payload?.let { pl -> capsuleAddress?.let { TallyPda.receipt(it, pl.menu.merchant, pl.menu.menuNonce, item.id) } }

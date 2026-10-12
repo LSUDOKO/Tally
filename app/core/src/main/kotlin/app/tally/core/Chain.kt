@@ -53,8 +53,13 @@ class Rpc(private val transport: (String) -> String) {
 
     fun getSlot(): Long = call("getSlot", cfg("commitment" to "confirmed")).jsonPrimitive.long
 
+    /**
+     * Finalized, not just confirmed: load-balanced RPCs (and the wallet's own RPC, which simulates a
+     * co-signed transaction) may not have seen a block that is only confirmed yet, and reject it as
+     * "Blockhash not found". A finalized blockhash still leaves ~45 s of validity.
+     */
     fun getLatestBlockhash(): String =
-        call("getLatestBlockhash", cfg("commitment" to "confirmed")).jsonObject["value"]!!.jsonObject["blockhash"]!!.jsonPrimitive.content
+        call("getLatestBlockhash", cfg("commitment" to "finalized")).jsonObject["value"]!!.jsonObject["blockhash"]!!.jsonPrimitive.content
 
     fun getBalance(address: String): Long = call("getBalance", str(address), cfg("commitment" to "confirmed")).jsonObject["value"]!!.jsonPrimitive.long
 
