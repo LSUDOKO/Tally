@@ -1,10 +1,31 @@
 # Changelog
 
-All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; nothing here is audited or meant for mainnet funds.
+All notable changes to Tally. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/). Dates are UTC. Tally runs on Solana devnet only; nothing here is audited or meant for mainnet funds.
 
-## Unreleased
+## [Unreleased]
 
 ### Added
+- [docs/VERIFY.md](docs/VERIFY.md): a reviewer's audit guide (shipped vs. research, test commands with expected counts, explorer evidence, a code map of the ten invariants, merchant status).
+- Community files: Code of Conduct, contributing guide, security policy, issue and pull request templates.
+
+## [1.2.0] - 2026-10-12
+
+### Fixed
+- A freshly started wallet could open with nothing to sign because it rejected Tally's saved session; Tally now re-authorizes once, and wallet errors read as sentences.
+- Second Look co-signing: finalized blockhashes, a fresh one at approval, sends past a lagging preflight node and rebroadcast until confirmed; a co-signed payment only starts on a menu with about 30 s left.
+- An offer opened after its window (for example from Telegram) now uses the counter's identical fresh menu instead of failing as "not fresh".
+- Menus signed on a faster RPC node are no longer flagged "not yet valid" (a few slots of skew are tolerated).
+
+### Changed
+- Tally cloud signs menus with the full 150-slot window, issues them 10 slots in the past and re-signs below 110 slots left.
+
+## [1.1.0] - 2026-10-12
+
+### Added
+- **Wallet sign-in** (Sign In With Solana through Mobile Wallet Adapter) with a wallet picker, remembered session, **Sign out** and **Switch**; receipts and points kept per account.
+- **Payment alerts in Telegram** through Helius webhooks and [@Tally_Sol_Bot](https://t.me/Tally_Sol_Bot).
+- **Counter places**: Google Maps name, address, rating and photo at checkout and in the counter directory.
+- **Weekday / weekend allowance**, **App lock**, **fee balance in dollars**, **CSV export**, **spend by category**, **counter directory**, **Solana Pay QR** in merchant mode.
 - **Tally Points, streaks and levels**: points only from settled on-chain receipts (no self-dealing, disputes or red-team runs), a streak multiplier up to 1.5×, 2× for Seeker capsules; levels give the mascot auras, a crown and a halo, with a level-up celebration.
 - **My usual**: one-tap reorder that stops on any change (price, item, counter) and explains it.
 - **Multi-item cart**: reviewed as a whole against per-purchase, daily and vault limits; each item settles as its own checked transaction.
@@ -13,6 +34,7 @@ All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; n
 - **Tally MCP server** (`mcp/`): verified menus, rules, offers, purchase proposals (QR and `tally://` link) and payment lookups for any MCP client; it cannot pay or change anything. The app accepts proposals by QR or link.
 - **Brand redesign**: cobalt glass UI, Playfair Display and Plus Jakarta Sans, the animated Tally mascot, launcher icon, splash and widget.
 
+## [1.0.0] - 2026-10-09
 
 ### Added
 - **Groq-hosted agent** (`openai/gpt-oss-120b`) in place of the Anthropic SDK. The key is entered in Settings and kept in app-private storage, never built into the APK. Calls are capped at 30 a day and 1,024 tokens each; past the allowance the deterministic rule agent decides.
@@ -59,3 +81,8 @@ All notable changes to Tally. Dates are UTC. Tally runs on Solana devnet only; n
 - Anchor program enforcing ten `pay_offer` invariants: signed-menu membership, hardened Ed25519 introspection, freshness window, Cheapest-Match rule, bond tier, receipt nullifier, exact-delta transfer, payee from the registry, caps and categories, and an optional exact Lighthouse assertion.
 - SKR merchant bonds with fraud-proof slashing, arbiter disputes, Seeker Genesis Token check, proof-of-work anti-flood gate.
 - LiteSVM threat-model suite asserting each attack's exact revert code.
+
+[Unreleased]: https://github.com/LSUDOKO/Tally/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/LSUDOKO/Tally/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/LSUDOKO/Tally/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/LSUDOKO/Tally/releases/tag/v1.0.0
