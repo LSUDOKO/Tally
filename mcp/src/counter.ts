@@ -17,7 +17,8 @@ export const CATALOG: Array<[string, number, bigint]> = [
 ];
 
 const WINDOW = 150n; // slots (~60 s): the longest window the program lets an agent pay on its own
-const RESIGN_BELOW = 120n; // re-sign while at least ~48 s remain, so a menu handed to a chat, agent or camera has time to reach the app
+const SLOT_SKEW = 10n; // ~4 s
+const RESIGN_BELOW = 110n; // re-sign while at least ~48 s remain, so a menu handed to a chat, agent or camera has time to reach the app
 
 export interface CounterMenu {
   payload: MenuPayload;
@@ -54,7 +55,10 @@ export class Counter {
   }
 
   private async sign(slot: bigint): Promise<CounterMenu> {
-    const menu = await signMenu({ merchant: this.merchant, issuedSlot: slot, expiresSlot: slot + WINDOW, menuNonce: this.nonce++, items: this.items }, this.secret);
+    // Phones read the slot from other RPC nodes, which can trail this one by a few slots; issue the
+    // menu slightly in the past so it is already valid wherever it is scanned.
+    const issuedSlot = slot - SLOT_SKEW;
+    const menu = await signMenu({ merchant: this.merchant, issuedSlot, expiresSlot: issuedSlot + WINDOW, menuNonce: this.nonce++, items: this.items }, this.secret);
     const payload: MenuPayload = { menu, names: CATALOG.map((c) => c[0]), descriptions: CATALOG.map(() => null) };
     const qr = toQr(payload);
     const json = JSON.stringify({
