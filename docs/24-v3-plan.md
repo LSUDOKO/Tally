@@ -18,16 +18,17 @@ Each item says what it needs. "No key" items ship without anything from the main
 | **Spending by category** | The weekly card splits spend into coffee / food / transit from the receipts on the phone. | Rewards |
 | **Scheduled allowance** | One daily cap on weekdays, another at weekends. Home asks for one wallet approval when the day type changes; the program enforces whatever is signed. | Settings → Allowance schedule |
 | **Counter directory** | Every registered counter read from the program's accounts, with bond size and slash history, before you ever scan. | Scan |
+| **Telegram payment alerts (Helius)** | `/wallet` gives the chat its own Helius webhook on the capsule's vault: every purchase, top-up and withdrawal arrives as a message naming the counter, with a pointer to freeze in the app, even with Tally closed. The cloud also reads chain through Helius RPC. | Telegram bot, Tally cloud (`HELIUS_API_KEY`) |
+| **Counter places (Google Places)** | The counter's Maps name, address, rating and photo at checkout and in the directory. The key stays on the cloud; a name match is labelled as one, and `PLACE_PINS` marks a confirmed place. | Checkout, Scan (`GOOGLE_PLACES_KEY`) |
+| **Telegram payment alerts (Helius)** | `/wallet` gives the chat its own Helius webhook on the capsule's vault: every purchase, top-up and withdrawal arrives as a message naming the counter, with a pointer to freeze in the app, even with Tally closed. The cloud also reads chain through Helius RPC. | Telegram bot, Tally cloud (`HELIUS_API_KEY`) |
+| **Counter places (Google Places)** | The counter's Maps name, address, rating and photo at checkout and in the directory. The key stays on the cloud; a name match is labelled as one, and `PLACE_PINS` marks a confirmed place. | Checkout, Scan (`GOOGLE_PLACES_KEY`) |
 | **Share a capsule's rules** | A read-only page (`/c/<owner>`) on Tally cloud with a capsule's rules, plus the bot's `/share`. | Tally cloud, Telegram |
 
 ## Needs something from the maintainer
 
 | Integration | Why | What's needed | Where it goes |
 | --- | --- | --- | --- |
-| **Helius** | Faster devnet RPC and **webhooks**, so "Was this you?" can arrive even when the app is closed (the cloud gets the event and pushes to Telegram). | A free Helius API key | Render env `HELIUS_API_KEY`; app Settings → RPC URL |
-| **Telegram alerts** | The bot messages you when your agent pays (needs Helius webhooks above, or a polling worker). | Same key; the bot token is already set | `mcp/src/bot.ts` |
 | **Dialect** | In-wallet notifications for Solflare/Phantom users instead of Telegram. | Dialect dapp registration | Cloud |
-| **Google Places** | Show the counter's real name, address and photo next to the merchant address. | Places API key | App (Checkout, Receipts) |
 | **Mainnet** | USDC on mainnet, a real SKR bond. | A funded deployer key, an audit | `programs/` deploy |
 | **Play Store / Solana dApp Store** | Distribution. | Developer accounts | `docs/13-hackathon-requirements.md` |
 

@@ -15,6 +15,8 @@ data class ClusterConfig(
     val usdcMint: String = "",
     val skrMint: String = "",
     val sgtGroup: String = "",
+    /** Tally cloud: the demo counter, Telegram bot and counter places (Google Places key lives there). */
+    val cloudUrl: String = "https://tally-cloud-b792.onrender.com",
 ) {
     val isReady get() = usdcMint.isNotBlank()
 

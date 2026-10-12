@@ -247,6 +247,7 @@ fun CheckoutScreen(s: Session) {
                 if (p.menu.window <= Tally.MAX_AUTONOMOUS_WINDOW) Chip("Live menu", TallyColors.Accent, Icons.Outlined.Bolt) else Chip("Extended menu", TallyColors.NeedsYou, Icons.Outlined.Schedule)
                 if ((m?.powDifficulty ?: 0) > 0) Chip("Busy: PoW", TallyColors.NeedsYou, Icons.Outlined.Memory)
             }
+            if (s.payResult == null) PlaceCard(s, p.menu.merchant, m?.name ?: "")
             // The outcome leads once there is one: the mascot and the result card, above everything else.
             if (s.payResult != null) Mascot(mood, Modifier.fillMaxWidth(), height = 190.dp, shakeKey = s.payResult?.takeIf { !it.ok })
             s.payResult?.let { r ->

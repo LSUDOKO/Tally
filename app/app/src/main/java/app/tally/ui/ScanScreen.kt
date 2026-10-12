@@ -187,7 +187,8 @@ private fun Directory(s: Session) {
     Card {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Label("Registered counters · ${list.size}")
-            list.take(6).forEach { (_, m) ->
+            list.take(6).forEach { (pda, m) ->
+                LaunchedEffect(pda) { s.loadPlace(pda) }
                 val trusted = m.skrBonded >= minBond && m.slashedTotal == 0L
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconTile(Icons.Outlined.Storefront, if (trusted) TallyColors.Accent else TallyColors.NeedsYou, 36.dp)
@@ -199,6 +200,9 @@ private fun Directory(s: Session) {
                                 (if (m.openDisputes > 0) " · ${m.openDisputes} open dispute${if (m.openDisputes > 1) "s" else ""}" else ""),
                             style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted, maxLines = 1,
                         )
+                        s.places[pda]?.let { place ->
+                            Text("Maps match: ${place.address}", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        }
                     }
                     Chip(if (trusted) "Trusted" else "Check", if (trusted) TallyColors.Paid else TallyColors.NeedsYou)
                 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
 import app.tally.BuildConfig
 import app.tally.agent.AgentResult
 import app.tally.agent.AgentSource
@@ -211,6 +212,21 @@ class Session(val context: Context, private val mwaOwner: Owner) {
                     .sortedByDescending { it.second.skrBonded }
             }.getOrDefault(directory ?: emptyList())
         }
+    }
+
+    /** Google Maps places by merchant address (null = no match), and their photos once loaded. */
+    val places = androidx.compose.runtime.mutableStateMapOf<String, app.tally.chain.Place?>()
+    val placePhotos = androidx.compose.runtime.mutableStateMapOf<String, androidx.compose.ui.graphics.ImageBitmap>()
+
+    suspend fun loadPlace(merchant: String) {
+        if (merchant in places) return
+        val place = withContext(Dispatchers.IO) { runCatching { app.tally.chain.CloudPlaces.lookup(config.cloudUrl, merchant) }.getOrNull() }
+        places[merchant] = place
+        val path = place?.photo ?: return
+        withContext(Dispatchers.IO) {
+            runCatching { app.tally.chain.CloudPlaces.photo(config.cloudUrl, path) }.getOrNull()
+                ?.let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) }
+        }?.let { placePhotos[merchant] = it.asImageBitmap() }
     }
 
     /** True while the chain can't be reached; Home then shows the last snapshot read-only. */

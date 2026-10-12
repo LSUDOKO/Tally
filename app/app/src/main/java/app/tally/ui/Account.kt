@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +21,8 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Icon
@@ -186,6 +189,49 @@ private fun SignOutDialog(s: Session, onDismiss: () -> Unit) {
             Primary("Sign out", { onDismiss(); scope.launch { s.disconnect() } }, color = TallyColors.Blocked, icon = Icons.Outlined.Logout)
             Gap(8)
             Secondary("Cancel", onDismiss)
+        }
+    }
+}
+
+/**
+ * Where this counter is, from Google Maps via Tally cloud. A name match is labelled as one; only a
+ * place a maintainer confirmed says so. The chain, not Google, decides whether Tally pays.
+ */
+@Composable
+fun PlaceCard(s: Session, merchant: String, onChainName: String) {
+    androidx.compose.runtime.LaunchedEffect(merchant) { s.loadPlace(merchant) }
+    if (merchant !in s.places) return
+    val place = s.places[merchant] ?: return
+    val context = s.context
+    Card {
+        Column {
+            s.placePhotos[merchant]?.let { img ->
+                Image(img, contentDescription = place.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(132.dp).clip(RoundedCornerShape(20.dp)))
+                Gap(12)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(Icons.Outlined.Place, TallyColors.Accent, 38.dp)
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(place.name, style = MaterialTheme.typography.titleMedium, color = TallyColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(place.address, style = MaterialTheme.typography.bodySmall, color = TallyColors.Muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Gap(10)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                place.rating?.let { Chip("★ ${"%.1f".format(it)}" + (place.ratings?.let { n -> " · $n" } ?: ""), TallyColors.Accent) }
+                if (place.pinned) Chip("Confirmed location", TallyColors.Paid, Icons.Outlined.Verified)
+                else Chip("Google match for the name", TallyColors.NeedsYou)
+            }
+            Gap(8)
+            Text(
+                if (place.pinned) "Confirmed for this counter on Tally cloud. Tally still pays only on the merchant's on-chain key and bond."
+                else "Best Google Maps match for \"$onChainName\". It may not be this counter: Tally pays on the merchant's on-chain key and bond, never on this.",
+                style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint,
+            )
+            place.mapsUri?.let { uri ->
+                Gap(10)
+                Secondary("Open in Maps", { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }, icon = Icons.Outlined.Map)
+            }
         }
     }
 }
