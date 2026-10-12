@@ -27,8 +27,8 @@ android {
         applicationId = "app.tally"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         manifestPlaceholders["appLabel"] = "Tally"
         buildConfigField("String", "RPC_URL", "\"${localOr("TALLY_RPC_URL", "https://api.devnet.solana.com")}\"")
         buildConfigField("String", "GROQ_API_KEY", "\"${localOr("GROQ_API_KEY", "")}\"")
