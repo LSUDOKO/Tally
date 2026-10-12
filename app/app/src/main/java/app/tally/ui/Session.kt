@@ -450,8 +450,30 @@ class Session(val context: Context, private val mwaOwner: Owner) {
         val p = payload ?: return null
         val slot = withContext(Dispatchers.IO) { g.rpc.getSlot() }
         if (Purchase.gate(slot, p.menu.expiresSlot) != Purchase.Gate.Rescan) return p
+        counterRefresh(p, slot)?.let { fresh -> payload = fresh; g.store.lastPayloadQr = Payload.toQr(fresh); return fresh }
         val own = ownerAddress?.takeIf { BuildConfig.DEMO_OWNER_ALLOWED && p.menu.merchant == TallyPda.merchant(it) } ?: return null
         return signOwnMenu(own, slot).also { payload = it }
+    }
+
+    /**
+     * The owner took longer than the menu's ~60 s window (reading Second Look, approving in the
+     * wallet). If it came from Tally cloud's counter, fetch the counter's current menu and use it only
+     * when it is the same offer, verified against the registered key exactly like a scan.
+     */
+    private suspend fun counterRefresh(old: SignedPayload, slot: Long): SignedPayload? = withContext(Dispatchers.IO) {
+        runCatching {
+            val m = merchant ?: return@runCatching null
+            val req = okhttp3.Request.Builder().url("${config.cloudUrl}/menu.json").build()
+            val body = app.tally.chain.Http.client.newCall(req).execute().use { if (it.isSuccessful) it.body.string() else null } ?: return@runCatching null
+            val qr = kotlinx.serialization.json.Json.parseToJsonElement(body).let { (it as kotlinx.serialization.json.JsonObject)["qr"] }
+                ?.let { (it as kotlinx.serialization.json.JsonPrimitive).content } ?: return@runCatching null
+            val fresh = Payload.fromQr(qr)
+            val ok = Payload.sameOffer(old, fresh) &&
+                Payload.verifyLocally(fresh, Base58.decode(m.signingKey), slot).isEmpty() &&
+                Purchase.gate(slot, fresh.menu.expiresSlot) == Purchase.Gate.Ok
+            android.util.Log.i("Tally", "menu ran out; counter refresh ${if (ok) "used (same offer)" else "refused"}")
+            fresh.takeIf { ok }
+        }.getOrNull()
     }
 
     private fun signOwnMenu(auth: String, slot: Long): SignedPayload {

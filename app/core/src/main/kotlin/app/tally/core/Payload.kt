@@ -101,6 +101,14 @@ object Payload {
 
     fun toQr(p: SignedPayload): String = QR_PREFIX + Base45.encode(encode(p))
 
+    /**
+     * A counter's re-signed menu offers exactly what the owner was looking at: same merchant, same
+     * items (ids, categories, prices, floors) in the same order, same names. Only then may it
+     * replace a menu that ran out while the owner decided.
+     */
+    fun sameOffer(old: SignedPayload, fresh: SignedPayload): Boolean =
+        old.menu.merchant == fresh.menu.merchant && old.menu.items == fresh.menu.items && old.names == fresh.names
+
     fun fromQr(text: String): SignedPayload {
         require(text.startsWith(QR_PREFIX)) { "not a Tally menu" }
         return decode(Base45.decode(text.removePrefix(QR_PREFIX)))

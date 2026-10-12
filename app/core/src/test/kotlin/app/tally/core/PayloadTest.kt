@@ -61,4 +61,15 @@ class PayloadTest {
         val p = SignedPayload(SignedMenu.sign(merchant, 1000, 1100, 1, items, seed), listOf("Drip", "Oat latte"), listOf(null, null))
         assertTrue(MenuIssue.FloorContradiction in Payload.verifyLocally(p, Ed25519.publicKey(seed), 1050))
     }
+
+    @Test
+    fun aReSignedMenuReplacesAnExpiredOneOnlyWhenTheOfferIsIdentical() {
+        val old = signed(1000, 1100)
+        assertTrue(Payload.sameOffer(old, signed(1090, 1240)))
+        val pricier = Menu.computeFloors(listOf(Item(id(0), 3, 4_900_000, 0), Item(id(1), 3, 5_900_000, 0), Item(id(2), 0, 3_000_000, 0)))
+        val changed = SignedPayload(SignedMenu.sign(merchant, 1090, 1240, 43, pricier, seed), rows.map { it.name }, rows.map { it.description })
+        org.junit.jupiter.api.Assertions.assertFalse(Payload.sameOffer(old, changed))
+        val renamed = SignedPayload(old.menu, listOf("Oat latte (REGULAR)", "Oat latte (large)", "Croissant"), old.descriptions)
+        org.junit.jupiter.api.Assertions.assertFalse(Payload.sameOffer(old, renamed))
+    }
 }
