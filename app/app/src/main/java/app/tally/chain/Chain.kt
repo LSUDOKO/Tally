@@ -43,22 +43,33 @@ class Submitter(private val rpc: Rpc) {
      */
     suspend fun sendAndConfirm(wire: ByteArray, land: Boolean = false, timeoutMs: Long = 45_000): Pair<String?, Outcome> =
         withContext(Dispatchers.IO) {
-            val sig = runCatching { rpc.sendTransaction(wire, skipPreflight = land) }.getOrElse { e ->
+            val sig = runCatching { rpc.sendTransaction(wire, skipPreflight = land) }.recoverCatching { e ->
+                // A load-balanced RPC node can trail the one that handed out the blockhash and answer
+                // "Blockhash not found" for a transaction that is still valid; the leader takes it.
+                if (land || !e.message.orEmpty().contains("Blockhash not found")) throw e
+                android.util.Log.w("Tally", "preflight node lacks the blockhash; sending without preflight")
+                rpc.sendTransaction(wire, skipPreflight = true)
+            }.getOrElse { e ->
                 val code = Regex("custom program error: 0x([0-9a-f]+)").find(e.message ?: "")?.groupValues?.get(1)?.toInt(16)
                 android.util.Log.w("Tally", "send rejected: ${e.message}")
                 // Unknown codes keep the node's own words so the cause is never hidden behind a number.
                 val known = code?.let(app.tally.core.ErrorText::sentence)?.takeUnless { it.startsWith("Transaction failed") }
                 return@withContext null to Outcome.Reverted(code, known ?: (e.message ?: "Send failed").take(240))
             }
-            sig to awaitOutcome(sig, timeoutMs)
+            sig to awaitOutcome(sig, timeoutMs, resend = wire)
         }
 
     /** Poll a sent signature until it confirms or reverts (or the timeout passes). */
-    suspend fun awaitOutcome(sig: String, timeoutMs: Long = 45_000): Outcome = withContext(Dispatchers.IO) {
+    suspend fun awaitOutcome(sig: String, timeoutMs: Long = 45_000, resend: ByteArray? = null): Outcome = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
+        var polls = 0
         while (System.currentTimeMillis() - start < timeoutMs) {
             val o = Purchase.outcome(runCatching { rpc.getSignatureStatus(sig) }.getOrNull())
             if (o !is Outcome.Pending) return@withContext o
+            // Rebroadcast the same signed bytes while unconfirmed (idempotent: one signature, one landing).
+            if (resend != null && ++polls % 3 == 0 && System.currentTimeMillis() - start < 30_000) {
+                runCatching { rpc.sendTransaction(resend, skipPreflight = true) }
+            }
             delay(800)
         }
         Outcome.Pending
