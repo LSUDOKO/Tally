@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use Tally or its design in your work, please cite it as below."
+title: "Tally: let your agent pay, only for what tallies"
+abstract: >-
+  An on-chain spending guard for AI agents on Solana. An agent may pay only for an
+  item a merchant signed, at the signed price, to the registered merchant, inside
+  the owner's rules; a Solana program checks every payment and anything else reverts.
+type: software
+authors:
+  - name: "Arpit Singh"
+    alias: LSUDOKO
+repository-code: "https://github.com/LSUDOKO/Tally"
+url: "https://youtu.be/Bj0FDTXTpZA"
+license: MIT
+version: 1.2.0
+date-released: 2026-10-12
+keywords:
+  - solana
+  - solana-mobile
+  - ai-agents
+  - agentic-payments
+  - anchor
+  - android
+  - mobile-wallet-adapter
+  - model-context-protocol
