@@ -93,7 +93,7 @@ export async function merchantName(merchant: string): Promise<string | null> {
   return m.exists ? new TextDecoder().decode(m.data.name).replace(/\0+$/, '') : null;
 }
 
-/** Payout address → merchant name for every registered counter (to name who an agent paid). */
+/** Payout and authority address → merchant name for every registered counter (to name who an agent paid). */
 export async function payoutNames(): Promise<Map<string, string>> {
   const accounts = await retry(() =>
     rpc.getProgramAccounts(TALLY_PROGRAM_ADDRESS, { encoding: 'base64', filters: [{ dataSize: BigInt(getMerchantSize()) }] }).send(),
@@ -101,7 +101,9 @@ export async function payoutNames(): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   for (const a of accounts) {
     const m = getMerchantDecoder().decode(Buffer.from(a.account.data[0], 'base64'));
-    out.set(m.payout, new TextDecoder().decode(m.name).replace(/\0+$/, ''));
+    const name = new TextDecoder().decode(m.name).replace(/\0+$/, '');
+    out.set(m.payout, name);
+    out.set(m.authority, name);
   }
   return out;
 }
