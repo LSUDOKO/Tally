@@ -87,7 +87,7 @@ fun ConnectSheet(s: Session, onDismiss: () -> Unit) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         wallets.forEach { w ->
                             WalletRow(w.bitmap(), null, w.name, "Detected", Icons.Outlined.ChevronRight) {
-                                onDismiss(); scope.launch { s.connect() }
+                                onDismiss(); scope.launch { s.connect(w.name) }
                             }
                         }
                     }
@@ -163,7 +163,7 @@ fun AccountCard(s: Session) {
             }
             Gap(14)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Secondary("Switch", { scope.launch { s.disconnect(); s.connect() } }, Modifier.weight(1f), icon = Icons.Outlined.SwapHoriz)
+                Secondary("Switch", { scope.launch { s.disconnect(); s.choosingWallet = true } }, Modifier.weight(1f), icon = Icons.Outlined.SwapHoriz)
                 Secondary("Sign out", { confirm = true }, Modifier.weight(1f), icon = Icons.Outlined.Logout, color = TallyColors.Blocked)
             }
         }

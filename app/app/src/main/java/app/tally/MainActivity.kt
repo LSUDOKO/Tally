@@ -171,6 +171,7 @@ private fun Root(s: Session, nfc: NfcReader) {
                 BottomBar(s.screen, scanEnabled = s.capsule != null || BuildConfig.APPLICATION_ID.endsWith(".qa")) { s.screen = it }
             }
         }
+        if (s.choosingWallet) app.tally.ui.ConnectSheet(s) { s.choosingWallet = false }
         s.busy?.let { BusyOverlay(it) }
         if (s.locked) LockOverlay(s)
         s.levelUp?.let { lvl -> LevelUpDialog(lvl) { s.levelUp = null } }
@@ -239,7 +240,7 @@ private fun BusyOverlay(label: String) {
 /** A message for the user; the mascot reacts to whether it is good news. */
 @Composable
 private fun Notice(message: String, onDismiss: () -> Unit) {
-    val good = listOf("enabled", "proven", "claimed", "rule-based agent", "Paid", "Signed in").any { message.contains(it, ignoreCase = true) }
+    val good = listOf("enabled", "proven", "claimed", "rule-based agent", "Paid", "Signed in", "saved").any { message.contains(it, ignoreCase = true) }
     Dialog(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().glass().background(TallyColors.Surface.copy(alpha = 0.92f)).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Mascot(if (good) Mood.ThumbsUp else Mood.Confused, Modifier.size(width = 150.dp, height = 140.dp), height = 140.dp)

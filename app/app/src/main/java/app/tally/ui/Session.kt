@@ -154,12 +154,15 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     /** The wallet app and account name the owner signed in with, for the header and Settings. */
     var walletName by mutableStateOf(g.store.walletName)
+    /** The wallet picker is open (from Home's sign-in button or Settings' Switch). */
+    var choosingWallet by mutableStateOf(false)
     var accountLabel by mutableStateOf(g.store.accountLabel)
 
-    suspend fun connect() = work("Waiting for your wallet") {
+    /** [chosen] is the wallet the owner tapped in Tally's sheet; wallets don't always name themselves in the reply. */
+    suspend fun connect(chosen: String? = null) = work("Waiting for your wallet") {
         val who = owner.signIn()
         g.store.signIn(who.address)
-        g.store.walletName = if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) "Demo owner" else app.tally.wallet.Wallets.nameFor(context, who.walletUriBase)
+        g.store.walletName = if (BuildConfig.DEMO_OWNER_ALLOWED && g.store.useDemoOwner) "Demo owner" else chosen ?: app.tally.wallet.Wallets.nameFor(context, who.walletUriBase)
         g.store.accountLabel = who.label
         walletName = g.store.walletName
         accountLabel = who.label

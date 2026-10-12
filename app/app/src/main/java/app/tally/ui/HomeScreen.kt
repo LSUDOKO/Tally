@@ -135,9 +135,7 @@ private fun Welcome(s: Session) {
             )
         }
         Gap(20)
-        var choosing by remember { mutableStateOf(false) }
-        Reveal(210, Modifier.fillMaxWidth()) { Primary("Sign in with wallet", { choosing = true }, icon = Icons.Outlined.AccountBalanceWallet) }
-        if (choosing) ConnectSheet(s) { choosing = false }
+        Reveal(210, Modifier.fillMaxWidth()) { Primary("Sign in with wallet", { s.choosingWallet = true }, icon = Icons.Outlined.AccountBalanceWallet) }
         Gap(8)
         Text("Solflare, Phantom, Backpack or Seed Vault. Your key stays in your wallet; Tally only holds a capped agent key.", style = MaterialTheme.typography.bodySmall, color = TallyColors.Faint, textAlign = TextAlign.Center)
         Gap(18)
