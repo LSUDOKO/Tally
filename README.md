@@ -16,7 +16,9 @@ A Solana program checks every payment, and anything else reverts.
 ![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-1F6BFF)
 ![MCP](https://img.shields.io/badge/MCP-Streamable%20HTTP-1F6BFF)
 ![Devnet](https://img.shields.io/badge/devnet-live-3DBD8C)
-![License](https://img.shields.io/badge/license-MIT-0A3DB8)
+[![Release](https://img.shields.io/github/v/release/LSUDOKO/Tally?color=1F6BFF&label=release)](https://github.com/LSUDOKO/Tally/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-0A3DB8)](LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-0A3DB8)](CODE_OF_CONDUCT.md)
 
 <img src="docs/images/banner.png" alt="Tally: let your agent pay, only for what tallies" width="100%">
 
@@ -308,6 +310,10 @@ Tally combines what five 2026 papers found ([docs/03](docs/03-research-foundatio
 
 Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the logo lockup, mark, wordmark, app icon, mascot, palette and rules.
 
+## Contributing
+
+Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md): the checks CI runs, and the rule that every new on-chain check ships with a test asserting its exact error code. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), and see [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+
 ## License
 
-MIT © LSUDOKO
+[MIT](LICENSE) © LSUDOKO
