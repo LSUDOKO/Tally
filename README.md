@@ -1,22 +1,23 @@
 <div align="center">
 
-<img src="docs/brand/app-icon-512.png" alt="Tally logo" width="120">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-lockup-dark.png">
+  <img src="docs/brand/app-icon-512.png" alt="Tally" width="120">
+</picture>
 
-# Tally
+### Let your agent pay, only for what tallies.
 
-**Let your agent pay, only for what tallies.**
-
-Tally is a Solana Mobile app that lets an AI agent buy coffee, lunch and transit for you, safely. Your agent proposes, the merchant signs its menu, and a Solana program checks every payment against the rules you signed in your wallet. If the agent is talked into a pricier item, a hidden add-on or a different payee, the transaction reverts and nothing moves.
-
-*Spending limits protect your balance. Tally protects your decision.*
-
-<img src="docs/images/banner.png" alt="Tally: let your agent pay, only for what tallies" width="100%">
+An AI agent may pay only for an item a merchant signed, at the signed price, to the registered merchant, inside your rules.<br>
+A Solana program checks every payment, and anything else reverts.
 
 [![CI](https://github.com/LSUDOKO/Tally/actions/workflows/ci.yml/badge.svg)](https://github.com/LSUDOKO/Tally/actions/workflows/ci.yml)
 ![Solana](https://img.shields.io/badge/Solana-Anchor%201.2-1F6BFF)
 ![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-1F6BFF)
 ![MCP](https://img.shields.io/badge/MCP-Streamable%20HTTP-1F6BFF)
+![Devnet](https://img.shields.io/badge/devnet-live-3DBD8C)
 ![License](https://img.shields.io/badge/license-MIT-0A3DB8)
+
+<img src="docs/images/banner.png" alt="Tally: let your agent pay, only for what tallies" width="100%">
 
 Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
@@ -26,24 +27,47 @@ Built for **CLOCK IN, the Solana Mobile Hackathon** (Mobile track)
 
 ---
 
+## Why
+
+AI agents can now pay on our behalf, and today they're protected with spending caps and allowlists. 2026 research shows the real attack is not stealing a large amount. It's **one sentence of merchant text talking the agent into the wrong item**: a pricier listing (steered **73.3%** of the time in *Signing the Transaction but Not the Decision*, arXiv 2609.11757), an add-on nobody showed, or a different payee. Those carts are well-formed, under the cap and signed by an authorised key, so every perimeter check passes. Across 14 models, only a deterministic check outside the model stopped bad transfers: **140 → 0** (APort Vault, arXiv 2609.22076).
+
+Caps answer *how much*. Allowlists answer *to whom*. **Tally answers *which item, at which signed price, from which registered merchant*, and asks you when the agent picks the pricier one.**
+
+*Spending limits protect your balance. Tally protects your decision.*
+
 ## See it
+
+Real recordings from a Moto G34 with Solflare on devnet (waits sped up, nothing staged).
 
 <table>
 <tr>
-<td align="center" width="25%"><img src="docs/images/pay.gif" alt="Pay"><br><b>Pay</b><br><sub>A proposal from outside Tally, one tap, the chain checks it, the notification lands.</sub></td>
-<td align="center" width="25%"><img src="docs/images/redteam.gif" alt="Red team"><br><b>Red team</b><br><sub>Four attacks on your own agent, every one reverted on devnet.</sub></td>
-<td align="center" width="25%"><img src="docs/images/telegram.gif" alt="Telegram"><br><b>Telegram</b><br><sub>The bot finds what your rules allow and hands it to the app. It can never pay.</sub></td>
-<td align="center" width="25%"><img src="docs/images/rewards.gif" alt="Rewards"><br><b>Rewards</b><br><sub>Points only from on-chain receipts; levels change the mascot.</sub></td>
+<td align="center" width="50%"><img src="docs/images/readme/tally-pay.gif" alt="Telegram offer to Paid 4.50 USDC" width="340"><br><b>Telegram → Paid</b><br><sub>Ask TallyBot for an oat latte. It finds the cheapest match your rules allow and hands it to the app; one tap, the chain checks it, Paid 4.50 USDC.</sub></td>
+<td align="center" width="50%"><img src="docs/images/readme/tally-secondlook.gif" alt="Second Look approved in Solflare, Paid 5.90 USDC" width="340"><br><b>Second Look → Paid</b><br><sub>The large latte is pricier than the cheapest match, so Tally stops for your signature. Approved in Solflare, Paid 5.90 USDC.</sub></td>
 </tr>
 </table>
 
-<p align="center"><img src="docs/images/screens.jpg" alt="Tally screens: home, receipts, scan, merchant" width="100%"></p>
+## How it works
 
-Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the mark, wordmark, icon, palette and rules.
+<p align="center"><img src="docs/images/readme/how-it-works.jpg" alt="How Tally works in five steps" width="100%"></p>
 
-## What you get
+1. **You set rules once in your wallet.** Categories, per-purchase and daily caps, merchant bond tier and expiry, in a capsule only your key can change.
+2. **The merchant signs its menu.** A rotating QR or an NFC tap carries a menu signed by the merchant's registered key.
+3. **Your agent proposes the cheapest match.** Behind a context firewall it sees item ids, categories, prices and floors, never merchant prose.
+4. **Tally's program checks every rule on-chain.** One atomic transaction binds three proofs:
+   - **Merchant proof.** A 144-byte menu header signed by the merchant's registered Ed25519 key, plus a Merkle proof for the chosen item.
+   - **Intent proof.** A **capsule** PDA holding your rules, which only your wallet key can change.
+   - **Execution proof.** Instructions-sysvar introspection with hardened Ed25519 offsets, then exact balance post-conditions.
+5. **Paid, or reverted and "Was this you?".** Pricier picks wait for your signature (Second Look); every agent payment sends a notification with a Freeze button.
 
-| | |
+## Screens
+
+<p align="center"><img src="docs/images/readme/screens-gallery.jpg" alt="Tally screens: Home, wallet sign-in, checkout, Paid, Second Look" width="100%"></p>
+
+More real screens: [Telegram offer](docs/images/readme/screens/telegram.jpg) · ["Was this you?"](docs/images/readme/screens/alert.jpg) · [Red team](docs/images/readme/screens/redteam.jpg) · [Receipts](docs/images/readme/screens/receipts.jpg) · [Rewards](docs/images/readme/screens/rewards.jpg) · [Settings](docs/images/readme/screens/settings.jpg) · [Weekday allowance](docs/images/readme/screens/allowance.jpg) · [Signed-menu QR](docs/images/readme/screens/menuqr.jpg) · [Solana Pay QR](docs/images/readme/screens/solanapay.jpg) · [Camera scan](docs/images/readme/screens/scan.jpg)
+
+## Features
+
+| Feature | What it does |
 |---|---|
 | **Sign in with your wallet** | Lists the wallets on your phone (Solflare, Phantom, Backpack, Seed Vault) with their own icons and signs in with Solana. No password, no fee; the session is remembered, and **Sign out** or **Switch** in Settings revokes it. Each account's receipts and points stay separate on a shared phone. |
 | **Capsule** | Your rules (categories, per-purchase and daily caps, merchant bond tier, expiry) and a USDC vault, signed once in Seed Vault. Only your key can change them. |
@@ -63,8 +87,6 @@ Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button 
 
 ### New in v3
 
-<p align="center"><img src="docs/images/v3.jpg" alt="Counter directory, Solana Pay QR, App lock, receipts export" width="100%"></p>
-
 | Feature | Where |
 |---|---|
 | **Wallet sign-in, sign out, switch**: a wallet picker with the phone's real wallets, Sign in with Solana, a remembered session | Home, Settings |
@@ -78,37 +100,19 @@ Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button 
 
 Everything above runs on devnet today. What needs a key and where it lives is in the [v3 plan](docs/24-v3-plan.md).
 
-## The problem
+## Architecture
 
-AI agents can now pay on our behalf, and today they're protected with spending caps and allowlists. 2026 research shows that the real attack is not stealing a large amount. It's **one sentence of merchant text talking the agent into the wrong item**: a pricier listing (steered **73.3%** of the time in *Signing the Transaction but Not the Decision*, arXiv 2609.11757), an add-on nobody showed, or a different payee. Those carts are well-formed, under the cap and signed by an authorised key, so every perimeter check passes.
+<p align="center"><img src="docs/images/readme/architecture.jpg" alt="Tally architecture: phone, Solana program, merchant counter, Tally cloud, outside agents" width="100%"></p>
 
-Caps answer *how much*. Allowlists answer *to whom*. **Tally answers *which item, at which signed price, from which registered merchant*, and asks you when the agent picks the pricier one.**
+- **Phone (Tally app).** Context firewall, agent (Groq-hosted model or rule-based), agent key in Android Keystore; the owner key stays in Seed Vault, Solflare or Phantom and is reached through Mobile Wallet Adapter.
+- **Tally program (Solana).** Capsule and USDC vault, merchant registry with SKR bond, `pay_offer` with ten invariants, receipts. USDC only ever moves to the registered payout.
+- **Merchant counter.** The same APK in Merchant mode: a signed menu over QR and NFC, re-signed every ~20 s, plus a standard Solana Pay QR.
+- **Tally cloud.** MCP server, Telegram bot, Helius webhooks for "Was this you?" alerts, Google Places proxy, the café counter and capsule pages. It can propose and alert; it cannot pay.
+- **Outside agents.** Claude or any MCP client, and Telegram chats, reach the app only as proposals.
 
-## How it works
+Specs: [docs/05](docs/05-architecture.md) (architecture) · [docs/06](docs/06-onchain-program.md) (program).
 
-```mermaid
-flowchart LR
-    subgraph Seeker["Seeker phone (user)"]
-      SV[Seed Vault<br/>owner key] -- MWA 2.x --> APP
-      APP[Tally app] --> FW[Context firewall<br/>structured fields only]
-      FW --> AG[Agent<br/>Groq-hosted model or rule-based]
-      AG -->|item_id| TX[pay_offer tx<br/>agent key in Keystore]
-    end
-    subgraph Counter["Merchant phone (same APK)"]
-      MT[Merchant terminal] -->|signed menu<br/>QR · NFC HCE| APP
-    end
-    TX --> P{{"Tally program<br/>10 invariants"}}
-    P -->|all hold| PAY[USDC → registered payout<br/>+ receipt]
-    P -->|any fails| REV[Revert — nothing moves]
-```
-
-One atomic Solana transaction binds three proofs:
-
-1. **Merchant proof.** A 144-byte menu header signed by the merchant's registered Ed25519 key, plus a Merkle proof for the chosen item.
-2. **Intent proof.** A **capsule** PDA holding your rules (caps, categories, bond tier, expiry), which only your Seed Vault key can change.
-3. **Execution proof.** Instructions-sysvar introspection with hardened Ed25519 offsets, then exact balance post-conditions.
-
-### `pay_offer`: the ten invariants
+## On-chain invariants: `pay_offer`
 
 | # | Invariant | Blocks |
 |---|---|---|
@@ -154,38 +158,9 @@ Free-tier hosting: the first request after ~15 idle minutes takes about 30–50 
 
 The [Tally MCP server](mcp/README.md) lets Claude or any MCP client read a counter's menu (signature verified on-chain), check it against your capsule's rules, and **propose** a purchase as a QR code or `tally://` link. Proposals only pre-fill checkout: you tap to pay, pricier picks still go through Second Look, and the chain re-checks everything. The server has no way to pay, withdraw, change rules or see keys.
 
-## Tests
+## Try it in 5 minutes
 
-| Suite | Count | What it proves |
-|---|---|---|
-| `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
-| `pnpm -C sdk test` | **19** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
-| `./gradlew :core:test` (in `app/`) | **95** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; points, streaks and levels; weekly summary; the usual-order guard; cart limits; agent proposals (including one made by the SDK); the weekday/weekend allowance schedule. One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
-| `pnpm -C mcp test` | **16** | The MCP server's policy (category mask, per-purchase and daily limits with the cycle reset, frozen and expired capsules, approval cases, best match), the Telegram bot, payment-alert wording and Helius webhook handling, and the Places proxy (cache, pins, photo allow-list) |
-
-The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
-
-## On-chain evidence (devnet)
-
-Every claim above can be checked on the explorer. The first six rows come from the scripted demo ([docs/DEVNET.md](docs/DEVNET.md)), the rest from a stock Android phone with Solflare ([docs/21](docs/21-real-phone-run.md)). Program: [`3ofJ…djqk`](https://explorer.solana.com/address/3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk?cluster=devnet).
-
-| What happened | What it proves | Result | Transaction |
-|---|---|---|---|
-| Honest purchase: the agent buys the $4.50 oat latte, the cheapest match | Autonomous payments work: signed menu, cheapest-match rule, payee from the registry. No human tap. | **Paid** | [5X3y…ZwcF](https://explorer.solana.com/tx/5X3yy6tRD3nVwSWK5vFBf3shBMN8hJDksrby8kk1PUyeykkkGZCKY73i16VJta9RfpDA2piYZz7tsFoqYtWZwcF?cluster=devnet) |
-| Payee swap: pay an attacker account instead of the café | The money can only go to the merchant's registered payout. | **Reverted 2001** | [4eCo…vPCE](https://explorer.solana.com/tx/4eCo3iQviYdcfnjLxqyETCoWZTCqFskQX3uBieXeEeR9vNfVPVwK2wcQnEQ75As8p7Qw6TkyvmejuAtLN6XBvPCE?cluster=devnet) |
-| Phantom add-on: a $2.99 "service fee" the café never signed | Only items in the merchant's signed Merkle root can be paid. | **Reverted 6009** | [4oot…x8NS](https://explorer.solana.com/tx/4oot9a8F18zqqAFXjK6ntL7uKEh8s93LuaMMBqqb5shNwtqbUE8GUdsQpaghyAjH7sosj2wdoRm6yPDwbsxDx8NS?cluster=devnet) |
-| Stale menu: replay a QR from 300 slots ago | Menus expire on-chain (≤150 slots), so screenshots can't be replayed. | **Reverted 6007** | [3wmM…JkzH](https://explorer.solana.com/tx/3wmMJMoqVCwAM2kgjktfyZssyCCWhYDTmLzr9o9kjP9EgkTirBhX15gFQVShuKCZCJ9amTtsCbv3rQJcijYHJkzH?cluster=devnet) |
-| Whisper upsell: the agent picks the $5.90 large latte on its own | Anything pricier than the cheapest match needs the owner's signature. | **Reverted 6013** | [8PMb…yszd](https://explorer.solana.com/tx/8PMbmycaGYKJr17VPQCEkqyn7qaR7uapAWH6pT5oXEGG45wor122am1M7RR8tEkPiXdATcRdRSkbroHRrXcyszd?cluster=devnet) |
-| The owner approves that large latte | With the owner's co-signature the same purchase goes through. | **Paid** | [56gB…mMH7](https://explorer.solana.com/tx/56gBBA1r2CyJZ12f9udR8Mt9NJcrw11M84R2JBCc5qehkKo33VqSL4qRKcRV8g5LDSXpk5s6js6o3AX7C7rrmMH7?cluster=devnet) |
-| Real phone, Solflare: create the capsule with rules and $20 | The owner key stays in the wallet; the app only proposes. | **Created** | [3ZjM…4jDY](https://explorer.solana.com/tx/3ZjM6LwXft7CFAy9V7sib1MnhP1VYv9vgevLPZ6vni1piAz6KRPfUhvXAMpA8f5Wk3tNoZUsQA7LcKTnbuAL4jDY?cluster=devnet) |
-| Real phone: the Groq agent buys the $4.50 latte | The hosted agent, behind the context firewall, pays without a human. | **Paid** | [5KFt…h2so](https://explorer.solana.com/tx/5KFt148FsKyrc7CL6x6RcZjJzs8nkYNrqHxZt8xUsXo8FBQwia297PB2cH8CbYMpMidocDNjSCGmNyZ2f2p9h2so?cluster=devnet) |
-| Real phone: the large latte, approved on Second Look in Solflare | Agent signature + wallet co-signature in one transaction. | **Paid** | [58eP…EGyD](https://explorer.solana.com/tx/58ePPqG3hK7TWYzXYtsoJXn5iSaNYX2tN8R67uzRhs2TA3esUx8Nb1CQPNqoAag7bxhcTwg2fgNWKLtzBbaHEGyD?cluster=devnet) |
-| Real phone: capsule created with a Seeker Genesis Token | The program verifies the token's collection on-chain (Seeker-only features). | **Seeker verified** | [5C5p…rBax](https://explorer.solana.com/tx/5C5pkK2Q48DkbNoPLcDBQB1vLNtBMAL1HhbEqpkCR3DAaSf2eHrM838J7Hpixk2pZqxiMfPiaTX962eE67ABrBax?cluster=devnet) |
-| Real phone: claim the Seeker launch promo | One claim per token; a second claim is refused (claim record exists). | **Claimed** | [4UxE…Cznf](https://explorer.solana.com/tx/4UxEYZURtLsiXYc2DK4z9k8rc8jdxoRmaxYh7Li1yEh2Y1WJtfqBKPXDV3RKNQeEz9vy2jf1ptGQL2xp4hMpCznf?cluster=devnet) |
-
-## Try it
-
-### On your phone in five minutes (judges)
+### On your phone (judges)
 
 1. Install **Solflare** (or Phantom) and switch it to **Devnet** (Solflare: Settings → Network → Devnet). A fresh wallet is best.
 2. Install the latest `tally-*.apk` from [Releases](https://github.com/LSUDOKO/Tally/releases).
@@ -244,6 +219,35 @@ On a Seeker: **Sign in with wallet** (Seed Vault) → **Create a capsule** ("Cof
 
 Optional: paste your own Groq API key in **Settings** to use a hosted model (`openai/gpt-oss-120b` on Groq) as the agent. The key stays in app-private storage and is never built into the APK, and the app makes at most 30 model calls a day. Without a key, a deterministic rule-based agent is used. Either way the model only ever sees item ids, categories, prices, floors and dictionary-filtered name tokens, never merchant prose.
 
+## Tests
+
+| Suite | Count | What it proves |
+|---|---|---|
+| `cargo test --workspace` | **155** | Core vectors + 119 LiteSVM integration tests against the compiled `.so` (exact error codes, real Token-2022 SGT accounts, real mainnet Lighthouse program) |
+| `pnpm -C sdk test` | **19** | TS byte parity with Rust; canonical instruction order; generates `fixtures/tx-v1.json` and the per-instruction `fixtures/ix-v1.json` |
+| `./gradlew :core:test` (in `app/`) | **97** | Kotlin byte parity with Rust **and** `@solana/kit` (every instruction the app builds, PDAs, compiled message); context firewall and the exact HTTP body sent to the hosted model; a software NFC tap carrying a real signed menu; Second Look; points, streaks and levels; weekly summary; the usual-order guard; cart limits; agent proposals (including one made by the SDK); the weekday/weekend allowance schedule. One opt-in test (`TALLY_LIVE=1`) pays, and is attacked, on devnet through the Kotlin client |
+| `pnpm -C mcp test` | **16** | The MCP server's policy (category mask, per-purchase and daily limits with the cycle reset, frozen and expired capsules, approval cases, best match), the Telegram bot, payment-alert wording and Helius webhook handling, and the Places proxy (cache, pins, photo allow-list) |
+
+The demo flow was also run end to end against `solana-test-validator`. The honest purchase pays; the payee swap, phantom add-on and stale menu revert with the expected codes; the Whisper upsell stops for co-sign; the owner-approved purchase pays.
+
+## On-chain evidence (devnet)
+
+Every claim above can be checked on the explorer. The first six rows come from the scripted demo ([docs/DEVNET.md](docs/DEVNET.md)), the rest from a stock Android phone with Solflare ([docs/21](docs/21-real-phone-run.md)). Program: [`3ofJ…djqk`](https://explorer.solana.com/address/3ofJTv8xX68aFTQJLNZV2tDXESPuCjcfRHpeLd37djqk?cluster=devnet).
+
+| What happened | What it proves | Result | Transaction |
+|---|---|---|---|
+| Honest purchase: the agent buys the $4.50 oat latte, the cheapest match | Autonomous payments work: signed menu, cheapest-match rule, payee from the registry. No human tap. | **Paid** | [5X3y…ZwcF](https://explorer.solana.com/tx/5X3yy6tRD3nVwSWK5vFBf3shBMN8hJDksrby8kk1PUyeykkkGZCKY73i16VJta9RfpDA2piYZz7tsFoqYtWZwcF?cluster=devnet) |
+| Payee swap: pay an attacker account instead of the café | The money can only go to the merchant's registered payout. | **Reverted 2001** | [4eCo…vPCE](https://explorer.solana.com/tx/4eCo3iQviYdcfnjLxqyETCoWZTCqFskQX3uBieXeEeR9vNfVPVwK2wcQnEQ75As8p7Qw6TkyvmejuAtLN6XBvPCE?cluster=devnet) |
+| Phantom add-on: a $2.99 "service fee" the café never signed | Only items in the merchant's signed Merkle root can be paid. | **Reverted 6009** | [4oot…x8NS](https://explorer.solana.com/tx/4oot9a8F18zqqAFXjK6ntL7uKEh8s93LuaMMBqqb5shNwtqbUE8GUdsQpaghyAjH7sosj2wdoRm6yPDwbsxDx8NS?cluster=devnet) |
+| Stale menu: replay a QR from 300 slots ago | Menus expire on-chain (≤150 slots), so screenshots can't be replayed. | **Reverted 6007** | [3wmM…JkzH](https://explorer.solana.com/tx/3wmMJMoqVCwAM2kgjktfyZssyCCWhYDTmLzr9o9kjP9EgkTirBhX15gFQVShuKCZCJ9amTtsCbv3rQJcijYHJkzH?cluster=devnet) |
+| Whisper upsell: the agent picks the $5.90 large latte on its own | Anything pricier than the cheapest match needs the owner's signature. | **Reverted 6013** | [8PMb…yszd](https://explorer.solana.com/tx/8PMbmycaGYKJr17VPQCEkqyn7qaR7uapAWH6pT5oXEGG45wor122am1M7RR8tEkPiXdATcRdRSkbroHRrXcyszd?cluster=devnet) |
+| The owner approves that large latte | With the owner's co-signature the same purchase goes through. | **Paid** | [56gB…mMH7](https://explorer.solana.com/tx/56gBBA1r2CyJZ12f9udR8Mt9NJcrw11M84R2JBCc5qehkKo33VqSL4qRKcRV8g5LDSXpk5s6js6o3AX7C7rrmMH7?cluster=devnet) |
+| Real phone, Solflare: create the capsule with rules and $20 | The owner key stays in the wallet; the app only proposes. | **Created** | [3ZjM…4jDY](https://explorer.solana.com/tx/3ZjM6LwXft7CFAy9V7sib1MnhP1VYv9vgevLPZ6vni1piAz6KRPfUhvXAMpA8f5Wk3tNoZUsQA7LcKTnbuAL4jDY?cluster=devnet) |
+| Real phone: the Groq agent buys the $4.50 latte | The hosted agent, behind the context firewall, pays without a human. | **Paid** | [5KFt…h2so](https://explorer.solana.com/tx/5KFt148FsKyrc7CL6x6RcZjJzs8nkYNrqHxZt8xUsXo8FBQwia297PB2cH8CbYMpMidocDNjSCGmNyZ2f2p9h2so?cluster=devnet) |
+| Real phone: the large latte, approved on Second Look in Solflare | Agent signature + wallet co-signature in one transaction. | **Paid** | [58eP…EGyD](https://explorer.solana.com/tx/58ePPqG3hK7TWYzXYtsoJXn5iSaNYX2tN8R67uzRhs2TA3esUx8Nb1CQPNqoAag7bxhcTwg2fgNWKLtzBbaHEGyD?cluster=devnet) |
+| Real phone: capsule created with a Seeker Genesis Token | The program verifies the token's collection on-chain (Seeker-only features). | **Seeker verified** | [5C5p…rBax](https://explorer.solana.com/tx/5C5pkK2Q48DkbNoPLcDBQB1vLNtBMAL1HhbEqpkCR3DAaSf2eHrM838J7Hpixk2pZqxiMfPiaTX962eE67ABrBax?cluster=devnet) |
+| Real phone: claim the Seeker launch promo | One claim per token; a second claim is refused (claim record exists). | **Claimed** | [4UxE…Cznf](https://explorer.solana.com/tx/4UxEYZURtLsiXYc2DK4z9k8rc8jdxoRmaxYh7Li1yEh2Y1WJtfqBKPXDV3RKNQeEz9vy2jf1ptGQL2xp4hMpCznf?cluster=devnet) |
+
 ## Security, honestly
 
 - **Blocked on-chain:** payee swap, price tampering, phantom add-ons, menu forgery, double charges, stale replay, conversational "pre-authorised" injection, Ed25519 offset hijack, hidden outflows and fee drains, contradictory floors (slashed), settlement floods.
@@ -262,6 +266,12 @@ Tally combines what five 2026 papers found ([docs/03](docs/03-research-foundatio
 - Those checks must be atomic with execution (Proof-Gated Signing, 2610.00354: simulation-only missed 50/50 drift attacks).
 - Previews must show gross outflow (2607.28747).
 - Freshness should come from a witness, not the device (2608.04957).
+
+## Brand kit
+
+<img src="docs/brand/logo-lockup-dark.png" alt="Tally logo lockup" width="280">
+
+Smoked glass on a slow-moving blue light, Inter Tight set light, one lit button per screen. The [brand kit](docs/brand/README.md) has the logo lockup, mark, wordmark, app icon, mascot, palette and rules.
 
 ## License
 
