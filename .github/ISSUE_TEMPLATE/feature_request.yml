@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an improvement to Tally.
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: Who is it for (owner, agent, merchant), and what can't they do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+    validations:
+      required: true
+  - type: dropdown
+    id: onchain
+    attributes:
+      label: Does it change what the program allows?
+      description: Changes to on-chain checks need a threat-model note and a negative test.
+      options:
+        - "No, app, cloud or docs only"
+        - "Yes, it touches the program"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered

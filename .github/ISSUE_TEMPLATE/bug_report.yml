@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in Tally does not work as described.
+title: "Bug: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Tally runs on **Solana devnet** only.
+        **Never post a recovery phrase, private key or API key.** For a security issue, use a [private report](https://github.com/LSUDOKO/Tally/security/advisories/new) instead.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Android app (user mode)
+        - Android app (merchant mode)
+        - On-chain program
+        - TypeScript SDK or scripts
+        - Tally cloud (counter, MCP server)
+        - Telegram bot or payment alerts
+        - Docs
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead. Include the exact message on screen.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Scan the live counter
+        2. Ask the agent for an oat latte
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: tx
+    attributes:
+      label: Devnet transaction signature
+      description: If a payment or wallet action failed, the signature lets us read the program's log.
+  - type: input
+    id: version
+    attributes:
+      label: Tally version
+      description: Settings → About, or the release you installed.
+      placeholder: "1.2.0"
+  - type: input
+    id: device
+    attributes:
+      label: Phone, Android version and wallet
+      placeholder: Moto G34, Android 14, Solflare 2.x on Devnet
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: Check that no keys or private information are visible.
