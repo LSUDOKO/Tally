@@ -2,12 +2,15 @@
 
 Everything in this folder is generated from the app's own theme (`app/app/src/main/java/app/tally/ui/theme/Theme.kt`), so the kit and the product never drift.
 
+![Logo lockup](logo-lockup-dark.png)
+
 ![Wordmark](wordmark-dark.png)
 
 ## Files
 
 | File | Use |
 | --- | --- |
+| `logo-lockup-dark.png` / `.svg` | The official lockup: the app icon beside "Tally" in Inter Tight Medium (`#EEF4FF`), for dark backgrounds. README hero, decks, social cards. The SVG embeds the 192 px icon. |
 | `mark.svg` / `mark.png` | The Tally mark: four strokes and the fifth across, white on the brand gradient. App header, favicons, social avatars. |
 | `mark-mono.svg`, `mark-mono-white.svg` | Single-colour mark for print, watermarks and the Android monochrome icon. |
 | `wordmark-dark.svg`, `wordmark-light.svg` | Mark + "Tally" in Inter Tight Medium, for dark and light backgrounds. |
