@@ -9,6 +9,9 @@ import app.tally.core.Message
 import app.tally.core.Rpc
 import app.tally.core.Signing
 import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
+import com.solana.mobilewalletadapter.clientlib.AdapterOperations
+import com.solana.mobilewalletadapter.clientlib.protocol.JsonRpc20Client
+import com.solana.mobilewalletadapter.clientlib.protocol.MobileWalletAdapterClient
 import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import com.solana.mobilewalletadapter.clientlib.Solana
@@ -77,7 +80,24 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
             r.payload to addr
         }
         is TransactionResult.NoWalletFound -> throw WalletException("No Mobile Wallet Adapter wallet found. On Seeker, Seed Vault is built in.")
-        is TransactionResult.Failure -> throw WalletException(r.e.message ?: "Wallet request failed")
+        is TransactionResult.Failure -> throw WalletException(explain(r.e))
+    }
+
+    /**
+     * Runs a wallet request on the saved session. A wallet that restarted (or revoked the session)
+     * rejects it before the request itself is shown, which left the owner looking at an empty
+     * wallet. Then: forget the session and ask once more with a fresh authorization.
+     */
+    private suspend fun <T> transact(block: suspend AdapterOperations.(MobileWalletAdapterClient.AuthorizationResult) -> T): TransactionResult<T> {
+        var reached = false
+        val first = adapter.transact(sender, null) { auth -> reached = true; block(this, auth) }
+        if (first is TransactionResult.Failure && !reached && adapter.authToken != null) {
+            Log.w("Tally", "wallet rejected the saved session (${remoteCode(first.e)}); authorizing again")
+            adapter.authToken = null
+            store.walletToken = null
+            return adapter.transact(sender, null) { auth -> block(this, auth) }
+        }
+        return first
     }
 
     override suspend fun signIn(): SignedIn {
@@ -99,7 +119,7 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
         val blockhash = withContext(Dispatchers.IO) { rpc.getLatestBlockhash() }
         val message = Message.compile(owner, blockhash, instructions)
         val unsigned = Message.serialize(message, Message.signers(owner, instructions).map { null })
-        val r = adapter.transact(sender) { signAndSendTransactions(arrayOf(unsigned)) }
+        val r = transact { signAndSendTransactions(arrayOf(unsigned)) }
         return Base58.encode(unwrap(r).first.signatures.first())
     }
 
@@ -109,7 +129,7 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
      * agent-signed transaction and submit it themselves.
      */
     override suspend fun cosign(wireTx: ByteArray): Cosigned {
-        val r = adapter.transact(sender) {
+        val r = transact {
             val caps = getCapabilities()
             Log.i("Tally", "wallet capabilities: signAndSend=${caps.supportsSignAndSendTransactions} optional=${caps.supportedOptionalFeatures.joinToString()}")
             if (SIGN_ONLY in caps.supportedOptionalFeatures) Cosigned.Signed(signTransactions(arrayOf(wireTx)).signedPayloads.first())
@@ -120,6 +140,23 @@ class MwaOwner(private val sender: ActivityResultSender, private val cluster: St
 
     private companion object {
         const val SIGN_ONLY = "solana:signTransactions"
+
+        // Mobile Wallet Adapter error codes (spec, "Errors").
+        const val AUTHORIZATION_FAILED = -1
+        const val NOT_SIGNED = -3
+        const val NOT_SUBMITTED = -4
+
+        fun remoteCode(e: Throwable): Int? = generateSequence(e) { it.cause }
+            .filterIsInstance<JsonRpc20Client.JsonRpc20RemoteException>().firstOrNull()?.code
+
+        /** Words for the owner instead of an exception class name. */
+        fun explain(e: Throwable): String = when (remoteCode(e)) {
+            NOT_SIGNED -> "You declined in the wallet. Nothing was paid."
+            AUTHORIZATION_FAILED -> "The wallet didn't authorize Tally. Try again, or sign in again from Settings."
+            NOT_SUBMITTED -> "The wallet signed but couldn't send it. Nothing was paid; try again."
+            null -> e.message?.takeUnless { it.startsWith("com.") || it.isBlank() } ?: "The wallet didn't answer. Open it once, then try again."
+            else -> "The wallet couldn't finish the request (code ${remoteCode(e)}). Nothing was paid; try again."
+        }
     }
 }
 
