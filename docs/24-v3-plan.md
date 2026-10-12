@@ -12,14 +12,13 @@ Each item says what it needs. "No key" items ship without anything from the main
 | **Fee balance in dollars** | USD per SOL from Jupiter's public price feed (CoinGecko fallback), shown beside the agent's SOL. | Settings → Agent |
 | **Export receipts** | All receipts as CSV (date, item, counter, USDC, outcome, flags, explorer link) through the share sheet. | Receipts → Export CSV |
 | **Brand kit** | Mark, wordmark, icon, palette, type and light rules, generated from the theme. | `docs/brand/` |
-
-## Next, no key needed
-
-1. **Solana Pay for merchants.** The merchant terminal also shows a standard [Solana Pay](https://docs.solanapay.com) transfer-request QR, so any Solana wallet can pay a Tally counter even without the app. Tally's own signed-menu QR stays the protected path.
-2. **Spending by category.** The weekly card gains a category split (coffee / food / transit) from the receipts already on the phone.
-3. **Scheduled allowance.** "Reset my daily cap to $15 every weekday, $5 on weekends." Stored on the phone, applied with one wallet signature when it changes.
-4. **Counter directory.** A list of bonded merchants read from the on-chain registry, with bond size and slash history, so a user can see who is trustworthy before they ever scan.
-5. **Share a capsule's rules.** A read-only link (`/c/<capsule>`) on Tally cloud showing a capsule's rules and receipts, for a parent giving a child an agent allowance.
+| **Wallet sign-in** | Lists the Mobile Wallet Adapter wallets on the phone (Solflare, Phantom, Backpack, Seed Vault) with their own icons and signs in with Solana; Play Store links when there are none. The session is kept, so later approvals don't ask to sign in again. | Home → Sign in with wallet |
+| **Sign out / switch wallet** | Revokes Tally's token in the wallet and sets that account's receipts and rewards aside on the phone until it signs in again. The capsule stays on chain. | Settings → account card |
+| **Solana Pay for merchants** | A standard [Solana Pay](https://docs.solanapay.com) transfer-request QR beside the signed menu, so any Solana wallet can pay a Tally counter. The signed-menu QR stays the protected path. | Merchant mode |
+| **Spending by category** | The weekly card splits spend into coffee / food / transit from the receipts on the phone. | Rewards |
+| **Scheduled allowance** | One daily cap on weekdays, another at weekends. Home asks for one wallet approval when the day type changes; the program enforces whatever is signed. | Settings → Allowance schedule |
+| **Counter directory** | Every registered counter read from the program's accounts, with bond size and slash history, before you ever scan. | Scan |
+| **Share a capsule's rules** | A read-only page (`/c/<owner>`) on Tally cloud with a capsule's rules, plus the bot's `/share`. | Tally cloud, Telegram |
 
 ## Needs something from the maintainer
 
