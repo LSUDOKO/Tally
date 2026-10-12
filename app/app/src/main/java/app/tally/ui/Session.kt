@@ -414,7 +414,9 @@ class Session(val context: Context, private val mwaOwner: Owner) {
 
     suspend fun onProposal(pr: Proposal) {
         onPayload(pr.payload)
-        if (payload === pr.payload) proposal = pr
+        // The offer may have been swapped for the counter's identical, fresher menu on the way in.
+        val now = payload ?: return
+        if (now === pr.payload || Payload.sameOffer(pr.payload, now)) proposal = Proposal(pr.itemIdHex, now)
     }
 
     suspend fun onPayload(p: SignedPayload) = work("Verifying signed menu") {
@@ -424,10 +426,17 @@ class Session(val context: Context, private val mwaOwner: Owner) {
             Accounts.merchant(data) to g.rpc.getSlot()
         }
         merchant = m
-        payload = p
-        issues = Payload.verifyLocally(p, Base58.decode(m.signingKey), slot) + (if (!m.active) listOf(MenuIssue.BadSignature) else emptyList())
-        g.store.lastPayloadQr = Payload.toQr(p)
-        reorderCheck = reorder?.let { Reorder.check(it, p.menu) }
+        var live = p
+        var found = Payload.verifyLocally(p, Base58.decode(m.signingKey), slot)
+        // An offer opened late (a chat hand-off, a slow tap) whose only problem is that its window ran
+        // out: take the counter's identical fresh menu instead of showing a stale-menu error.
+        if (found.isNotEmpty() && found.all { it == MenuIssue.Expired }) {
+            counterRefresh(p, slot)?.let { fresh -> live = fresh; found = Payload.verifyLocally(fresh, Base58.decode(m.signingKey), slot) }
+        }
+        payload = live
+        issues = found + (if (!m.active) listOf(MenuIssue.BadSignature) else emptyList())
+        g.store.lastPayloadQr = Payload.toQr(live)
+        reorderCheck = reorder?.let { Reorder.check(it, live.menu) }
         cart = emptyList()
         cartResults = emptyList()
         agentResult = null
